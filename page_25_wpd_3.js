@@ -1105,6 +1105,39 @@ async function context_paste(p_action, p_camera, p_duplicating, p_item_copy = "Y
                                 // if (currCombinationIndex !== -1 && currShelfCombIndx !== -1) {
                                 //     await setCombinedShelfItems(p_pog_index, currCombinationIndex, currShelfCombIndx, locx ? locx : l_x_val, "Y", "N", -1, 0, []);
                                 // }
+
+
+                                 // ASA-2029 -start  Issue no 4
+                                var shelfdtl = g_pog_json[p_pog_index].ModuleInfo[g_module_index].ShelfInfo[g_shelf_index];
+                                let l_x_val = shelfdtl.Combine == "N" ? -1 : shelfdtl.Y + shelfdtl.H/2;
+                                if ((shelfdtl.ObjType == "SHELF" || shelfdtl.ObjType == "HANGINGBAR") && shelfdtl.Combine !== "N") {
+                                    [currCombinationIndex, currShelfCombIndx] = getCombinationShelf(p_pog_index, shelfdtl.Shelf);
+                                }
+                                if (currCombinationIndex !== -1 && currShelfCombIndx !== -1) {
+                                  
+                                    var pastedItem = shelfdtl.ItemInfo[g_item_index];
+                                    if (typeof pastedItem !== "undefined") {
+                                         if (!pastedItem.ObjID) {
+                                            pastedItem.ObjID = Math.floor(Math.random() * 999999);
+                                        }
+                                        var drag_details_arr = [{
+                                            MIndex: g_module_index,
+                                            SIndex: g_shelf_index,
+                                            IIndex: g_item_index,
+                                            Iobjid: pastedItem.ObjID
+                                        }];
+                                        await setCombinedShelfItems(p_pog_index, currCombinationIndex, currShelfCombIndx, locx ? locx : l_x_val, "Y", "N", -1, 0, drag_details_arr);
+                                        if (drag_details_arr.length > 0) {
+                                            g_module_index = drag_details_arr[0].MIndex;
+                                            g_shelf_index = drag_details_arr[0].SIndex;
+                                            g_item_index = drag_details_arr[0].IIndex;
+                                            item_index_arr = [g_item_index];
+                                        }
+                                    }
+                                    
+                                }
+                                    //ASA-2029 End
+                                    
                                 var drag_item_arr = [];
 								if (return_val == "N" && validate_items(item_width_arr, item_height_arr, item_depth_arr, item_index_arr, shelf_obj_type, g_module_index, g_shelf_index, g_item_index, l_edit_ind, CrushHoriz, CrushVert, CrushDepth, -1, "N", "N", "Y", "N", "N", drag_item_arr, "Y", "Y", "Y", p_pog_index)) {
                                     var locx = "";
@@ -1119,9 +1152,10 @@ async function context_paste(p_action, p_camera, p_duplicating, p_item_copy = "Y
 									} else {
 										edit_item_index = g_item_index;
 									}
-   									reset_auto_crush(g_module_index, g_shelf_index, -1, p_pog_index, g_module_index, g_shelf_index, p_pog_index); //ASA-1343 issue 1 //ASA-1685
+   									 let c =  await reset_auto_crush(g_module_index, g_shelf_index, -1, p_pog_index, g_module_index, g_shelf_index, p_pog_index); //ASA-1343 issue 1 //ASA-1685
+                                    console.log(c)
 									var res = await set_auto_facings(g_module_index, g_shelf_index, edit_item_index, g_pog_json[p_pog_index].ModuleInfo[g_module_index].ShelfInfo[g_shelf_index].ItemInfo[edit_item_index], "B", "I", "D", p_pog_index); //ASA-1273 Prasanna
-									return_val = recreate_all_items(g_module_index, g_shelf_index, g_pog_json[p_pog_index].ModuleInfo[g_module_index].ShelfInfo[g_shelf_index].ObjType, "Y", locx, edit_item_index, g_pog_json[p_pog_index].ModuleInfo[g_module_index].ShelfInfo[g_shelf_index].ItemInfo.length, "N", "N", -1, -1, g_start_canvas, "", p_pog_index, $v("P25_POGCR_DELIST_ITEM_DFT_COL"), $v("P25_MERCH_STYLE"), $v("P25_POGCR_LOAD_IMG_FROM"), $v("P25_BU_ID"), $v("P25_POGCR_ITEM_NUM_LBL_COLOR"), $v("P25_POGCR_ITEM_NUM_LABEL_POS"), $v("P25_POGCR_DISPLAY_ITEM_INFO"), "Y"); //ASA-1350 issue 6 added parameters
+									return_val = await recreate_all_items(g_module_index, g_shelf_index, g_pog_json[p_pog_index].ModuleInfo[g_module_index].ShelfInfo[g_shelf_index].ObjType, "Y", locx, edit_item_index, g_pog_json[p_pog_index].ModuleInfo[g_module_index].ShelfInfo[g_shelf_index].ItemInfo.length, "N", "N", -1, -1, g_start_canvas, "", p_pog_index, $v("P25_POGCR_DELIST_ITEM_DFT_COL"), $v("P25_MERCH_STYLE"), $v("P25_POGCR_LOAD_IMG_FROM"), $v("P25_BU_ID"), $v("P25_POGCR_ITEM_NUM_LBL_COLOR"), $v("P25_POGCR_ITEM_NUM_LABEL_POS"), $v("P25_POGCR_DISPLAY_ITEM_INFO"), "Y"); //ASA-1350 issue 6 added parameters
 									g_cut_copy_arr = [];
 									g_cut_support_obj_arr = [];
 									g_cut_loc_arr = [];
@@ -1635,6 +1669,7 @@ async function context_paste(p_action, p_camera, p_duplicating, p_item_copy = "Y
 				g_multi_copy_done = "N";
 			}
 			var res = await calculateFixelAndSupplyDays("N", p_pog_index);
+            
 			render(p_pog_index);
        		logDebug("function : context_paste", "E");
 			return l_sucess;

@@ -7294,12 +7294,16 @@ function validate_items(p_item_width_arr, p_item_height_arr, p_item_depth_arr, p
             var miny = wpdSetFixed(shelfdtl.Y - (shelfdtl.H / 2));
             var maxy = wpdSetFixed(shelfdtl.Y + (shelfdtl.H / 2));
             for (i = 0; i < p_item_index_arr.length; i++) {
-                shelfdtl.ItemInfo[p_item_index_arr[i]].WChanged = "N";
-                shelfdtl.ItemInfo[p_item_index_arr[i]].DChanged = "N";
+                if (typeof shelfdtl.ItemInfo[p_item_index_arr[i]] !== "undefined") {
+                    shelfdtl.ItemInfo[p_item_index_arr[i]].WChanged = "N";
+                    shelfdtl.ItemInfo[p_item_index_arr[i]].DChanged = "N";
+                }
             }
             if (p_item_index !== -1) {
-                shelfdtl.ItemInfo[p_item_index].WChanged = "N";
-                shelfdtl.ItemInfo[p_item_index].DChanged = "N";
+                if (typeof shelfdtl.ItemInfo[p_item_index] !== "undefined") {
+                    shelfdtl.ItemInfo[p_item_index].WChanged = "N";
+                    shelfdtl.ItemInfo[p_item_index].DChanged = "N";
+                }
             }
 
             if (p_shelf_obj_type == "PEGBOARD") {
