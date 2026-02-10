@@ -4743,6 +4743,13 @@ async function manage_multi_edit(p_edit_type, p_pog_index) {
                             [currCombinationIndex, currShelfCombIndx] = getCombinationShelf(p_pog_index, shelfs.Shelf); //Regression issue 15 20240607  //ASA-1668 #1
                             recreate = "Y";
                         }
+                        //ASA-2041  Issue 1
+                        else if (l_combine !== "S" && l_combine !== "N" && old_shelf_info.Combine == "N") { //ASA-2041.1 - NEW combination
+                            await generateCombinedShelfs(p_pog_index, objects.MIndex, objects.SIndex, $v("P25_POGCR_DELIST_ITEM_DFT_COL"), $v("P25_MERCH_STYLE"), $v("P25_POGCR_LOAD_IMG_FROM"), $v("P25_BU_ID"), $v("P25_POGCR_ITEM_NUM_LBL_COLOR"), $v("P25_POGCR_ITEM_NUM_LABEL_POS"), $v("P25_POGCR_DISPLAY_ITEM_INFO"), "Y", "", "Y"); //ASA-1350 issue 6 added parameters
+                            [currCombinationIndex, currShelfCombIndx] = getCombinationShelf(p_pog_index, shelfs.Shelf); //Regression issue 15 20240607  //ASA-1668 #1
+                            recreate = "Y";
+                        }
+                        //2041 issue 1 END here 
 
                         //var old_shelf_info = JSON.parse(JSON.stringify(g_pog_json[p_pog_index].ModuleInfo[objects.MIndex].ShelfInfo[objects.SIndex])); //ASA-1595 Issue 2
                         items_arr = g_pog_json[p_pog_index].ModuleInfo[objects.MIndex].ShelfInfo[objects.SIndex].ItemInfo;

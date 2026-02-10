@@ -316,7 +316,6 @@ var g_allowItemSort = "Y"; //ASA-1970 Issue1
 
 //Getting request animation frame for different browsers.
 window.requestAnimationFrame = window.requestAnimationFrame || window.mozRequestAnimationFrame || window.webkitRequestAnimationFrame || window.msRequestAnimationFrame || window.oRequestAnimationFrame;
-
 //ASA-1472
 //Global function to handle to Fixed and its defaulted to 5 decimal points now.
 function wpdSetFixed(p_num) {
@@ -6827,7 +6826,29 @@ function dcText(p_txt, p_font_size, p_fgcolor, p_bgcolor, p_width, p_height, p_w
             ctx.textAlign = "center";
             ctx.textBaseline = "middle";
             ctx.fillStyle = "#" + p_fgcolor.toString(16).padStart(6, "0"); // fgcolor
-            ctx.font = p_fontbold + " " + text_height + "px " + p_fontstyle;
+            // ROHIT's ASA 2030 ISSUE 1 - FIX
+            let finalFontPx;
+
+            if (
+                p_font_size &&                          // backend value exists
+                p_font_size !== "" &&
+                !isNaN(p_font_size) &&
+                p_text_direction !== "V" &&             // vertical text handled separately
+                p_reducetofit !== "Y"                   // allow shrink logic to work
+            ) {
+                // TEXTBOX / label intent → absolute px
+                finalFontPx = parseInt(p_font_size, 10) * p_enlarge_no;
+            } else {
+                // legacy / shelf / fallback behavior
+                finalFontPx = text_height;
+            }
+
+            ctx.font =
+                (p_fontbold ? p_fontbold + " " : "") +
+                finalFontPx + "px " +
+                (p_fontstyle || "Arial");
+            
+            // END-OF-ROHIT's ASA 2030 ISSUE 1 - FIX
 
             var lineHeight = advMetrics.lineHeight - advMetrics.lineGap;
             if (p_wrap_text == "Y" && metrics > canvasWidth) {
@@ -11549,12 +11570,18 @@ function cropCanvasToContent(canvas) {
 
 //ASA-1870, Moved from page_25_wpd_4.js to main.js and added pog code and version as a parameter
 async function create_item_compare(p_pog_Code, p_pog_version) {
+    var l_version = g_pog_json[g_pog_index].DraftVersion;  //ASA 2058
+    $s('P25_DRAFT_VERSION', l_version);         //ASA 2058
+
+    var v_x04 = (l_version === null || l_version === undefined || l_version === '') ? 'N' : 'Y'; //ASA 2058
+
     var p = apex.server.process(
         "CREATE_COMPARE_ITEM_COLL",
         {
             x01: p_pog_Code,
             x02: p_pog_version,
             x03: g_pdf_online_clck, //ASA-1531 ISSUE 16
+            x04: v_x04,   //ASA 2058
         },
         {
             dataType: "html",

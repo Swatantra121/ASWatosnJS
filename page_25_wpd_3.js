@@ -1114,7 +1114,7 @@ async function context_paste(p_action, p_camera, p_duplicating, p_item_copy = "Y
                                     [currCombinationIndex, currShelfCombIndx] = getCombinationShelf(p_pog_index, shelfdtl.Shelf);
                                 }
                                 if (currCombinationIndex !== -1 && currShelfCombIndx !== -1) {
-                                  
+                                    //ASA-2029 Start
                                     var pastedItem = shelfdtl.ItemInfo[g_item_index];
                                     if (typeof pastedItem !== "undefined") {
                                          if (!pastedItem.ObjID) {
@@ -2742,6 +2742,7 @@ async function check_module_change(p_module_index, p_pog_code, p_pog_version, p_
 
 //this will create a shelfinfo and moduleinfo for change textbox.
 async function create_change_textbox(p_module_change, p_module_name, p_shelfy, p_module_index, p_pog_index) {
+    debugger;
 	logDebug("function : create_change_textbox; module_change : " + p_module_change + "; module_name : " + p_module_name + "; shelfy : " + p_shelfy + "; p_module_index : " + p_module_index, "S");
 	var ShelfInfo = {};
 

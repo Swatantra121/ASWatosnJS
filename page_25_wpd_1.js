@@ -5494,8 +5494,10 @@ function set_item_values(p_item_code, p_item_width, p_item_height, p_item_depth,
         divider = product_model.getValue(this_record, "DIVIDER");
         back_support = product_model.getValue(this_record, "BACK_SUPPORT");
         oos_perc = parseInt(product_model.getValue(this_record, "STORE_NUMBER") || 0) > 0
-            ? ((parseInt(product_model.getValue(this_record, "STORE_NO_STOCK")) / parseInt(product_model.getValue(this_record, "STORE_NUMBER") || 1)) * 100).toFixed(2)
-            : ""; //ASA-1688 Issue 2
+         ? parseFloat(product_model.getValue(this_record, "STORE_NO_STOCK")).toFixed(2)   //ASA-2042 Issue-3
+          : ""; //ASA-1688 Issue 2
+          //  ? ((parseInt(product_model.getValue(this_record, "STORE_NO_STOCK")) / parseInt(product_model.getValue(this_record, "STORE_NUMBER") || 1)) * 100).toFixed(2)
+           
         //g_pog_json[p_pog_index].LiveStoreCount != 0 ? ((parseInt(product_model.getValue(this_record, "STORE_NO_STOCK"))/g_pog_json[p_pog_index].LiveStoreCount)*100).toFixed(2) : ""; //ASA-1688 Added for oos%
         initial_item_desc = product_model.getValue(this_record, "INITIAL_ITEM_DESC"); //ASA-1734 Issue 1
         initial_brand = product_model.getValue(this_record, "INITIAL_BRAND"); //ASA-1787 Request #6
@@ -7273,6 +7275,7 @@ function item_height_validation(p_item_height, p_module_index, p_shelf_index, p_
 function validate_items(p_item_width_arr, p_item_height_arr, p_item_depth_arr, p_item_index_arr, p_shelf_obj_type, p_module_index, p_shelf_index, p_item_index, p_edit_ind, p_crush_width, p_crush_height, p_crush_depth, p_final_x, p_item_fixed, p_valid_height, p_alert_ind, p_valid_bottom, p_facing_edit, p_drag_item_arr, p_crush_item, p_valid_width, p_valid_depth, p_pog_index, p_validate = "N", p_multi_edit = 'N', p_decrement_value = "N") { //ASA-1300 added new parameter //ASA-1858 Added new parameter p_decrement_value 
     logDebug("function : validate_items; shelf_obj_type : " + p_shelf_obj_type + "; p_module_index : " + p_module_index + "; p_shelf_index : " + p_shelf_index + "; i_item_index : " + p_item_index + "; p_edit_ind : " + p_edit_ind + "; crush_width : " + p_crush_width + "; crush_height : " + p_crush_height + "; crush_depth : " + p_crush_depth + "; i_final_x : " + p_final_x + "; item_fixed : " + p_item_fixed + "; valid_height : " + p_valid_height + "; alert_ind : " + p_alert_ind + "; valid_bottom : " + p_valid_bottom + "; facing_edit : " + p_facing_edit + "; crush_item : " + p_crush_item + "; valid_width : " + p_valid_width + "; valid_depth : " + p_valid_depth, "S");
     try {
+        debugger;
         var shelfdtl = g_pog_json[p_pog_index].ModuleInfo[p_module_index].ShelfInfo[p_shelf_index];
         if (shelfdtl.ItemInfo.length > 0) {
             var l_max_merch = 0;
@@ -7294,13 +7297,13 @@ function validate_items(p_item_width_arr, p_item_height_arr, p_item_depth_arr, p
             var miny = wpdSetFixed(shelfdtl.Y - (shelfdtl.H / 2));
             var maxy = wpdSetFixed(shelfdtl.Y + (shelfdtl.H / 2));
             for (i = 0; i < p_item_index_arr.length; i++) {
-                if (typeof shelfdtl.ItemInfo[p_item_index_arr[i]] !== "undefined") {
+                if (typeof shelfdtl.ItemInfo[p_item_index_arr[i]] !== "undefined") { // conditon  add for asa 2029 
                     shelfdtl.ItemInfo[p_item_index_arr[i]].WChanged = "N";
                     shelfdtl.ItemInfo[p_item_index_arr[i]].DChanged = "N";
                 }
             }
             if (p_item_index !== -1) {
-                if (typeof shelfdtl.ItemInfo[p_item_index] !== "undefined") {
+                if (typeof shelfdtl.ItemInfo[p_item_index] !== "undefined") { // conditon add for asa 2029 
                     shelfdtl.ItemInfo[p_item_index].WChanged = "N";
                     shelfdtl.ItemInfo[p_item_index].DChanged = "N";
                 }
