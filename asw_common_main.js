@@ -6826,29 +6826,8 @@ function dcText(p_txt, p_font_size, p_fgcolor, p_bgcolor, p_width, p_height, p_w
             ctx.textAlign = "center";
             ctx.textBaseline = "middle";
             ctx.fillStyle = "#" + p_fgcolor.toString(16).padStart(6, "0"); // fgcolor
-            // ROHIT's ASA 2030 ISSUE 1 - FIX
-            let finalFontPx;
-
-            if (
-                p_font_size &&                          // backend value exists
-                p_font_size !== "" &&
-                !isNaN(p_font_size) &&
-                p_text_direction !== "V" &&             // vertical text handled separately
-                p_reducetofit !== "Y"                   // allow shrink logic to work
-            ) {
-                // TEXTBOX / label intent → absolute px
-                finalFontPx = parseInt(p_font_size, 10) * p_enlarge_no;
-            } else {
-                // legacy / shelf / fallback behavior
-                finalFontPx = text_height;
-            }
-
-            ctx.font =
-                (p_fontbold ? p_fontbold + " " : "") +
-                finalFontPx + "px " +
-                (p_fontstyle || "Arial");
-            
-            // END-OF-ROHIT's ASA 2030 ISSUE 1 - FIX
+            //ctx.font = p_fontbold + " " + text_height + "px " + p_fontstyle;
+            ctx.font = (p_fontbold ? p_fontbold + " " : "") + " " + text_height + "px " + p_fontstyle; // ASA 2030 ISSUE 1 FIX
 
             var lineHeight = advMetrics.lineHeight - advMetrics.lineGap;
             if (p_wrap_text == "Y" && metrics > canvasWidth) {
@@ -18153,6 +18132,7 @@ function get_item_xy(p_shelfs, p_items, p_item_width, p_item_height, p_pog_index
 function crushItem(p_pog_index, p_moduleIndex, p_shelfIndex, p_itemIndex, p_crushType, p_setInd, p_itemDepthArr, p_itemDepthIndxArr, p_on_load = "N") {
     //ASA-1300 //ASA-1383 issue 8
     try {
+        debugger;
         var crush_index_arr = [];
         var pogModule = g_pog_json[p_pog_index].ModuleInfo[p_moduleIndex];
         var pogShelf = g_pog_json[p_pog_index].ModuleInfo[p_moduleIndex].ShelfInfo[p_shelfIndex];
@@ -18201,8 +18181,7 @@ function crushItem(p_pog_index, p_moduleIndex, p_shelfIndex, p_itemIndex, p_crus
             }*/
             // changes for ASA-2024.3 START
             height_manualCrush = typeof pogItem.MVertCrushed == "undefined" || pogItem.MVertCrushed == null || pogItem.MVertCrushed == "N" ? "N" : "Y";
-            width_manualCrush = typeof pogItem.MHorizCrushed == "undefined" || pogItem.MHorizCrushed == null || pogItem.MHorizCrushed == "N" ? "N" : "Y";
-            depth_manualCrush = typeof pogItem.MDepthCrushed == "undefined" || pogItem.MDepthCrushed == null || pogItem.MDepthCrushed == "N" ? "N" : "Y";
+            // depth_manualCrush = typeof pogItem.MDepthCrushed == "undefined" || pogItem.MDepthCrushed == null || pogItem.MDepthCrushed == "N" ? "N" : "Y";
             if (actualHeight == "H") {
                 crush_height = height_manualCrush == "N" ? pogItem.CHPerc : pogItem.CrushVert;
             } else if (actualHeight == "W") {
@@ -18210,6 +18189,7 @@ function crushItem(p_pog_index, p_moduleIndex, p_shelfIndex, p_itemIndex, p_crus
             } else if (actualHeight == "D") {
                 crush_height = height_manualCrush == "N" ? pogItem.CDPerc : pogItem.CrushD;
             }
+            width_manualCrush = typeof pogItem.MHorizCrushed == "undefined" || pogItem.MHorizCrushed == null || pogItem.MHorizCrushed == "N" ? "N" : "Y";
             if (wActualWidth == "H") {
                 if (pogItem.MassCrushH == "Y") {
                     crush_width = pogItem.CrushHoriz;
