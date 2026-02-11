@@ -14256,7 +14256,7 @@ function blink_effect_3d() {
                         var child = g_intersected[i].children[j];
                         if (child.material && 
                             child.uuid !== "highlight_frame" && 
-                            child.uuid !== "wireframe" && child.type !== "Sprite") {
+                            child.uuid !== "wireframe" && child.type !== "Sprite" && child.type !== "LineSegments") {
                             
                             if (blink_color == 0x00ffff) {
                                 child.material.color.setHex(0xff0000);

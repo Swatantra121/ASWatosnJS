@@ -1439,6 +1439,35 @@ async function context_paste(p_action, p_camera, p_duplicating, p_item_copy = "Y
 								}
 								var res = await set_auto_facings(g_module_index, g_shelf_index, g_item_index, g_pog_json[p_pog_index].ModuleInfo[g_module_index].ShelfInfo[g_shelf_index].ItemInfo[g_item_index], "B", "I", "D", p_pog_index); //ASA-1273 Prasanna
 
+								// ASA-2029  issue 4 - Handle combined shelf positioning for multi-item paste
+								var shelfdtl_multi = g_pog_json[p_pog_index].ModuleInfo[g_module_index].ShelfInfo[g_shelf_index];
+								let l_x_val_multi = shelfdtl_multi.Combine == "N" ? -1 : shelfdtl_multi.Y + shelfdtl_multi.H/2;
+								var currCombinationIndex_multi = -1, currShelfCombIndx_multi = -1;
+								if ((shelfdtl_multi.ObjType == "SHELF" || shelfdtl_multi.ObjType == "HANGINGBAR") && shelfdtl_multi.Combine !== "N") {
+									[currCombinationIndex_multi, currShelfCombIndx_multi] = getCombinationShelf(p_pog_index, shelfdtl_multi.Shelf);
+								}
+								if (currCombinationIndex_multi !== -1 && currShelfCombIndx_multi !== -1) {
+									var pastedItem_multi = shelfdtl_multi.ItemInfo[g_item_index];
+									if (typeof pastedItem_multi !== "undefined") {
+										if (!pastedItem_multi.ObjID) {
+											pastedItem_multi.ObjID = Math.floor(Math.random() * 999999);
+										}
+										var drag_details_arr_multi = [{
+											MIndex: g_module_index,
+											SIndex: g_shelf_index,
+											IIndex: g_item_index,
+											Iobjid: pastedItem_multi.ObjID
+										}];
+										await setCombinedShelfItems(p_pog_index, currCombinationIndex_multi, currShelfCombIndx_multi, l_x_val_multi, "Y", "N", -1, 0, drag_details_arr_multi);
+										if (drag_details_arr_multi.length > 0) {
+											g_module_index = drag_details_arr_multi[0].MIndex;
+											g_shelf_index = drag_details_arr_multi[0].SIndex;
+											g_item_index = drag_details_arr_multi[0].IIndex;
+											item_index_arr = [g_item_index];
+										}
+									}
+								}
+								// ASA-2029 End
 								if (reorder_items(g_module_index, g_shelf_index, p_pog_index)) {
 									var i = 0;
 									for (const fitems of g_pog_json[p_pog_index].ModuleInfo[g_module_index].ShelfInfo[g_shelf_index].ItemInfo) {
