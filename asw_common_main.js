@@ -6669,6 +6669,9 @@ function wrapText(p_context, p_text, p_x, p_y, p_maxWidth, p_lineHeight) {
 function dcText(p_txt, p_font_size, p_fgcolor, p_bgcolor, p_width, p_height, p_wrap_text, p_reducetofit, p_fontstyle, p_fontbold, p_fontsize, p_mod_index, p_shelf_cnt, p_enlarge_no, p_pog_index, p_pogcr_enhance_textbox_fontsize, p_text_direction) {
     try {
         logDebug("function : dcText; txt : " + p_txt, "S");
+        if (p_txt && p_txt.includes("ASA-1837")) {
+            console.error("DRAWING ASA-1837 VIA dcText", p_txt);
+            }
         // ===== FONT SIZE SYNC FIX (MOST IMPORTANT) =====  ASA-2029
         // if ((!p_font_size || p_font_size === "") && p_fontsize) {
         //     p_font_size = p_fontsize;
@@ -10916,6 +10919,8 @@ function send_to_db(p_pog_code, p_img_arr) {
 async function create_pdf(p_pog_details, p_save_pdf, p_save_pog, p_camera, p_draftPogInd, p_pogcrItemBackLabelColor, p_pogcrItemLabelPosition, p_pogcrDescListArr, p_NotchHead, p_resetZoomInd = "Y", p_pog_index, p_genLiveImg, p_allPogFlag, p_MerchStyle, p_LoadImgFrom, p_Buid, p_ItemNumLblColor, p_ItemNumLblPos, p_DispItemInfo, p_DelistDftColor, p_WorkflowSave = "N", p_DraftSeqID = "", p_ItemDtlList, p_create_img = "Y",
     p_enhance_pdf_image, p_enhance_pdf_ratio, p_canvas_size, p_vdate, p_pog_default_color, p_pog_module_default_color, p_pogcr_dft_spread_product, p_pegb_dft_horiz_spacing, p_pegboard_dft_vert_spacing, p_basket_dft_wall_thickness, p_chest_wall_thickness, p_pegb_max_arrange, p_default_wrap_text, p_cr_default_text_size, p_textbox_default_color, p_shelf_default_color, p_div_color, p_slot_divider, p_slot_orientation, p_fixed_divider, p_pog_item_default_color, p_default_basket_fill, p_default_basket_spread, p_bay_live_image, p_bay_without_live_image, p_bulk_pdf_request) {
     try {
+        console.log('textbox cache', g_textbox_merge_pdf);
+
         logDebug("function : create_pdf; p_pog_details : " + p_pog_details + "; save_pdf : " + p_save_pdf + "; save_pog : " + p_save_pog, "S");
         if (p_resetZoomInd == "Y") {
             reset_zoom(p_pog_index);
@@ -14179,6 +14184,7 @@ function highlightProduct(p_object, p_linewidth, p_width, p_height, p_depth, p_z
         var wireframe = new THREE.LineSegments(geo, mat);
          p_object.geometry.computeBoundingBox(); //ASA-2017 Issue 11,15,16
         wireframe.position.copy(p_object.geometry.boundingBox.getCenter(new THREE.Vector3()));
+        wireframe.position.z += 0.01;
         wireframe.BorderColour = 0xff0000;
         wireframe.uuid = "highlight_frame";
         p_object.WireframeObj = wireframe;
@@ -19592,7 +19598,7 @@ function get_shelf_index(p_obj_id, p_pog_index) {
 // ASA-1129, Start
 //This function is used to find out from all the module which are the items which fall under the combine rules and can be combined to gether. this will set the
 //g_combineShelfs array with each combine set of shelfs.
-async function generateCombinedShelfs(p_pog_index, p_module_index, p_shelf_index, p_pogcrDelistItemDftColor, p_merchStyle, p_pogcrLoadImgFrom, p_buId, p_pogcrItemLabelColor, p_pogcrItemNumLabelPosition, p_pogcrDisplayItemInfo, p_merge_items = "Y", p_calc_days_of_supply = "", p_get_combiedetails) {
+async function generateCombinedShelfs(p_pog_index, p_module_index, p_shelf_index, p_pogcrDelistItemDftColor, p_merchStyle, p_pogcrLoadImgFrom, p_buId, p_pogcrItemLabelColor, p_pogcrItemNumLabelPosition, p_pogcrDisplayItemInfo, p_merge_items = "Y", p_calc_days_of_supply = "", p_get_combiedetails,p_depth_check = "N") { // ASA-2041 issue 1 
     //ASA-1350 issue 6 add parameters
     try {
         logDebug("function : generateCombinedShelfs; p_pog_index : " + p_pog_index, "S");
@@ -19621,7 +19627,8 @@ async function generateCombinedShelfs(p_pog_index, p_module_index, p_shelf_index
                         //2. all the shelfs should have same Object Type, same Y, H, Rotation, Slope, D.
                         //3. if checking from left the current shelf start should be same as previous shelf end.
                         //4. if checking from right. current shelf end shouldbe same as next shelf start.
-                        if (typeof shelf_info !== "undefined" && shelf_info.Combine !== "N" && shelf_info.ObjType == currShelf.ObjType && wpdSetFixed(currShelf.Y) == wpdSetFixed(shelf_info.Y) && wpdSetFixed(currShelf.H) == wpdSetFixed(shelf_info.H) && currShelf.Rotation == shelf_info.Rotation && currShelf.Slope == shelf_info.Slope && wpdSetFixed(currShelf.D) == wpdSetFixed(shelf_info.D)) {
+                        let  depthCheck = p_depth_check  == "D" ? true : wpdSetFixed(currShelf.D) == wpdSetFixed(shelf_info.D);   // ASA-2041 issue 1 create condition
+                        if (typeof shelf_info !== "undefined" && shelf_info.Combine !== "N" && shelf_info.ObjType == currShelf.ObjType && wpdSetFixed(currShelf.Y) == wpdSetFixed(shelf_info.Y) && wpdSetFixed(currShelf.H) == wpdSetFixed(shelf_info.H) && currShelf.Rotation == shelf_info.Rotation && currShelf.Slope == shelf_info.Slope && depthCheck) { // ASA-2041 issue 1 check condition
                             //ASA-1292
                             var compareShelf,
                                 compShelfSt = -1,
@@ -19637,6 +19644,11 @@ async function generateCombinedShelfs(p_pog_index, p_module_index, p_shelf_index
                                 compShelfEnd = currShelfEnd;
                             }
                             //take start and end of current shelf.
+                         //take start and end of current shelf.
+                                var shelfStart = wpdSetFixed(shelf_info.X - shelf_info.W / 2);
+                                var shelfEnd = wpdSetFixed(shelf_info.X + shelf_info.W / 2);
+
+                                        //take start and end of current shelf.
                             var shelfStart = wpdSetFixed(shelf_info.X - shelf_info.W / 2);
                             var shelfEnd = wpdSetFixed(shelf_info.X + shelf_info.W / 2);
 
@@ -22703,3 +22715,59 @@ function reorderShelfWithFixedItem(pShelf, pShelfStart, pShelfEnd, pSpreadProduc
         error_handling(err);
     }
 }
+
+// ASA-1965 TASK 1 S Create new function for cleanup extra json tag from autofill json
+function filterAutoFillJsontag(p_autoFillData) {
+    const keepKeys = ["ItemID", "Item", "Desc"];
+    if (!p_autoFillData || typeof p_autoFillData !== "object")
+        return {};
+
+    const cleanData = JSON.parse(JSON.stringify(p_autoFillData));
+
+    const cleanItemKeys = (itemArray) => {
+        if (!Array.isArray(itemArray))
+            return;
+        itemArray.forEach((item) => {
+            Object.keys(item).forEach((key) => {
+                if (!keepKeys.includes(key))
+                    delete item[key];
+            });
+        });
+    };
+
+    if (Array.isArray(cleanData.BlkInfo)) {
+        cleanData.BlkInfo.forEach((block) => {
+            //  Remove unwanted data and keep object data only from colorObj: BlockDim > ColorObj 
+            if (block.BlockDim && block.BlockDim.ColorObj) {
+                const obj = block.BlockDim.ColorObj.object; // ASA-1965 Issue 5
+                block.BlockDim.ColorObj = { object: obj }; 
+            }
+            // Path 1: BlkModInfo > moduleInfo > ShelfInfo > ItemInfo
+            if (Array.isArray(block.BlkModInfo)) {
+                block.BlkModInfo.forEach((modInfo) => {
+                    const shelves = modInfo?.moduleInfo?.ShelfInfo;
+                    if (Array.isArray(shelves)) {
+                        shelves.forEach((shelf) => cleanItemKeys(shelf.ItemInfo));
+                    } else if (shelves && typeof shelves === "object") {
+                        cleanItemKeys(shelves.ItemInfo);
+                    }
+                });
+            }
+
+            // Path 2: BlkShelfInfo > ShelfInfo > ItemInfo
+            if (Array.isArray(block.BlkShelfInfo)) {
+                block.BlkShelfInfo.forEach((shelfBlock) => {
+                    const shelfInfo = shelfBlock?.ShelfInfo;
+                    if (Array.isArray(shelfInfo)) {
+                        shelfInfo.forEach((shelf) => cleanItemKeys(shelf.ItemInfo));
+                    } else if (shelfInfo && typeof shelfInfo === "object") {
+                        cleanItemKeys(shelfInfo.ItemInfo);
+                    }
+                });
+            }
+        });
+    }
+
+    return cleanData;
+}
+//ASA-1965 TASK 1 E
