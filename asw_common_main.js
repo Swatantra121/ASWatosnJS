@@ -6669,9 +6669,6 @@ function wrapText(p_context, p_text, p_x, p_y, p_maxWidth, p_lineHeight) {
 function dcText(p_txt, p_font_size, p_fgcolor, p_bgcolor, p_width, p_height, p_wrap_text, p_reducetofit, p_fontstyle, p_fontbold, p_fontsize, p_mod_index, p_shelf_cnt, p_enlarge_no, p_pog_index, p_pogcr_enhance_textbox_fontsize, p_text_direction) {
     try {
         logDebug("function : dcText; txt : " + p_txt, "S");
-        if (p_txt && p_txt.includes("ASA-1837")) {
-            console.error("DRAWING ASA-1837 VIA dcText", p_txt);
-            }
         // ===== FONT SIZE SYNC FIX (MOST IMPORTANT) =====  ASA-2029
         // if ((!p_font_size || p_font_size === "") && p_fontsize) {
         //     p_font_size = p_fontsize;
@@ -10919,8 +10916,6 @@ function send_to_db(p_pog_code, p_img_arr) {
 async function create_pdf(p_pog_details, p_save_pdf, p_save_pog, p_camera, p_draftPogInd, p_pogcrItemBackLabelColor, p_pogcrItemLabelPosition, p_pogcrDescListArr, p_NotchHead, p_resetZoomInd = "Y", p_pog_index, p_genLiveImg, p_allPogFlag, p_MerchStyle, p_LoadImgFrom, p_Buid, p_ItemNumLblColor, p_ItemNumLblPos, p_DispItemInfo, p_DelistDftColor, p_WorkflowSave = "N", p_DraftSeqID = "", p_ItemDtlList, p_create_img = "Y",
     p_enhance_pdf_image, p_enhance_pdf_ratio, p_canvas_size, p_vdate, p_pog_default_color, p_pog_module_default_color, p_pogcr_dft_spread_product, p_pegb_dft_horiz_spacing, p_pegboard_dft_vert_spacing, p_basket_dft_wall_thickness, p_chest_wall_thickness, p_pegb_max_arrange, p_default_wrap_text, p_cr_default_text_size, p_textbox_default_color, p_shelf_default_color, p_div_color, p_slot_divider, p_slot_orientation, p_fixed_divider, p_pog_item_default_color, p_default_basket_fill, p_default_basket_spread, p_bay_live_image, p_bay_without_live_image, p_bulk_pdf_request) {
     try {
-        console.log('textbox cache', g_textbox_merge_pdf);
-
         logDebug("function : create_pdf; p_pog_details : " + p_pog_details + "; save_pdf : " + p_save_pdf + "; save_pog : " + p_save_pog, "S");
         if (p_resetZoomInd == "Y") {
             reset_zoom(p_pog_index);
@@ -18138,7 +18133,6 @@ function get_item_xy(p_shelfs, p_items, p_item_width, p_item_height, p_pog_index
 function crushItem(p_pog_index, p_moduleIndex, p_shelfIndex, p_itemIndex, p_crushType, p_setInd, p_itemDepthArr, p_itemDepthIndxArr, p_on_load = "N") {
     //ASA-1300 //ASA-1383 issue 8
     try {
-        debugger;
         var crush_index_arr = [];
         var pogModule = g_pog_json[p_pog_index].ModuleInfo[p_moduleIndex];
         var pogShelf = g_pog_json[p_pog_index].ModuleInfo[p_moduleIndex].ShelfInfo[p_shelfIndex];
@@ -19598,7 +19592,7 @@ function get_shelf_index(p_obj_id, p_pog_index) {
 // ASA-1129, Start
 //This function is used to find out from all the module which are the items which fall under the combine rules and can be combined to gether. this will set the
 //g_combineShelfs array with each combine set of shelfs.
-async function generateCombinedShelfs(p_pog_index, p_module_index, p_shelf_index, p_pogcrDelistItemDftColor, p_merchStyle, p_pogcrLoadImgFrom, p_buId, p_pogcrItemLabelColor, p_pogcrItemNumLabelPosition, p_pogcrDisplayItemInfo, p_merge_items = "Y", p_calc_days_of_supply = "", p_get_combiedetails,p_depth_check = "N") { // ASA-2041 issue 1 
+async function generateCombinedShelfs(p_pog_index, p_module_index, p_shelf_index, p_pogcrDelistItemDftColor, p_merchStyle, p_pogcrLoadImgFrom, p_buId, p_pogcrItemLabelColor, p_pogcrItemNumLabelPosition, p_pogcrDisplayItemInfo, p_merge_items = "Y", p_calc_days_of_supply = "", p_get_combiedetails,p_depth_check = "N" ,p_check_Multi_Edit = "N") { // ASA-2041 issue 1 
     //ASA-1350 issue 6 add parameters
     try {
         logDebug("function : generateCombinedShelfs; p_pog_index : " + p_pog_index, "S");
@@ -19644,11 +19638,6 @@ async function generateCombinedShelfs(p_pog_index, p_module_index, p_shelf_index
                                 compShelfEnd = currShelfEnd;
                             }
                             //take start and end of current shelf.
-                         //take start and end of current shelf.
-                                var shelfStart = wpdSetFixed(shelf_info.X - shelf_info.W / 2);
-                                var shelfEnd = wpdSetFixed(shelf_info.X + shelf_info.W / 2);
-
-                                        //take start and end of current shelf.
                             var shelfStart = wpdSetFixed(shelf_info.X - shelf_info.W / 2);
                             var shelfEnd = wpdSetFixed(shelf_info.X + shelf_info.W / 2);
 
@@ -19660,6 +19649,8 @@ async function generateCombinedShelfs(p_pog_index, p_module_index, p_shelf_index
                             } else if (shelf_info.Combine == "B" && ((compareShelf.Combine == "R" && shelfStart == compShelfEnd) || (compareShelf.Combine == "L" && shelfEnd == compShelfSt) || (compareShelf.Combine == "B" && (shelfStart == compShelfEnd || shelfEnd == compShelfSt)))) {
                                 shelfFound = true;
                             }
+                           else if (shelf_info.Combine == "B" && compareShelf.Combine == "B" && p_check_Multi_Edit=="Y" &&shelf_info.PIndex == compareShelf.PIndex) {  shelfFound = true; } //ASA-2041 issue 6 
+
                             if (shelfFound) {
                                 // || shelf_info.Shelf == currShelf.Shelf) {
                                 var dtls = {};
@@ -20076,6 +20067,7 @@ function updateCombinedItemInfo(p_pog_index, p_module_index, p_shelf_index, p_it
 //it will find the new shelf and move the iteminfo to the new ShelfInfo based on the Xaxis and also set ItemInfo tag for that combination with all the items in all the shelfs.
 async function setCombinedShelfItems(p_pog_index, p_combinationIndex, p_currShelfCombIndx, p_locationX, p_edit_ind, p_shelf_edit, p_redo_x, p_edit_item_index, p_drag_details) {
     try {
+        debugger;
         logDebug("function : setCombinedShelfItems; p_pog_index : " + p_pog_index + "; pCombinationIndex : " + p_combinationIndex + "; pCurrShelfCombIndx : " + p_currShelfCombIndx + "; pLocationX : " + p_locationX, "S");
         //g_combineItemModf = []; //Task_27808
         const spread_product = g_combinedShelfs[p_combinationIndex].SpreadItem;
