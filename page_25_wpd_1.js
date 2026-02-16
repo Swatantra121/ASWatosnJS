@@ -4718,6 +4718,7 @@ async function get_edit_item_img(p_ModuleIndex, p_ShelfIndex, p_ItemIndex, p_ite
 
 //this function is called when user edit the item. the product details popup will open and when they click save. this function is called.
 async function edit_items(p_item_index, p_camera, p_pog_index) {
+    debugger;
     logDebug("function : edit_items; i_item_index : " + p_item_index, "S");
     try {
         var item_depth_arr = [],
@@ -5145,21 +5146,21 @@ async function edit_items(p_item_index, p_camera, p_pog_index) {
             //if there is any change in width or height of the item. then we need to get new x from get_item_xaxis from. so we set chest_chagex to Y.
             if ((shelfdtl.ManualCrush == 'Y' && shelfdtl.ObjType == 'CHEST' && g_chest_as_pegboard == 'Y') || !(shelfdtl.ObjType == 'CHEST' && g_chest_as_pegboard == 'Y')) { //ASA-1300
                 if (itemdtl.MVertCrushed == "Y") {
-                    var retvheight = await crushItem(p_pog_index, g_module_index, g_shelf_index, return_val, "H", "Y", item_depth_arr, item_index_arr);
+                    var retvheight = await crushItem(p_pog_index, g_module_index, g_shelf_index, return_val, actualHeight, "Y", item_depth_arr, item_index_arr); //ASA-2024 Issue3
                     if (retvheight == "Y") { //ASA-1329 
                         chest_changex = "Y";
                     }
                 }
 
                 if (itemdtl.MHorizCrushed == "Y") {
-                    var retvwidth = await crushItem(p_pog_index, g_module_index, g_shelf_index, return_val, "W", "Y", item_depth_arr, item_index_arr);
+                    var retvwidth = await crushItem(p_pog_index, g_module_index, g_shelf_index, return_val, actualWidth, "Y", item_depth_arr, item_index_arr); //ASA-2024 Issue3
                     if (retvheight == "Y") { //ASA-1329
                         chest_changex = "Y";
                     }
                 }
 
                 if (itemdtl.MDepthCrushed == "Y") {
-                    var retvdepth = await crushItem(p_pog_index, g_module_index, g_shelf_index, return_val, "D", "Y", item_depth_arr, item_index_arr);
+                    var retvdepth = await crushItem(p_pog_index, g_module_index, g_shelf_index, return_val, actualDepth, "Y", item_depth_arr, item_index_arr); //ASA-2024 Issue3
                     if (retvheight == "Y") { //ASA-1329
                         chest_changex = "Y";
                     }
@@ -5255,7 +5256,7 @@ async function edit_items(p_item_index, p_camera, p_pog_index) {
             var drag_item_arr = [];
             $v("P25_AUTO_CALC_DEPTH_FACING_ON_SAVE") == "Y" && await maximizeItemDepthFacings("D", g_module_index, g_shelf_index, p_item_index, p_pog_index); //ASA-2007
             //validate_items will also do auto crushing when item is failing the validation. 
-            if (return_val == "N" && validate_items(item_width_arr, item_height_arr, item_depth_arr, item_index_arr, g_shelf_object_type, g_module_index, g_shelf_index, p_item_index, "Y", CrushHoriz, CrushVert, CrushDepth, itemdtl.X, $v("P25_ITEM_FIXED"), "N", "Y", top_bottom_flag, facing_edit, drag_item_arr, "Y", "Y", "Y", p_pog_index)) {
+            if (return_val == "N" && validate_items(item_width_arr, item_height_arr, item_depth_arr, item_index_arr, g_shelf_object_type, g_module_index, g_shelf_index, p_item_index, "Y", CrushHoriz, CrushVert, CrushDepth, itemdtl.X, $v("P25_ITEM_FIXED"), "N", "N", top_bottom_flag, facing_edit, drag_item_arr, "Y", "Y", "Y", p_pog_index)) { //ASA-2024 Issue2 & Issue4
                 //identify if any change in POG
                 g_pog_edited_ind = "Y";
                 itemdtl.pegHeadRoom = pegHeadRoom;

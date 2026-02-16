@@ -1108,6 +1108,7 @@ async function context_paste(p_action, p_camera, p_duplicating, p_item_copy = "Y
 
 
                                  // ASA-2029 -start  Issue no 4
+                                 debugger;
                                 var shelfdtl = g_pog_json[p_pog_index].ModuleInfo[g_module_index].ShelfInfo[g_shelf_index];
                                 let l_x_val = shelfdtl.Combine == "N" ? -1 : shelfdtl.Y + shelfdtl.H/2;
                                 if ((shelfdtl.ObjType == "SHELF" || shelfdtl.ObjType == "HANGINGBAR") && shelfdtl.Combine !== "N") {
@@ -1126,7 +1127,7 @@ async function context_paste(p_action, p_camera, p_duplicating, p_item_copy = "Y
                                             IIndex: g_item_index,
                                             Iobjid: pastedItem.ObjID
                                         }];
-                                        await setCombinedShelfItems(p_pog_index, currCombinationIndex, currShelfCombIndx, locx ? locx : l_x_val, "Y", "N", -1, 0, drag_details_arr);
+                                        await setCombinedShelfItems(p_pog_index, currCombinationIndex, currShelfCombIndx, locx ? locx : l_x_val, "Y", "N", -1, 0, drag_details_arr,"Y"); //ASA-2029  Issue4 Case(c)
                                         if (drag_details_arr.length > 0) {
                                             g_module_index = drag_details_arr[0].MIndex;
                                             g_shelf_index = drag_details_arr[0].SIndex;
@@ -1408,7 +1409,7 @@ async function context_paste(p_action, p_camera, p_duplicating, p_item_copy = "Y
 								var items = g_pog_json[p_pog_index].ModuleInfo[g_module_index].ShelfInfo[g_shelf_index].ItemInfo[g_item_index];
 								var spread_gap = g_pog_json[p_pog_index].ModuleInfo[g_module_index].ShelfInfo[g_shelf_index].HorizGap;
 								if (shelf_obj_type !== "PEGBOARD" && !(shelf_obj_type == "CHEST" && g_chest_as_pegboard == "Y")) {
-									var new_x = get_item_xaxis(items.W, items.H, items.D, shelf_obj_type, l_final_x, spread_gap, spread_product, spread_gap, g_module_index, g_shelf_index, g_item_index, shelf_obj_type == "PALLET" ? "N" : "Y", g_pog_json[p_pog_index].ModuleInfo[g_module_index].ShelfInfo[g_shelf_index].ItemInfo.length, "N", p_pog_index);
+									var new_x = get_item_xaxis(items.W, items.H, items.D, shelf_obj_type, -1, spread_gap, spread_product, spread_gap, g_module_index, g_shelf_index, g_item_index, shelf_obj_type == "PALLET" ? "N" : "Y", g_pog_json[p_pog_index].ModuleInfo[g_module_index].ShelfInfo[g_shelf_index].ItemInfo.length, "N", p_pog_index);
 									g_pog_json[p_pog_index].ModuleInfo[g_module_index].ShelfInfo[g_shelf_index].ItemInfo[g_item_index].X = new_x;
 								}
 
@@ -1438,7 +1439,7 @@ async function context_paste(p_action, p_camera, p_duplicating, p_item_copy = "Y
 									return_val = await item_height_validation(itemH, g_module_index, g_shelf_index, g_item_index, "Y", -1, allow_crush, CrushVert, item_fixed, "Y", itemD, "N", p_pog_index);
 								}
 								var res = await set_auto_facings(g_module_index, g_shelf_index, g_item_index, g_pog_json[p_pog_index].ModuleInfo[g_module_index].ShelfInfo[g_shelf_index].ItemInfo[g_item_index], "B", "I", "D", p_pog_index); //ASA-1273 Prasanna
-
+                                
 								// ASA-2029  issue 4 - Handle combined shelf positioning for multi-item paste
 								var shelfdtl_multi = g_pog_json[p_pog_index].ModuleInfo[g_module_index].ShelfInfo[g_shelf_index];
 								let l_x_val_multi = shelfdtl_multi.Combine == "N" ? -1 : shelfdtl_multi.Y + shelfdtl_multi.H/2;
@@ -1458,7 +1459,7 @@ async function context_paste(p_action, p_camera, p_duplicating, p_item_copy = "Y
 											IIndex: g_item_index,
 											Iobjid: pastedItem_multi.ObjID
 										}];
-										await setCombinedShelfItems(p_pog_index, currCombinationIndex_multi, currShelfCombIndx_multi, l_x_val_multi, "Y", "N", -1, 0, drag_details_arr_multi);
+										await setCombinedShelfItems(p_pog_index, currCombinationIndex_multi, currShelfCombIndx_multi, l_x_val_multi, "Y", "N", -1, 0, drag_details_arr_multi,"Y"); //ASA-2029  Issue4 Case(c)
 										if (drag_details_arr_multi.length > 0) {
 											g_module_index = drag_details_arr_multi[0].MIndex;
 											g_shelf_index = drag_details_arr_multi[0].SIndex;
@@ -2275,7 +2276,13 @@ async function update_edit_location(p_newX, p_newY, p_newZ, p_module_index, p_sh
 		undoObjectsInfo.Z = selectedObject.position.z;
 		undoObjectsInfo.g_deletedItems = itemsDel;
 
-		var update_textbox = g_pog_json[p_pog_index].ModuleInfo[p_module_index].ShelfInfo[p_shelf_index].Z !== p_newZ ? "N" : "Y";
+        //ASA-2029 issue 1 Start
+		var old_textbox_z = wpdSetFixed(g_pog_json[p_pog_index].ModuleInfo[p_module_index].ShelfInfo[p_shelf_index].Z);
+        var new_textbox_z = wpdSetFixed(p_newZ);
+        var update_textbox = old_textbox_z !== new_textbox_z ? "N" : "Y";
+		//var update_textbox = g_pog_json[p_pog_index].ModuleInfo[p_module_index].ShelfInfo[p_shelf_index].Z !== p_newZ ? "N" : "Y";
+        //ASA-2029 issue 1 End
+
 		g_pog_json[p_pog_index].ModuleInfo[p_module_index].ShelfInfo[p_shelf_index].EditNotch = "N";
 		var shelf_start = p_newX - g_pog_json[p_pog_index].ModuleInfo[p_module_index].ShelfInfo[p_shelf_index].W / 2;
 		var shelf_end = p_newX + g_pog_json[p_pog_index].ModuleInfo[p_module_index].ShelfInfo[p_shelf_index].W / 2;
@@ -2771,7 +2778,6 @@ async function check_module_change(p_module_index, p_pog_code, p_pog_version, p_
 
 //this will create a shelfinfo and moduleinfo for change textbox.
 async function create_change_textbox(p_module_change, p_module_name, p_shelfy, p_module_index, p_pog_index) {
-    debugger;
 	logDebug("function : create_change_textbox; module_change : " + p_module_change + "; module_name : " + p_module_name + "; shelfy : " + p_shelfy + "; p_module_index : " + p_module_index, "S");
 	var ShelfInfo = {};
 
@@ -9295,8 +9301,26 @@ async function save_draft(p_saveType, p_description, p_draftVersion) {
 								}
 								// ASA-1924 End
 
-								pog_info["saveType"] = "N";
-								pog_info["draftVersion"] = p_draftVersion; //ASA-1425 Issue 4
+								//pog_info["saveType"] = "N";  asa-2050
+                                pog_info["saveType"] = p_saveType;
+								//pog_info["draftVersion"] = p_draftVersion; //ASA-1425 Issue 4
+                                //start-asa2050
+                                if (p_saveType == "S") {
+                                    pog_info["draftVersion"] = g_pog_json[i].DraftVersion;
+                                    g_pog_json[i].DraftVersion = g_pog_json[i].DraftVersion;
+                                   
+                                } else {
+                                    pog_info["draftVersion"] = p_draftVersion;
+                                   // g_pog_json[i].DraftVersion = p_draftVersion;
+                                   for (let idx = 0; idx < g_pog_json.length; idx++) {
+                                        if (g_pog_json[idx].selected === true) {
+                                            g_pog_json[idx].DraftVersion = p_draftVersion;
+                                            
+                                        }
+                                    }
+                                }
+                                //end-asa2050
+                               
 							} else {
 								if (typeof p_description == "undefined" || p_description == "") {
 									pog_info["description"] = new_pogjson[0].description;
@@ -10668,7 +10692,6 @@ async function show_errors_final_pog(p_pog_info_err) {
 }
 
 function maximizePog(p_pog_index, p_type) {
-    debugger;
 	var maxSceneObj, maxPogjson, maxPogDataJson;
 	// ASA-1910 Issue 4 and 5
 	if (p_type !== 0) {

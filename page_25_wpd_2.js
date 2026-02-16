@@ -10325,7 +10325,7 @@ function create_divider(p_pog_index) {
             if (edited == "N") {
                 g_pog_json[p_pog_index].ModuleInfo[g_module_index].ShelfInfo[g_shelf_index].ItemInfo[g_pog_json[p_pog_index].ModuleInfo[g_module_index].ShelfInfo[g_shelf_index].ItemInfo.length - 1].ObjID = oBjID;
             } else {
-                g_pog_json[p_pog_index].ModuleInfo[g_module_index].ShelfInfo[g_shelf_index].ItemInfo[g_item_index].ObjID = oBjID;
+                g_pog_json[p_pog_index].ModuleInfo[g_module_index].ShelfInfo[g_shelf_index].ItemInfo[g_item_index].ObjID = oBjID;               
             }
             g_pog_json[p_pog_index].ModuleInfo[g_module_index].ShelfInfo[upd_shelf_index].ShelfDivObjID = oBjID;
 

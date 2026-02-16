@@ -2416,9 +2416,10 @@ function open_save_draft() {
     logDebug("function : open_save_draft", "S");
     if (g_pog_json.length > 0) {
         console.log("templete opened");
+
         if (g_all_pog_flag == "Y") {
             $s("P25_DRAFT_SAVE_TYPE", "M");
-            $s("P25_SAVE_OPTION", "SAVE");
+          //  $s("P25_SAVE_OPTION", "SAVE");  asa2050
             $s("P25_POG_DESCRIPTION", "");
             $s("P25_POG_DESCRIPTION", g_pog_json[g_pog_index].Desc7 !== "" ? g_pog_json[g_pog_index].Desc7 : g_pog_json[g_pog_index].POGCode); //ASA-1765 #issue 5
             $("#P25_POG_DESCRIPTION_CONTAINER").hide();
@@ -4619,7 +4620,6 @@ async function auto_set_items(p_module_index, p_shelf_index, p_newItemArr, p_fin
 
 async function manage_multi_edit(p_edit_type, p_pog_index) {
     logDebug("function : manage_multi_edit; edit_type : " + p_edit_type, "S");
-    debugger;
     try {
         if (p_edit_type == "F") {
             var max_merch = parseFloat(g_shelf_details[0].MaxMerch) / 100;
@@ -4678,6 +4678,7 @@ async function manage_multi_edit(p_edit_type, p_pog_index) {
             var ItemsDel = [];
             var i = 0;
             var prevSObjID = -1; //ASA-1669
+            debugger
             if (g_delete_details.length > 0) {
                 for (const det of g_delete_details) {
                     // if (i == 0) {
@@ -4739,13 +4740,13 @@ async function manage_multi_edit(p_edit_type, p_pog_index) {
                             } //End Task_27734
                         }
                         else if (l_combine !== "S" && old_shelf_info.Combine !== "N") { //ASA-2041.1
-                            await generateCombinedShelfs(p_pog_index, objects.MIndex, objects.SIndex, $v("P25_POGCR_DELIST_ITEM_DFT_COL"), $v("P25_MERCH_STYLE"), $v("P25_POGCR_LOAD_IMG_FROM"), $v("P25_BU_ID"), $v("P25_POGCR_ITEM_NUM_LBL_COLOR"), $v("P25_POGCR_ITEM_NUM_LABEL_POS"), $v("P25_POGCR_DISPLAY_ITEM_INFO"), "Y", "", "Y"); //ASA-1350 issue 6 added parameters
+                            await generateCombinedShelfs(p_pog_index, objects.MIndex, objects.SIndex, $v("P25_POGCR_DELIST_ITEM_DFT_COL"), $v("P25_MERCH_STYLE"), $v("P25_POGCR_LOAD_IMG_FROM"), $v("P25_BU_ID"), $v("P25_POGCR_ITEM_NUM_LBL_COLOR"), $v("P25_POGCR_ITEM_NUM_LABEL_POS"), $v("P25_POGCR_DISPLAY_ITEM_INFO"), "Y", "", "Y","Y"); //ASA-1350 issue 6 added parameters ASA-2041 issue 6 
                             [currCombinationIndex, currShelfCombIndx] = getCombinationShelf(p_pog_index, shelfs.Shelf); //Regression issue 15 20240607  //ASA-1668 #1
                             recreate = "Y";
                         }
                         //ASA-2041  Issue 1
                         else if (l_combine !== "S" && l_combine !== "N" && old_shelf_info.Combine == "N") { //ASA-2041.1 - NEW combination
-                            await generateCombinedShelfs(p_pog_index, objects.MIndex, objects.SIndex, $v("P25_POGCR_DELIST_ITEM_DFT_COL"), $v("P25_MERCH_STYLE"), $v("P25_POGCR_LOAD_IMG_FROM"), $v("P25_BU_ID"), $v("P25_POGCR_ITEM_NUM_LBL_COLOR"), $v("P25_POGCR_ITEM_NUM_LABEL_POS"), $v("P25_POGCR_DISPLAY_ITEM_INFO"), "Y", "", "Y"); //ASA-1350 issue 6 added parameters
+                            await generateCombinedShelfs(p_pog_index, objects.MIndex, objects.SIndex, $v("P25_POGCR_DELIST_ITEM_DFT_COL"), $v("P25_MERCH_STYLE"), $v("P25_POGCR_LOAD_IMG_FROM"), $v("P25_BU_ID"), $v("P25_POGCR_ITEM_NUM_LBL_COLOR"), $v("P25_POGCR_ITEM_NUM_LABEL_POS"), $v("P25_POGCR_DISPLAY_ITEM_INFO"), "Y", "", "Y","D","Y"); //ASA-1350 issue 6 added parameters ASA-2041 issue 1 one  parameter pass 
                             [currCombinationIndex, currShelfCombIndx] = getCombinationShelf(p_pog_index, shelfs.Shelf); //Regression issue 15 20240607  //ASA-1668 #1
                             recreate = "Y";
                         }
@@ -5109,7 +5110,6 @@ async function manage_multi_edit(p_edit_type, p_pog_index) {
                     let result1 = await add_merch("Y", g_pog_index);
                 }
             }
-            
             var res = await calculateFixelAndSupplyDays("N", p_pog_index);
             render(p_pog_index);
             if (g_show_live_image == "Y") {
@@ -18028,60 +18028,61 @@ function importUpdateItemInfo(pFileIndex) {
     }
 }
 
+//mOVED TO MAIN FILE
 // ASA-1965 TASK 1 S Create new function for cleanup extra json tag from autofill json
-function filterAutoFillJsontag(p_autoFillData) {
-    const keepKeys = ["ItemID", "Item", "Desc"];
-    if (!p_autoFillData || typeof p_autoFillData !== "object")
-        return {};
+// function filterAutoFillJsontag(p_autoFillData) {
+//     const keepKeys = ["ItemID", "Item", "Desc"];
+//     if (!p_autoFillData || typeof p_autoFillData !== "object")
+//         return {};
 
-    const cleanData = JSON.parse(JSON.stringify(p_autoFillData));
+//     const cleanData = JSON.parse(JSON.stringify(p_autoFillData));
 
-    const cleanItemKeys = (itemArray) => {
-        if (!Array.isArray(itemArray))
-            return;
-        itemArray.forEach((item) => {
-            Object.keys(item).forEach((key) => {
-                if (!keepKeys.includes(key))
-                    delete item[key];
-            });
-        });
-    };
+//     const cleanItemKeys = (itemArray) => {
+//         if (!Array.isArray(itemArray))
+//             return;
+//         itemArray.forEach((item) => {
+//             Object.keys(item).forEach((key) => {
+//                 if (!keepKeys.includes(key))
+//                     delete item[key];
+//             });
+//         });
+//     };
 
-    if (Array.isArray(cleanData.BlkInfo)) {
-        cleanData.BlkInfo.forEach((block) => {
-            //  Remove unwanted data and keep object data only from colorObj: BlockDim > ColorObj 
-            if (block.BlockDim && block.BlockDim.ColorObj) {
-                const obj = block.BlockDim.ColorObj.object; // ASA-1965 Issue 5
-                block.BlockDim.ColorObj = { object: obj };
-            }
-            // Path 1: BlkModInfo > moduleInfo > ShelfInfo > ItemInfo
-            if (Array.isArray(block.BlkModInfo)) {
-                block.BlkModInfo.forEach((modInfo) => {
-                    const shelves = modInfo?.moduleInfo?.ShelfInfo;
-                    if (Array.isArray(shelves)) {
-                        shelves.forEach((shelf) => cleanItemKeys(shelf.ItemInfo));
-                    } else if (shelves && typeof shelves === "object") {
-                        cleanItemKeys(shelves.ItemInfo);
-                    }
-                });
-            }
+//     if (Array.isArray(cleanData.BlkInfo)) {
+//         cleanData.BlkInfo.forEach((block) => {
+//             //  Remove unwanted data and keep object data only from colorObj: BlockDim > ColorObj 
+//             if (block.BlockDim && block.BlockDim.ColorObj) {
+//                 const obj = block.BlockDim.ColorObj.object; // ASA-1965 Issue 5
+//                 block.BlockDim.ColorObj = { object: obj };
+//             }
+//             // Path 1: BlkModInfo > moduleInfo > ShelfInfo > ItemInfo
+//             if (Array.isArray(block.BlkModInfo)) {
+//                 block.BlkModInfo.forEach((modInfo) => {
+//                     const shelves = modInfo?.moduleInfo?.ShelfInfo;
+//                     if (Array.isArray(shelves)) {
+//                         shelves.forEach((shelf) => cleanItemKeys(shelf.ItemInfo));
+//                     } else if (shelves && typeof shelves === "object") {
+//                         cleanItemKeys(shelves.ItemInfo);
+//                     }
+//                 });
+//             }
 
-            // Path 2: BlkShelfInfo > ShelfInfo > ItemInfo
-            if (Array.isArray(block.BlkShelfInfo)) {
-                block.BlkShelfInfo.forEach((shelfBlock) => {
-                    const shelfInfo = shelfBlock?.ShelfInfo;
-                    if (Array.isArray(shelfInfo)) {
-                        shelfInfo.forEach((shelf) => cleanItemKeys(shelf.ItemInfo));
-                    } else if (shelfInfo && typeof shelfInfo === "object") {
-                        cleanItemKeys(shelfInfo.ItemInfo);
-                    }
-                });
-            }
-        });
-    }
+//             // Path 2: BlkShelfInfo > ShelfInfo > ItemInfo
+//             if (Array.isArray(block.BlkShelfInfo)) {
+//                 block.BlkShelfInfo.forEach((shelfBlock) => {
+//                     const shelfInfo = shelfBlock?.ShelfInfo;
+//                     if (Array.isArray(shelfInfo)) {
+//                         shelfInfo.forEach((shelf) => cleanItemKeys(shelf.ItemInfo));
+//                     } else if (shelfInfo && typeof shelfInfo === "object") {
+//                         cleanItemKeys(shelfInfo.ItemInfo);
+//                     }
+//                 });
+//             }
+//         });
+//     }
 
-    return cleanData;
-}
+//     return cleanData;
+// }
 //ASA-1965 TASK 1 E
 
 //ASA-1979 function to mirror the POG as per requirement

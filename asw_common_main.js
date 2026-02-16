@@ -711,10 +711,10 @@ function logDebug(p_string, p_type) {
     } else {
         logType = "End";
     }
-    g_dbuDebugEnabled = "Y";
+    // g_dbuDebugEnabled = "Y";
     if (g_dbuDebugEnabled == "Y") {
-        // apex.debug.log(logType + " | " + p_string + " | " + getDateTime());
-        console.log(logType + " | " + p_string + " | " + getDateTime());
+        apex.debug.log(logType + " | " + p_string + " | " + getDateTime());
+        // console.log(logType + " | " + p_string + " | " + getDateTime());
     }
 }
 
@@ -6666,6 +6666,7 @@ function wrapText(p_context, p_text, p_x, p_y, p_maxWidth, p_lineHeight) {
     }
 }
 
+
 function dcText(p_txt, p_font_size, p_fgcolor, p_bgcolor, p_width, p_height, p_wrap_text, p_reducetofit, p_fontstyle, p_fontbold, p_fontsize, p_mod_index, p_shelf_cnt, p_enlarge_no, p_pog_index, p_pogcr_enhance_textbox_fontsize, p_text_direction) {
     try {
         logDebug("function : dcText; txt : " + p_txt, "S");
@@ -6675,7 +6676,6 @@ function dcText(p_txt, p_font_size, p_fgcolor, p_bgcolor, p_width, p_height, p_w
         // }
         // p_font_size = parseInt(p_font_size, 10) || 12;
         // =============================================
-
         if (p_shelf_cnt !== -1) {
             var shelfdtl = g_pog_json[p_pog_index].ModuleInfo[p_mod_index].ShelfInfo[p_shelf_cnt];
             if ((shelfdtl.ObjType !== "TEXTBOX") || (shelfdtl.ObjType == "TEXTBOX" && p_pogcr_enhance_textbox_fontsize == "Y" && p_reducetofit == "Y")) {
@@ -20065,9 +20065,8 @@ function updateCombinedItemInfo(p_pog_index, p_module_index, p_shelf_index, p_it
 
 //This function is used to shuffle all the items in the group of combine shelfs.
 //it will find the new shelf and move the iteminfo to the new ShelfInfo based on the Xaxis and also set ItemInfo tag for that combination with all the items in all the shelfs.
-async function setCombinedShelfItems(p_pog_index, p_combinationIndex, p_currShelfCombIndx, p_locationX, p_edit_ind, p_shelf_edit, p_redo_x, p_edit_item_index, p_drag_details) {
+async function setCombinedShelfItems(p_pog_index, p_combinationIndex, p_currShelfCombIndx, p_locationX, p_edit_ind, p_shelf_edit, p_redo_x, p_edit_item_index, p_drag_details, p_paste_multi_Item="N") {////ASA-2029  Issue4 Case(c)
     try {
-        debugger;
         logDebug("function : setCombinedShelfItems; p_pog_index : " + p_pog_index + "; pCombinationIndex : " + p_combinationIndex + "; pCurrShelfCombIndx : " + p_currShelfCombIndx + "; pLocationX : " + p_locationX, "S");
         //g_combineItemModf = []; //Task_27808
         const spread_product = g_combinedShelfs[p_combinationIndex].SpreadItem;
@@ -20118,7 +20117,7 @@ async function setCombinedShelfItems(p_pog_index, p_combinationIndex, p_currShel
                 SIndex: "asc",
                 X: "asc",
             };
-            item_details.keySort(sorto);
+            p_paste_multi_Item == "N" && item_details.keySort(sorto); //ASA-2029  Issue4 Case(c)
 
             if (item_details.length > 0) {
                 //ASA-1507 #3
@@ -20232,7 +20231,6 @@ async function setCombinedShelfItems(p_pog_index, p_combinationIndex, p_currShel
                     } else {
                         var upd_item_index = 0;
                     }
-
                     itemInfo.MIndex = modf.NewMIndex;
                     itemInfo.SIndex = modf.NewSIndex;
                     itemInfo.IIndex = upd_item_index;
@@ -20291,7 +20289,7 @@ async function setCombinedShelfItems(p_pog_index, p_combinationIndex, p_currShel
                 SIndex: "asc",
                 X: "asc",
             };
-            item_details.keySort(sorto);
+            p_paste_multi_Item == "N" && item_details.keySort(sorto); //ASA-2029  Issue4 Case(c)
             if (item_details.length > 0) {
                 //ASA-1507 #3
                 g_combinedShelfs[i].ItemInfo = item_details;
