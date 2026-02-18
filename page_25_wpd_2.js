@@ -7282,7 +7282,6 @@ function get_nearest_item(p_module_index, p_shelf_index, p_final_x, p_item_index
                 }
             }
         }
-
         if (same_location == "N") {
             if (min_distance_arr.length > 0) {
                 var indices = [];
@@ -7322,7 +7321,15 @@ function get_nearest_item(p_module_index, p_shelf_index, p_final_x, p_item_index
             } else {
                 upd_item_index = 0;
             }
-        }
+        } 
+       else {  // ASA-2066 Issue 2 start
+            if (p_edit_ind == "N" && spread_product !== "R" && upd_item_index > -1) { 
+                if (p_final_x >= items_arr[upd_item_index].X) {
+                 upd_item_index = upd_item_index + 1;
+            }
+            
+            } 
+        }// ASA-2066 Issue 2 
         logDebug("function : get_nearest_item", "E");
         return [upd_item_index, bottom_item_ind, bottom_item_flag];
     } catch (err) {
