@@ -1,4 +1,5 @@
 //This function is called from page 25 execute on page load.
+var g_default_camera_z = "0";
 function initiate_values_onload() {
     sessionStorage.setItem("g_dbuDebugEnabled", $v("P25_POGC_JS_DEBUG_ENABLE"));
     logDebug("onload code ; ", "S");
@@ -649,7 +650,6 @@ function initiate_values_onload() {
     g_item_vertical_text_display = $v("P25_ITEM_CODE_VERT_ALN"); //ASA-1847 4.1
     g_item_text_center_align = $v("P25_ITEM_CODE_CTR_ALN"); //ASA-1847 4.1
 
-
     //this is a common function called from all the page where three asw_common_main is used. this will set global variables and can be used across all pages.
     setParams($v("P25_POGCR_LABEL_TEXT_SIZE"), $v("P25_POGCR_STATUS_ERR_COLOR"), $v("P25_CAMERA_Z"), $v("P25_POGCR_TEXBOX_MERGE_PDF"), $v("P25_POGCR_HNGBAR_DFCNG_MAXMCH"), $v("P25_POGCR_AUTO_APLY_DEPTH_FAC"), $v("P25_POGCR_AUTO_APLY_VERT_FAC"), null, $v("P25_POGCR_ITEM_DIM_ERR_COLOR"), $v("P25_AUTO_HLITE_NON_MV_ITEM"), $v("P25_POGCR_NOIMAGE_SHOW_DESC"), $v('P25_POGCR_NOTCH_LABEL_POSITION'), $v("P25_POGCR_FIXEL_ITEM_LABEL"), $v("P25_POGCR_ITEM_DESC_VERTI"), parseFloat($v("P25_POGCR_DFT_MAX_MERCH"))); //ASA1310_20240307 crush item onload
 
@@ -662,6 +662,7 @@ function initiate_values_onload() {
         },
         shortcut: "Alt+C,N",
     });
+
     apex.actions.add({
         name: "open-template",
         label: "Open Template",
@@ -1845,8 +1846,6 @@ function init(p_canvasNo) {
             });
         }
     });
-    // onWindowResize("F");
-
     logDebug("function : init", "E");
 }
 
@@ -2255,7 +2254,7 @@ async function onWindowResize(p_event) {
 async function create_module_from_json(p_pog_json_arr, p_new_pog_ind, p_pog_type, p_product_open, p_pog_opened, p_stop_loading, p_create_pdf_ind, p_recreate, p_create_json, p_pog_version, p_save_pdf, p_camera, p_scene, p_pog_index, p_orgPogIndex, p_ImageLoadInd = "N", p_UpdateIndex = "N", p_old_POGJSON = []) {
     try {
         typeof p_save_pdf == "undefined" ? "Y" : p_save_pdf;
-
+       
         console.log("value", p_pog_json_arr,
             p_new_pog_ind,
             p_pog_type,
@@ -2363,6 +2362,15 @@ async function create_module_from_json(p_pog_json_arr, p_new_pog_ind, p_pog_type
             ""); //Regression 29(Portal Issue) added p_calc_dayofsupply
 
         g_pog_json[p_pog_index].MassUpdate = "N"; //ASA-1809, Set this to N, as for saving POG draft or existing the coordinates in JSON has been update with respect to WPD
+         debugger;
+        // ✅ Store default camera Z AFTER module creation
+        if (typeof g_default_camera_z === "undefined" || g_default_camera_z === 0) {
+            if (g_camera && g_camera.position && g_camera.position.z !== 0) {
+                g_default_camera_z = g_camera.position.z;
+                console.log("Stored default camera Z (WPD):", g_default_camera_z);
+            }
+        }
+
 
         //This after refresh event is needed because Division/Dept/Subdept are cascading LOV and setting value is always removed by refresh
         //due to setting value to master page item.
@@ -3564,6 +3572,562 @@ function clear_search_fields() {
 }
 
 //This function is called from drop event from draggable product list. That means when you drag a item from product list and drop in any place in canvas.
+// async function create_item_list(p_item_list, p_x, p_y, p_camera, p_canvas, p_pog_index) {
+//     logDebug("function : create_item_list ; x : " + p_x + "; y : " + p_y, "S");
+//     try {
+//         var product_model = apex.region("draggable_table").widget().interactiveGrid("getViews", "grid").model;
+//         render(p_pog_index);
+//         var width = p_canvas.width; // / window.devicePixelRatio;
+//         var height = p_canvas.height; // / window.devicePixelRatio;
+//         var a = (2 * p_x) / width - 1;
+//         var b = 1 - (2 * p_y) / height;
+//         var item_dim_arr = [],
+//             item_depth_arr = [],
+//             item_height_arr = [],
+//             item_width_arr = [],
+//             item_arr = [],
+//             item_desc_arr = [],
+//             item_index_arr = [];
+//         var org_width_arr = [],
+//             org_height_arr = [],
+//             org_depth_arr = [];
+//         //raycaster will help to find out what are the object available on the mouse point of drop using intersectobjects.
+//         g_raycaster.setFromCamera(new THREE.Vector2(a, b), p_camera);
+//         g_intersects = g_raycaster.intersectObjects(g_world.children); //Recursive = true is important to find only mouse down event when mouse comming from other region.
+//         //if there is no objects found. then add a transparant object into raycaster and find out the coordinates.
+//         if (g_intersects.length == 0 || g_intersects[0].object.uuid == "drag_object") {
+//             g_intersects = g_raycaster.intersectObject(g_targetForDragging);
+//             if (g_intersects.length !== 0) {
+//                 var item = g_intersects[0];
+
+//                 g_objectHit = item.object;
+//                 g_objecthit_id = g_objectHit.id;
+//                 locationX = item.point.x; // Gives the point of intersection in g_world coords
+//                 locationY = item.point.y;
+//                 var min_shelf = 100;
+//                 var shelfY = 0,
+//                     module_drop = "N",
+//                     pog_depth;
+//                 g_shelf_edit_flag = "N";
+//                 g_shelf_index = "";
+//                 g_item_index = "";
+//                 shelf_obj_type = "";
+//                 g_item_edit_flag = "N";
+//                 g_module_index = -1;
+//                 var j = 0;
+//                 for (const Modules of g_pog_json[p_pog_index].ModuleInfo) {
+//                     if (g_shelf_edit_flag == "Y") {
+//                         break; //return false;
+//                     }
+//                     if (Modules.ParentModule == null) {
+//                         var i = 0;
+//                         for (const Shelf of Modules.ShelfInfo) {
+//                             if (Shelf.Rotation > 0 || Shelf.Rotation < 0) {
+//                                 var div_shelf_end = Shelf.X + Shelf.ShelfRotateWidth / 2;
+//                                 var div_shelf_start = Shelf.X - Shelf.ShelfRotateWidth / 2;
+//                             } else {
+//                                 var div_shelf_end = Shelf.X + Shelf.W / 2;
+//                                 var div_shelf_start = Shelf.X - Shelf.W / 2;
+//                             }
+//                             if (Shelf.ObjType !== "BASE" && Shelf.ObjType !== "NOTCH" && Shelf.ObjType !== "DIVIDER" && Shelf.ObjType !== "TEXTBOX") {
+//                                 if (parseFloat(Shelf.Y) < parseFloat(locationY) && div_shelf_end > locationX && div_shelf_start < locationX) {
+//                                     if (min_shelf > parseFloat(locationY) - parseFloat(Shelf.Y)) {
+//                                         min_shelf = parseFloat(locationY) - parseFloat(Shelf.Y);
+//                                         shelf_id = Shelf.Shelf;
+//                                         shelf_obj_type = Shelf.ObjType;
+//                                         g_shelf_index = i;
+//                                         g_module_index = j;
+//                                     }
+//                                 }
+//                             }
+//                             i++;
+//                         }
+//                     }
+//                     j++;
+//                 }
+//             } else {
+//                 return;
+//             }
+//         } else {//This block is that when we have found a object.
+//             var item = g_intersects[0];
+//             g_objectHit = item.object;
+//             var l_objecthit_id = g_objectHit.id;
+//             var shelfY = 0,
+//                 module_drop = "N",
+//                 pog_depth;
+//             var locationX = item.point.x; // Gives the point of intersection in g_world coords
+//             var locationY = item.point.y;
+//             g_shelf_edit_flag = "N";
+//             g_shelf_index = "";
+//             g_item_index = "";
+//             shelf_obj_type = "";
+//             g_item_edit_flag = "N";
+//             g_module_index = -1;
+//             var i = 0;
+//             for (const modules of g_pog_json[p_pog_index].ModuleInfo) {
+//                 if (modules.MObjID == l_objecthit_id && modules.ParentModule == null) {
+//                     g_module_index = i;
+//                     module_drop = "Y";
+//                     break; //return false;
+//                 } else {
+//                     module_drop = "N";
+//                 }
+//                 i++;
+//             }
+//             if (module_drop == "N") {
+//                 var j = 0;
+//                 for (const Modules of g_pog_json[p_pog_index].ModuleInfo) {
+//                     if (g_shelf_edit_flag == "Y") {
+//                         break; //return false;
+//                     }
+
+//                     if (Modules.ParentModule == null) {
+//                         var i = 0;
+//                         for (const shelf of Modules.ShelfInfo) {
+//                             if (shelf.SObjID == l_objecthit_id) {
+//                                 g_module_index = j;
+//                                 g_shelf_index = i;
+//                                 g_shelf_max_merch = shelf.MaxMerch;
+//                                 g_shelf_edit_flag = "Y";
+//                                 shelf_width = shelf.W;
+//                                 shelf_height = shelf.H;
+//                                 shelf_obj_type = shelf.ObjType;
+//                                 break; //return false;
+//                             } else {
+//                                 g_shelf_edit_flag = "N";
+//                             }
+//                             i++;
+//                         }
+//                     }
+//                     j++;
+//                 }
+//             }
+
+//             if (g_shelf_edit_flag == "N") {
+//                 var k = 0;
+//                 for (const Modules of g_pog_json[p_pog_index].ModuleInfo) {
+//                     if (g_shelf_edit_flag == "Y") {
+//                         break; //return false;
+//                     }
+//                     if (Modules.ParentModule == null) {
+//                         var i = 0;
+//                         for (const Shelf of Modules.ShelfInfo) {
+//                             if (g_item_edit_flag == "Y") {
+//                                 break; //return false;
+//                             }
+//                             var j = 0;
+//                             for (const items of Shelf.ItemInfo) {
+//                                 if (items.ObjID == l_objecthit_id) {
+//                                     g_module_index = k;
+//                                     g_shelf_index = i;
+//                                     g_item_index = j;
+//                                     g_item_edit_flag = "Y";
+//                                     shelf_obj_type = Shelf.ObjType;
+//                                     break; //return false;
+//                                 } else {
+//                                     g_item_edit_flag = "N";
+//                                 }
+//                                 j++;
+//                             }
+//                             i++;
+//                         }
+//                     }
+//                     k++;
+//                 }
+//             }
+//             if (g_module_index !== -1) {
+//                 var min_shelf = 100;
+//                 var shelf_id;
+//                 var total_items = 0;
+//                 var i = 0;
+//                 for (const Shelf of g_pog_json[p_pog_index].ModuleInfo[g_module_index].ShelfInfo) {
+//                     if (parseFloat(locationY) > parseFloat(Shelf.Y) - Shelf.H / 2 && parseFloat(locationY) < parseFloat(Shelf.Y) + Shelf.H / 2 && parseFloat(locationX) > parseFloat(Shelf.X) - Shelf.W / 2 && parseFloat(locationX) < parseFloat(Shelf.X) + Shelf.W / 2) {
+//                         shelf_id = Shelf.Shelf;
+//                         shelf_obj_type = Shelf.ObjType;
+//                         g_shelf_index = i;
+//                     } else {
+//                         if (Shelf.ObjType !== "BASE" && Shelf.ObjType !== "NOTCH" && Shelf.ObjType !== "DIVIDER" && Shelf.ObjType !== "TEXTBOX") {
+//                             if (parseFloat(Shelf.Y) < parseFloat(locationY) && parseFloat(locationX) > parseFloat(Shelf.X) - Shelf.W / 2 && parseFloat(locationX) < parseFloat(Shelf.X) + Shelf.W / 2) {
+//                                 if (min_shelf > parseFloat(locationY) - parseFloat(Shelf.Y)) {
+//                                     min_shelf = parseFloat(locationY) - parseFloat(Shelf.Y);
+//                                     shelf_id = Shelf.Shelf;
+//                                     shelf_obj_type = Shelf.ObjType;
+//                                     g_shelf_index = i;
+//                                 }
+//                             }
+//                         }
+//                     }
+//                     i++;
+//                 }
+//             }
+//         }
+
+//         if (typeof g_shelf_index !== undefined && g_shelf_index !== "") {
+//             g_pog_index = p_pog_index;
+//             set_select_canvas(p_pog_index);
+//             g_all_pog_flag = "N";
+//             var shelfdtl = g_pog_json[p_pog_index].ModuleInfo[g_module_index].ShelfInfo[g_shelf_index];
+//             var orient_arr = [];
+//             //There can be multiple items dragged at a time.
+//             for (var i = 0; i < p_item_list.length; i++) {
+//                 var this_record = product_model.getRecord(p_item_list[i].innerText);
+//                 var item_dim_type = product_model.getValue(this_record, "DIM_TYPE");
+//                 var item_width = parseFloat(product_model.getValue(this_record, "ITEM_WIDTH")) / 100;
+//                 var item_height = parseFloat(product_model.getValue(this_record, "ITEM_HEIGHT")) / 100;
+//                 var item_depth = parseFloat(product_model.getValue(this_record, "ITEM_DEPTH")) / 100;
+//                 var orientation = product_model.getValue(this_record, "ORIENTATION");
+//                 var orient_desc = product_model.getValue(this_record, "ORIENTATION_DESC");
+
+//                 if (item_dim_type == null || typeof item_dim_type == undefined) {
+//                     item_dim_type = "U";
+//                 }
+//                 if (isNaN(item_width) || item_width == 0) {
+//                     item_width = parseFloat($v("P25_POG_ITEM_DEFAULT_WIDTH")) / 100;
+//                 }
+//                 if (isNaN(item_height) || item_height == 0) {
+//                     item_height = parseFloat($v("P25_POG_ITEM_DEFAULT_HEIGHT")) / 100;
+//                 }
+//                 if (isNaN(item_depth) || item_depth == 0) {
+//                     item_depth = parseFloat($v("P25_POG_ITEM_DEFAULT_DEPTH")) / 100;
+//                 }
+//                 org_depth_arr.push(item_depth);
+//                 org_height_arr.push(item_height);
+//                 org_width_arr.push(item_width);
+//                 //getting dimension according to orientation.
+//                 var [new_orient, new_desc] = get_item_exists_orientation(p_item_list[i].innerText, 0);
+//                 if (typeof new_orient !== "undefined" && orientation == "0") {
+//                     orientation = new_orient;
+//                     var details = {};
+//                     details["NewOrient"] = new_orient;
+//                     details["NewDesc"] = new_desc;
+//                     orient_arr.push(details);
+//                 } else {
+//                     var details = {};
+//                     details["NewOrient"] = orientation == null ? "" : orientation;
+//                     details["NewDesc"] = orientation == null ? "" : orient_desc;
+//                     orient_arr.push(details);
+//                 }
+//                 var [item_width, item_height, item_depth, actualHeight, actualWidth, actualDepth] = get_new_orientation_dim(orientation, item_width, item_height, item_depth);
+
+//                 item_arr.push(p_item_list[i].innerText);
+//                 item_dim_arr.push(item_dim_type);
+//                 item_depth_arr.push(parseFloat(item_depth));
+//                 item_height_arr.push(parseFloat(item_height));
+//                 item_width_arr.push(parseFloat(item_width));
+//             }
+//             var items_arr = shelfdtl.ItemInfo;
+//             var min_distance_arr = [];
+//             var min_index_arr = [];
+//             var obj_id_arr = [];
+//             var min_distance = 0;
+//             var spread_product = shelfdtl.SpreadItem;
+//             var shelfInfo = JSON.parse(JSON.stringify(shelfdtl));
+//             var objID = JSON.parse(JSON.stringify(shelfdtl.SObjID));
+//             undoObjectsInfo = [];
+//             undoObjectsInfo.push(shelfInfo);
+//             undoObjectsInfo.moduleIndex = g_module_index;
+//             undoObjectsInfo.moduleObjectID = g_pog_json[p_pog_index].ModuleInfo[g_module_index].MObjID;
+//             undoObjectsInfo.module = g_pog_json[p_pog_index].ModuleInfo[g_module_index].Module;
+//             undoObjectsInfo.shelfIndex = g_shelf_index;
+//             undoObjectsInfo.actionType = "ITEM_DELETE";
+//             undoObjectsInfo.startCanvas = p_pog_index;
+//             undoObjectsInfo.objectID = objID;
+//             undoObjectsInfo.itemColorFlag = "R";
+//             if (spread_product == "R") {
+//                 var i = 0;
+//                 for (const items of items_arr) {
+//                     shelfdtl.ItemInfo[i].Exists = "E";
+//                     if (items.X > locationX) {
+//                         min_distance_arr.push(items.X - parseFloat(locationX));
+//                         min_index_arr.push(i);
+//                     }
+//                     i++;
+//                 }
+//             } else {
+//                 var i = 0;
+//                 for (const items of items_arr) {
+//                     shelfdtl.ItemInfo[i].Exists = "E";
+//                     if (items.X < locationX) {
+//                         min_distance_arr.push(parseFloat(locationX) - items.X);
+//                         min_index_arr.push(i);
+//                     }
+//                     i++;
+//                 }
+//             }
+//             min_distance = Math.min.apply(Math, min_distance_arr);
+//             var index = min_distance_arr.findIndex(function (number) {
+//                 return number == min_distance;
+//             });
+//             var min_index = min_index_arr[index];
+
+//             var new_index = 0;
+//             for (var i = 0; i < item_width_arr.length; i++) {
+//                 if (i == 0) {
+//                     new_index = min_index;
+//                 } else {
+//                     new_index = new_index + 1;
+//                 }
+//                 //using random objid from temporary purpose to process items before creating them.
+//                 var random_id = Math.floor(Math.random() * 16777216);
+//                 var return_val = set_item_values(item_arr[i], item_width_arr[i], item_height_arr[i], item_depth_arr[i], item_dim_arr[i], 0, "N", -1, "", new_index, {}, p_pog_index, orient_arr[i].NewOrient, orient_arr[i].NewDesc, random_id);
+//                 item_index_arr.push(return_val);
+//                 obj_id_arr.push(random_id);
+
+//                 shelfdtl.ItemInfo[return_val].OW = org_width_arr[i];
+//                 shelfdtl.ItemInfo[return_val].OH = org_height_arr[i];
+//                 shelfdtl.ItemInfo[return_val].OD = org_depth_arr[i];
+//             }
+//             var spread_gap = shelfdtl.HorizGap;
+//             var horiz_gap = spread_gap;
+//             var spread_product = shelfdtl.SpreadItem;
+//             var item_length = shelfdtl.ItemInfo.length;
+//             var allow_crush = shelfdtl.AllowAutoCrush;
+//             var return_val = "N";
+
+//             for (var i = 0; i < item_index_arr.length; i++) {
+//                 if (shelf_obj_type == "SHELF" || (shelf_obj_type == "CHEST" && g_chest_as_pegboard == "N") || shelf_obj_type == "BASKET" || shelf_obj_type == "PALLET") {
+//                     //ASA-1125
+//                     shelfY = parseFloat(shelfdtl["Y"]) + parseFloat(shelfdtl["H"]) / 2 + shelfdtl.ItemInfo[item_index_arr[i]].H / 2;
+//                 } else if (shelf_obj_type == "PEGBOARD" || (shelf_obj_type == "CHEST" && g_chest_as_pegboard == "Y")) {
+//                     //ASA-1125
+//                     var closest = get_closest_peg(item_height_arr[i], g_module_index, g_shelf_index, locationY, p_pog_index);
+//                     shelfY = closest - parseFloat(item_height_arr[i]) / 2;
+//                     shelfdtl.ItemInfo[item_index_arr[i]].FromProductList = "Y";
+//                     shelfdtl.ItemInfo[item_index_arr[i]].Exists = "N";
+//                     if (g_pegbrd_auto_placing == "Y") {
+//                         shelfdtl.ItemInfo[item_index_arr[i]].Edited = "Y";
+//                     }
+//                 } else if (shelf_obj_type == "HANGINGBAR") {
+//                     shelfY = parseFloat(shelfdtl["Y"]) - shelfdtl.ItemInfo[item_index_arr[i]].H / 2;
+//                 } else if (shelf_obj_type == "ROD") {
+//                     shelfY = parseFloat(shelfdtl["Y"]) - shelfdtl.H / 2 - shelfdtl.ItemInfo[item_index_arr[i]].H / 2;
+//                 }
+//                 shelfdtl.ItemInfo[item_index_arr[i]].Y = shelfY;
+//                 shelfdtl.ItemInfo[item_index_arr[i]].Exists = "N";
+//                 shelfdtl.ItemInfo[item_index_arr[i]].DropY = locationY;
+//             }
+//             //for pegboard or chest as pegboard, we need t ofind the first top position an then set other items next to it.
+//             if (item_index_arr.length > 1) {
+//                 if (shelf_obj_type == "PEGBOARD" || (shelf_obj_type == "CHEST" && g_chest_as_pegboard == "Y")) {
+//                     //ASA-1125
+//                     var max_top = -9999;
+//                     for (var i = 0; i < item_index_arr.length; i++) {
+//                         max_top = Math.max(max_top, locationY + shelfdtl.ItemInfo[item_index_arr[i]].H / 2);
+//                     }
+//                     if (g_pegbrd_auto_placing == "Y") {
+//                         for (var i = 0; i < item_index_arr.length; i++) {
+//                             shelfdtl.ItemInfo[item_index_arr[i]].Y = max_top - shelfdtl.ItemInfo[item_index_arr[i]].H / 2;
+//                             shelfdtl.ItemInfo[item_index_arr[i]].DropY = shelfdtl.ItemInfo[item_index_arr[i]].Y;
+//                         }
+//                     } else {
+//                         var high_y = 0;
+//                         for (var i = 0; i < item_index_arr.length; i++) {
+//                             if (i == 0) {
+//                                 high_y = shelfdtl.ItemInfo[item_index_arr[i]].Y + shelfdtl.ItemInfo[item_index_arr[i]].H / 2;
+//                             }
+//                             if (high_y < shelfdtl.ItemInfo[item_index_arr[i]].Y + shelfdtl.ItemInfo[item_index_arr[i]].H / 2) {
+//                                 high_y = shelfdtl.ItemInfo[item_index_arr[i]].Y + shelfdtl.ItemInfo[item_index_arr[i]].H / 2;
+//                             }
+//                         }
+//                         for (var i = 0; i < item_index_arr.length; i++) {
+//                             shelfdtl.ItemInfo[item_index_arr[i]].Y = high_y - shelfdtl.ItemInfo[item_index_arr[i]].H / 2;
+//                         }
+//                     }
+//                 }
+//                 var sum_width = 0;
+//                 var items_list = shelfdtl.ItemInfo;
+//                 var i = 0;
+//                 for (const items of items_list) {
+//                     if (item_index_arr.indexOf(i) !== -1) {
+//                         sum_width += items.W;
+//                         items.Exists = "N";
+//                     }
+//                     i++;
+//                 }
+//                 var loc_start = locationX - sum_width / 2;
+//                 var i = 0;
+//                 var l = 0;
+//                 for (const items of items_list) {
+//                     if (item_index_arr.indexOf(i) !== -1) {
+//                         shelfdtl.ItemInfo[i].X = loc_start + items.W / 2;
+//                         loc_start += items.W;
+//                         l++;
+//                     }
+//                     i++;
+//                 }
+//             } else {
+//                 shelfdtl.ItemInfo[item_index_arr[0]].X = locationX;
+//                 if (g_pegbrd_auto_placing == "Y" && shelf_obj_type == "PEGBOARD") {
+//                     shelfdtl.ItemInfo[item_index_arr[0]].Y = locationY;
+//                 }
+//             }
+//             if (shelfdtl.SpreadItem == "F") {
+//                 var i = 0;
+//                 for (const fitems of shelfdtl.ItemInfo) {
+//                     if (item_index_arr.indexOf(i) == -1) {
+//                         fitems.W = fitems.RW;
+//                     }
+//                     i++;
+//                 }
+//             }
+
+//             if (shelf_obj_type == "SHELF" || (shelf_obj_type == "CHEST" && g_chest_as_pegboard == "N") || shelf_obj_type == "PALLET" || shelf_obj_type == "HANGINGBAR") {
+//                 //ASA-1125
+//                 var new_x = 0;
+//                 var i = 0;
+//                 var [currCombinationIndex, currShelfCombIndx] = getCombinationShelf(p_pog_index, shelfdtl.Shelf); //ASA--1329 KUSH
+//                 if (currCombinationIndex !== -1 && currShelfCombIndx !== -1) { //ASA--1329 KUSH
+//                     await setCombinedShelfItems(p_pog_index, currCombinationIndex, currShelfCombIndx, locationX, 'Y', 'N', -1, new_index, []); //ASA--1329 KUSH
+//                 }
+
+//                 if (reorder_items(g_module_index, g_shelf_index, p_pog_index)) {
+//                     for (const items of shelfdtl.ItemInfo) {
+//                         new_x = get_item_xaxis(items.W, items.H, items.D, items.CType, locationX, horiz_gap, spread_product, spread_gap, g_module_index, g_shelf_index, i, "Y", item_length, "N", p_pog_index);
+//                         // Need to reset the index of new items after setting items for combined shelfs
+//                         if (obj_id_arr.indexOf(items.RandomID) !== -1) {
+//                             var itemIndx = obj_id_arr.indexOf(items.RandomID);
+//                             item_index_arr[itemIndx] = i
+//                         }
+//                         if (item_index_arr.indexOf(i) !== -1) {
+//                             //ASA-1410, added function call for capping
+//                             await set_auto_facings(g_module_index, g_shelf_index, i, items, "D", "I", "A", p_pog_index);
+//                             return_val = item_height_validation(items.H, g_module_index, g_shelf_index, i, "Y", new_x, allow_crush, items.CrushVert, items.Fixed, "Y", items.D, "N", p_pog_index, "Y"); //ASA-1830 Issue 1 Added Y for p_byPassMedicineOverhung
+//                             if (return_val == "N") {
+//                                 shelfdtl.ItemInfo[i].X = new_x;
+//                                 if (shelf_obj_type == "PALLET") {
+//                                     shelfdtl.ItemInfo[i].Z = 0;
+//                                 } else {
+//                                     shelfdtl.ItemInfo[i].Exists = "E";
+//                                 }
+//                             } else {
+//                                 break; //return false;
+//                             }
+//                         }
+//                         i++;
+//                     }
+//                 }
+//             }
+
+//             var l_index = 0; //ASA-1410 issue 1
+//             for (const items of shelfdtl.ItemInfo) {
+//                 if (item_index_arr.indexOf(l_index) !== -1) {
+//                     //ASA-1410, added function call for capping
+//                     await set_item_capping(p_pog_index, g_module_index, g_shelf_index, l_index, 'N', 'Y');//ASA-1410 issue 10 20240625 //ASA-1412 issue 1 20240628
+//                 }
+//                 l_index++;
+//             }
+//             //ASA-1410 issue 1
+//             var drag_item_arr = [];
+//             if (return_val == "N" && validate_items(item_width_arr, item_height_arr, item_depth_arr, item_index_arr, shelf_obj_type, g_module_index, g_shelf_index, -1, "N", 0, 0, 0, locationX, "N", "N", "Y", "N", "N", drag_item_arr, "Y", "Y", "Y", p_pog_index)) {
+//                 //identify if any change in POG
+//                 g_pog_edited_ind = "Y";
+
+//                 var new_items_arr = [];
+//                 var new_item_index_arr = [];
+//                 var items_list = shelfdtl.ItemInfo;
+//                 var modules = g_pog_json[p_pog_index].ModuleInfo[g_module_index];
+//                 var shelfs = shelfdtl;
+//                 var i = 0;
+//                 for (const items of items_list) {
+//                     if (shelf_obj_type == "PEGBOARD" || (shelf_obj_type == "CHEST" && g_chest_as_pegboard == "Y")) {
+//                         //ASA-1125
+//                         items.Exists = "E";
+//                     }
+//                     if (item_index_arr.indexOf(i) !== -1) {
+//                         new_items_arr.push(items);
+//                         new_item_index_arr.push(i);
+//                         await set_auto_facings(g_module_index, g_shelf_index, i, items, "B", "I", "A", p_pog_index);
+//                     }
+//                     i++;
+//                 }
+//                 $(".live_image").css("color", "#c7c7c7").css("cursor", "auto");
+//                 $(".open_pdf").css("color", "#c7c7c7").removeAttr("onclick").css("cursor", "auto");
+//                 $(".open_pdf_online").css("color", "#c7c7c7").removeAttr("onclick").css("cursor", "auto");
+//                 if ($v("P25_POGCR_LOAD_IMG_FROM") == "DB") {
+//                     var return_val = await get_images(g_module_index, g_shelf_index, new_items_arr, new_item_index_arr, parseFloat($v("P25_POGCR_IMG_MAX_WIDTH")), parseFloat($v("P25_POGCR_IMG_MAX_HEIGHT")), parseFloat($v("P25_IMAGE_COMPRESS_RATIO")));
+//                 }
+
+//                 if (shelfdtl.SpreadItem == "F") {
+//                     var i = 0;
+//                     for (const fitems of shelfdtl.ItemInfo) {
+//                         if (item_index_arr.indexOf(i) == -1) {
+//                             fitems.W = fitems.RW;
+//                         }
+//                         i++;
+//                     }
+//                 } //else {//20240415 - Regression Issue 2 -- we should always call recreate_all_items to create the added item
+//                 if (reorder_items(g_module_index, g_shelf_index, p_pog_index)) {
+//                     // ASA-1095
+//                     if (shelf_obj_type == "SHELF" && (shelfdtl.SpreadItem == "L" || shelfdtl.SpreadItem == "R")) {
+//                         l_edited_item_index = mergeAdjacentItems(p_pog_index, g_module_index, g_shelf_index, new_item_index_arr[0]);
+//                     }
+//                     var return_val = await recreate_all_items(g_module_index, g_shelf_index, shelf_obj_type, "N", locationX, -1, item_width_arr.length, "Y", "N", -1, -1, g_start_canvas, "", p_pog_index, $v("P25_POGCR_DELIST_ITEM_DFT_COL"), $v("P25_MERCH_STYLE"), $v("P25_POGCR_LOAD_IMG_FROM"), $v("P25_BU_ID"), $v("P25_POGCR_ITEM_NUM_LBL_COLOR"), $v("P25_POGCR_ITEM_NUM_LABEL_POS"), $v("P25_POGCR_DISPLAY_ITEM_INFO"), 'Y'); //ASA-1350 issue 6 added parameters
+//                 }
+//                 // }//20240415 - Regression Issue 2
+//                 //capture the module is edit or not to create changed text box
+//                 g_pog_json[p_pog_index].ModuleInfo[g_module_index].EditFlag = "Y";
+
+//                 if (g_pog_json[p_pog_index].ModuleInfo[g_module_index].ShelfInfo[g_shelf_index].ObjType == 'CHEST' && g_chest_as_pegboard == 'Y') { //Bug-26122 - splitting the chest
+//                     g_pog_json[p_pog_index].ModuleInfo[g_module_index].ShelfInfo[g_shelf_index].ChestEdit = 'Y';
+//                 }
+
+//                 var items_list = shelfdtl.ItemInfo;
+//                 g_undo_details = [];
+//                 g_undo_obj_arr = [];
+//                 g_undo_supp_obj_arr = [];
+//                 var counter = 0;
+//                 var i = 0;
+//                 for (const items of items_list) {
+//                     if (obj_id_arr.indexOf(items.RandomID) !== -1) {
+//                         g_deletedItems.push(items.Item);
+//                         items.Exists = "E";
+//                         counter++;
+//                     }
+//                     i++;
+//                 }
+
+//                 g_keyCode = 0;
+//                 undoObjectsInfo.g_deletedItems = g_deletedItems;
+//                 g_allUndoObjectsInfo.push(undoObjectsInfo);
+//                 logFinalUndoObjectsInfo("ITEM_DELETE", "U", g_allUndoObjectsInfo, "", "Y", "N", "N", "N", "N", "Y");
+//                 g_allUndoObjectsInfo = [];
+//                 //recreate the orientation view if any present
+//                 async function recreate_view() {
+//                     var returnval = await recreate_compare_views(g_compare_view, "N");
+//                 }
+//                 recreate_view();
+
+//                 $(".live_image").css("color", "white").css("cursor", "pointer");
+//                 // $(".open_pdf").css("color", "black").attr("onclick", "open_pdf()").css("cursor", "pointer"); //Task_29818
+//                 $(".open_pdf").css("color", "black").css("cursor", "pointer");                                  //Task_29818
+//                 // $(".open_pdf_online").css("color", "black").attr("onclick", "open_pdf_online()").css("cursor", "pointer");  //Task_29818
+//                 $(".open_pdf_online").css("color", "black").css("cursor", "pointer");                           //Task_29818
+//                 var updateFixelDaysOfSupply = await calculateFixelAndSupplyDays("N", p_pog_index);
+//                 let res = await deleted_items_log(g_deletedItems, "A", g_pog_index);
+//             } else {
+//                 for (var i = item_index_arr.length - 1; i >= 0; i--) {
+//                     if (item_index_arr[i] == 0) {
+//                         shelfdtl.ItemInfo.splice(item_index_arr[i], item_index_arr[i] + 1);
+//                     } else {
+//                         shelfdtl.ItemInfo.splice(item_index_arr[i], 1);
+//                     }
+//                 }
+//                 var [currCombinationIndex, currShelfCombIndx] = getCombinationShelf(p_pog_index, shelfdtl.Shelf); //ASA--1329 KUSH
+//                 if (currCombinationIndex !== -1 && currShelfCombIndx !== -1) { //ASA--1329 KUSH
+//                     await setCombinedShelfItems(p_pog_index, currCombinationIndex, currShelfCombIndx, locationX, 'Y', 'N', -1, new_index, []); //ASA--1329 KUSH
+//                 }
+
+//                 logDebug("function : create_item_list", "E");
+//             }
+//         }
+//         g_objecthit_id = "";
+//         render(p_pog_index);
+//         g_product_list_drag = "N";
+//     } catch (err) {
+//         error_handling(err);
+//     }
+// }
+
 async function create_item_list(p_item_list, p_x, p_y, p_camera, p_canvas, p_pog_index) {
     logDebug("function : create_item_list ; x : " + p_x + "; y : " + p_y, "S");
     try {
@@ -3655,101 +4219,172 @@ async function create_item_list(p_item_list, p_x, p_y, p_camera, p_canvas, p_pog
             shelf_obj_type = "";
             g_item_edit_flag = "N";
             g_module_index = -1;
-            var i = 0;
+
+            //ASA-2045 Task4
+            // If the intersect hit is a TEXTBOX object, fall back to ground intersection
+            // and scan shelves by coordinates so the underlying shelf is chosen instead.
+            var isTextboxHit = false;
             for (const modules of g_pog_json[p_pog_index].ModuleInfo) {
-                if (modules.MObjID == l_objecthit_id && modules.ParentModule == null) {
-                    g_module_index = i;
-                    module_drop = "Y";
-                    break; //return false;
-                } else {
-                    module_drop = "N";
-                }
-                i++;
-            }
-            if (module_drop == "N") {
-                var j = 0;
-                for (const Modules of g_pog_json[p_pog_index].ModuleInfo) {
-                    if (g_shelf_edit_flag == "Y") {
-                        break; //return false;
-                    }
-
-                    if (Modules.ParentModule == null) {
-                        var i = 0;
-                        for (const shelf of Modules.ShelfInfo) {
-                            if (shelf.SObjID == l_objecthit_id) {
-                                g_module_index = j;
-                                g_shelf_index = i;
-                                g_shelf_max_merch = shelf.MaxMerch;
-                                g_shelf_edit_flag = "Y";
-                                shelf_width = shelf.W;
-                                shelf_height = shelf.H;
-                                shelf_obj_type = shelf.ObjType;
-                                break; //return false;
-                            } else {
-                                g_shelf_edit_flag = "N";
-                            }
-                            i++;
+                if (modules.ParentModule == null) {
+                    for (const shelf of modules.ShelfInfo) {
+                        if (shelf.SObjID == l_objecthit_id && shelf.ObjType == "TEXTBOX") {
+                            isTextboxHit = true;
+                            break;
                         }
                     }
-                    j++;
                 }
+                if (isTextboxHit) break;
             }
 
-            if (g_shelf_edit_flag == "N") {
-                var k = 0;
-                for (const Modules of g_pog_json[p_pog_index].ModuleInfo) {
-                    if (g_shelf_edit_flag == "Y") {
-                        break; //return false;
-                    }
-                    if (Modules.ParentModule == null) {
-                        var i = 0;
-                        for (const Shelf of Modules.ShelfInfo) {
-                            if (g_item_edit_flag == "Y") {
-                                break; //return false;
-                            }
-                            var j = 0;
-                            for (const items of Shelf.ItemInfo) {
-                                if (items.ObjID == l_objecthit_id) {
-                                    g_module_index = k;
-                                    g_shelf_index = i;
-                                    g_item_index = j;
-                                    g_item_edit_flag = "Y";
-                                    shelf_obj_type = Shelf.ObjType;
-                                    break; //return false;
+            if (isTextboxHit) {
+                g_intersects = g_raycaster.intersectObject(g_targetForDragging);
+                if (g_intersects.length !== 0) {
+                    item = g_intersects[0];
+                    g_objectHit = item.object;
+                    g_objecthit_id = g_objectHit.id;
+                    locationX = item.point.x;
+                    locationY = item.point.y;
+                    var min_shelf = 100;
+                    var shelfY = 0;
+                    var module_drop = "N";
+                    var pog_depth;
+                    g_shelf_edit_flag = "N";
+                    g_shelf_index = "";
+                    g_item_index = "";
+                    shelf_obj_type = "";
+                    g_item_edit_flag = "N";
+                    g_module_index = -1;
+                    var j = 0;
+                    for (const Modules of g_pog_json[p_pog_index].ModuleInfo) {
+                        if (g_shelf_edit_flag == "Y") {
+                            break; //return false;
+                        }
+                        if (Modules.ParentModule == null) {
+                            var i = 0;
+                            for (const Shelf of Modules.ShelfInfo) {
+                                if (Shelf.Rotation > 0 || Shelf.Rotation < 0) {
+                                    var div_shelf_end = Shelf.X + Shelf.ShelfRotateWidth / 2;
+                                    var div_shelf_start = Shelf.X - Shelf.ShelfRotateWidth / 2;
                                 } else {
-                                    g_item_edit_flag = "N";
+                                    var div_shelf_end = Shelf.X + Shelf.W / 2;
+                                    var div_shelf_start = Shelf.X - Shelf.W / 2;
                                 }
-                                j++;
+                                if (Shelf.ObjType !== "BASE" && Shelf.ObjType !== "NOTCH" && Shelf.ObjType !== "DIVIDER" && Shelf.ObjType !== "TEXTBOX") {
+                                    if (parseFloat(Shelf.Y) < parseFloat(locationY) && div_shelf_end > locationX && div_shelf_start < locationX) {
+                                        if (min_shelf > parseFloat(locationY) - parseFloat(Shelf.Y)) {
+                                            min_shelf = parseFloat(locationY) - parseFloat(Shelf.Y);
+                                            shelf_id = Shelf.Shelf;
+                                            shelf_obj_type = Shelf.ObjType;
+                                            g_shelf_index = i;
+                                            g_module_index = j;
+                                        }
+                                    }
+                                }
+                                i++;
                             }
-                            i++;
                         }
+                        j++;
                     }
-                    k++;
+                } else {
+                    return;
                 }
-            }
-            if (g_module_index !== -1) {
-                var min_shelf = 100;
-                var shelf_id;
-                var total_items = 0;
+            } else {
                 var i = 0;
-                for (const Shelf of g_pog_json[p_pog_index].ModuleInfo[g_module_index].ShelfInfo) {
-                    if (parseFloat(locationY) > parseFloat(Shelf.Y) - Shelf.H / 2 && parseFloat(locationY) < parseFloat(Shelf.Y) + Shelf.H / 2 && parseFloat(locationX) > parseFloat(Shelf.X) - Shelf.W / 2 && parseFloat(locationX) < parseFloat(Shelf.X) + Shelf.W / 2) {
-                        shelf_id = Shelf.Shelf;
-                        shelf_obj_type = Shelf.ObjType;
-                        g_shelf_index = i;
+                for (const modules of g_pog_json[p_pog_index].ModuleInfo) {
+                    if (modules.MObjID == l_objecthit_id && modules.ParentModule == null) {
+                        g_module_index = i;
+                        module_drop = "Y";
+                        break; //return false;
                     } else {
-                        if (Shelf.ObjType !== "BASE" && Shelf.ObjType !== "NOTCH" && Shelf.ObjType !== "DIVIDER" && Shelf.ObjType !== "TEXTBOX") {
-                            if (parseFloat(Shelf.Y) < parseFloat(locationY) && parseFloat(locationX) > parseFloat(Shelf.X) - Shelf.W / 2 && parseFloat(locationX) < parseFloat(Shelf.X) + Shelf.W / 2) {
-                                if (min_shelf > parseFloat(locationY) - parseFloat(Shelf.Y)) {
-                                    min_shelf = parseFloat(locationY) - parseFloat(Shelf.Y);
-                                    shelf_id = Shelf.Shelf;
-                                    shelf_obj_type = Shelf.ObjType;
-                                    g_shelf_index = i;
-                                }
-                            }
-                        }
+                        module_drop = "N";
                     }
                     i++;
+                }
+                if (module_drop == "N") {
+                    var j = 0;
+                    for (const Modules of g_pog_json[p_pog_index].ModuleInfo) {
+                        if (g_shelf_edit_flag == "Y") {
+                            break; //return false;
+                        }
+
+                        if (Modules.ParentModule == null) {
+                            var i = 0;
+                            for (const shelf of Modules.ShelfInfo) {
+                                if (shelf.SObjID == l_objecthit_id) {
+                                    g_module_index = j;
+                                    g_shelf_index = i;
+                                    g_shelf_max_merch = shelf.MaxMerch;
+                                    g_shelf_edit_flag = "Y";
+                                    shelf_width = shelf.W;
+                                    shelf_height = shelf.H;
+                                    shelf_obj_type = shelf.ObjType;
+                                    break; //return false;
+                                } else {
+                                    g_shelf_edit_flag = "N";
+                                }
+                                i++;
+                            }
+                        }
+                        j++;
+                    }
+                }
+
+                if (g_shelf_edit_flag == "N") {
+                    var k = 0;
+                    for (const Modules of g_pog_json[p_pog_index].ModuleInfo) {
+                        if (g_shelf_edit_flag == "Y") {
+                            break; //return false;
+                        }
+                        if (Modules.ParentModule == null) {
+                            var i = 0;
+                            for (const Shelf of Modules.ShelfInfo) {
+                                if (g_item_edit_flag == "Y") {
+                                    break; //return false;
+                                }
+                                var j = 0;
+                                for (const items of Shelf.ItemInfo) {
+                                    if (items.ObjID == l_objecthit_id) {
+                                        g_module_index = k;
+                                        g_shelf_index = i;
+                                        g_item_index = j;
+                                        g_item_edit_flag = "Y";
+                                        shelf_obj_type = Shelf.ObjType;
+                                        break; //return false;
+                                    } else {
+                                        g_item_edit_flag = "N";
+                                    }
+                                    j++;
+                                }
+                                i++;
+                            }
+                        }
+                        k++;
+                    }
+                }
+                if (g_module_index !== -1) {
+                    var min_shelf = 100;
+                    var shelf_id;
+                    var total_items = 0;
+                    var i = 0;
+                    for (const Shelf of g_pog_json[p_pog_index].ModuleInfo[g_module_index].ShelfInfo) {
+                        if (parseFloat(locationY) > parseFloat(Shelf.Y) - Shelf.H / 2 && parseFloat(locationY) < parseFloat(Shelf.Y) + Shelf.H / 2 && parseFloat(locationX) > parseFloat(Shelf.X) - Shelf.W / 2 && parseFloat(locationX) < parseFloat(Shelf.X) + Shelf.W / 2) {
+                            shelf_id = Shelf.Shelf;
+                            shelf_obj_type = Shelf.ObjType;
+                            g_shelf_index = i;
+                        } else {
+                            if (Shelf.ObjType !== "BASE" && Shelf.ObjType !== "NOTCH" && Shelf.ObjType !== "DIVIDER" && Shelf.ObjType !== "TEXTBOX") {
+                                if (parseFloat(Shelf.Y) < parseFloat(locationY) && parseFloat(locationX) > parseFloat(Shelf.X) - Shelf.W / 2 && parseFloat(locationX) < parseFloat(Shelf.X) + Shelf.W / 2) {
+                                    if (min_shelf > parseFloat(locationY) - parseFloat(Shelf.Y)) {
+                                        min_shelf = parseFloat(locationY) - parseFloat(Shelf.Y);
+                                        shelf_id = Shelf.Shelf;
+                                        shelf_obj_type = Shelf.ObjType;
+                                        g_shelf_index = i;
+                                    }
+                                }
+                            }
+                        }
+                        i++;
+                    }
                 }
             }
         }
@@ -4718,7 +5353,6 @@ async function get_edit_item_img(p_ModuleIndex, p_ShelfIndex, p_ItemIndex, p_ite
 
 //this function is called when user edit the item. the product details popup will open and when they click save. this function is called.
 async function edit_items(p_item_index, p_camera, p_pog_index) {
-    debugger;
     logDebug("function : edit_items; i_item_index : " + p_item_index, "S");
     try {
         var item_depth_arr = [],
@@ -7276,7 +7910,6 @@ function item_height_validation(p_item_height, p_module_index, p_shelf_index, p_
 function validate_items(p_item_width_arr, p_item_height_arr, p_item_depth_arr, p_item_index_arr, p_shelf_obj_type, p_module_index, p_shelf_index, p_item_index, p_edit_ind, p_crush_width, p_crush_height, p_crush_depth, p_final_x, p_item_fixed, p_valid_height, p_alert_ind, p_valid_bottom, p_facing_edit, p_drag_item_arr, p_crush_item, p_valid_width, p_valid_depth, p_pog_index, p_validate = "N", p_multi_edit = 'N', p_decrement_value = "N") { //ASA-1300 added new parameter //ASA-1858 Added new parameter p_decrement_value 
     logDebug("function : validate_items; shelf_obj_type : " + p_shelf_obj_type + "; p_module_index : " + p_module_index + "; p_shelf_index : " + p_shelf_index + "; i_item_index : " + p_item_index + "; p_edit_ind : " + p_edit_ind + "; crush_width : " + p_crush_width + "; crush_height : " + p_crush_height + "; crush_depth : " + p_crush_depth + "; i_final_x : " + p_final_x + "; item_fixed : " + p_item_fixed + "; valid_height : " + p_valid_height + "; alert_ind : " + p_alert_ind + "; valid_bottom : " + p_valid_bottom + "; facing_edit : " + p_facing_edit + "; crush_item : " + p_crush_item + "; valid_width : " + p_valid_width + "; valid_depth : " + p_valid_depth, "S");
     try {
-        debugger;
         var shelfdtl = g_pog_json[p_pog_index].ModuleInfo[p_module_index].ShelfInfo[p_shelf_index];
         if (shelfdtl.ItemInfo.length > 0) {
             var l_max_merch = 0;

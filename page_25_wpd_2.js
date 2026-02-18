@@ -415,7 +415,8 @@ function set_item_after_drag(p_new_object_type, p_spread_product, p_new_module_i
         if (p_new_object_type == "PEGBOARD" || (p_new_object_type == "CHEST" && g_chest_as_pegboard == "Y")) {
             g_pog_json[p_pog_index].ModuleInfo[p_new_module_index].ShelfInfo[p_new_shelf_index].ItemInfo.push(p_itemInfo);
             l_edited_item_index = g_pog_json[p_pog_index].ModuleInfo[p_new_module_index].ShelfInfo[p_new_shelf_index].ItemInfo.length - 1;
-        } else {
+        } 
+        else {
             g_pog_json[p_pog_index].ModuleInfo[p_new_module_index].ShelfInfo[p_new_shelf_index].ItemInfo.splice(p_upd_item_index, 0, p_itemInfo);
             l_edited_item_index = p_upd_item_index;
         }
@@ -7059,7 +7060,7 @@ function rollback_item(p_module_index, p_shelf_index, p_item_index, p_drag_z, p_
 async function update_item_loc(p_curr_module, p_module_index, p_shelf_index, p_div_shelf_index, p_div_object_type, p_item_index, p_final_x, p_shelf_found, p_itemInfo, p_shelfY, p_shelfHeight, p_final_y, p_div_pogjson, p_drag_direction, p_pog_index, p_curr_pogIndex) {
     logDebug("function : update_item_loc; curr_module : " + p_curr_module + "; p_module_index : " + p_module_index + "; p_shelf_index : " + p_shelf_index + "; div_shelf_index : " + p_div_shelf_index + "; div_object_type : " + p_div_object_type + "; i_item_index : " + p_item_index + "; i_final_x : " + p_final_x + "; shelf_found : " + p_shelf_found + "; shelfY : " + p_shelfY + "; shelfHeight : " + p_shelfHeight + "; p_final_y : " + p_final_y + "; drag_direction : " + p_drag_direction, "S");
     try {
-        typeof p_curr_pogIndex == "undefined" ? p_pog_index : p_curr_pogIndex;
+       typeof p_curr_pogIndex == "undefined" ? p_pog_index : p_curr_pogIndex;
         var new_pog_index = -1,
             new_module_index = -1,
             new_shelf_index = -1,
@@ -10044,6 +10045,13 @@ function create_divider(p_pog_index) {
             //as divider is a fixel but it is consider as a item inside the shelf, which is dragged and placed according to shelf spread setting.
             //so we keep one shelfinfo for data to be saved in sm_pog_fixel and a iteminfo for use to use it for all actions on screen. both data
             //should be in sync always.
+             //ASA-2049 Issue 4
+            if (edited == "Y") {
+                var currShelf = g_pog_json[p_pog_index].ModuleInfo[g_module_index].ShelfInfo[g_shelf_index];
+                var oldWidth = currShelf.ItemInfo[g_item_index].W; 
+            }
+            //ASA-2049 Issue 4
+
             ShelfInfo["Shelf"] = ShelfID;
             ShelfInfo["ObjType"] = $v("P25_OBJECT_TYPE");
             ShelfInfo["Desc"] = $v("P25_DIVIDER_NAME");
@@ -10302,7 +10310,23 @@ function create_divider(p_pog_index) {
                     g_pog_json[p_pog_index].ModuleInfo[g_module_index].ItemInfo.push(ItemInfo);
                 }
                 item_cnt = g_pog_json[p_pog_index].ModuleInfo[g_module_index].ShelfInfo[g_shelf_index].ItemInfo.length - 1;
-            } else {
+            } 
+            else {
+                //ASA-2049 Issue 4
+                var l_newWidth = parseFloat($v("P25_DIV_WIDTH")) / 100; 
+                var l_widthDiff = (l_newWidth - oldWidth) * 100;
+                if (l_widthDiff > 0 && l_widthDiff > currShelf.AvlSpace) {
+                    alert(get_message("LOST_FROM_SHELF_ERR_HORIZ", currShelf.Shelf));
+                    return;
+                }
+                currShelf.AvlSpace = parseFloat((currShelf.AvlSpace - l_widthDiff).toFixed(2))
+                var l_shelfObj = g_world.getObjectById(currShelf.SObjID);
+                if (l_shelfObj) {
+                    l_shelfObj.AvlSpace = currShelf.AvlSpace;
+                }
+                showFixelAvailableSpace("N", "N", p_pog_index);
+                //ASA-2049 Issue 4
+                
                 ShelfInfo["Z"] = g_pog_json[p_pog_index].ModuleInfo[g_module_index].ShelfInfo[g_shelf_index].ItemInfo[g_item_index].Z;
                 g_pog_json[p_pog_index].ModuleInfo[g_module_index].ShelfInfo[upd_shelf_index] = ShelfInfo;
                 ItemInfo["OW"] = g_pog_json[p_pog_index].ModuleInfo[g_module_index].ShelfInfo[g_shelf_index].ItemInfo[g_item_index].OW;
@@ -10312,7 +10336,7 @@ function create_divider(p_pog_index) {
                 item_cnt = g_item_index;
             }
 
-            if (edited == "Y") {
+            if (edited == "Y") {            
                 var selectedObject = g_scene_objects[p_pog_index].scene.children[2].getObjectById(g_dblclick_objid);
                 g_scene_objects[p_pog_index].scene.children[2].remove(selectedObject);
                 render(p_pog_index);

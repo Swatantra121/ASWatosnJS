@@ -4620,6 +4620,7 @@ async function auto_set_items(p_module_index, p_shelf_index, p_newItemArr, p_fin
 
 async function manage_multi_edit(p_edit_type, p_pog_index) {
     logDebug("function : manage_multi_edit; edit_type : " + p_edit_type, "S");
+    debugger
     try {
         if (p_edit_type == "F") {
             var max_merch = parseFloat(g_shelf_details[0].MaxMerch) / 100;
@@ -4678,7 +4679,6 @@ async function manage_multi_edit(p_edit_type, p_pog_index) {
             var ItemsDel = [];
             var i = 0;
             var prevSObjID = -1; //ASA-1669
-            debugger
             if (g_delete_details.length > 0) {
                 for (const det of g_delete_details) {
                     // if (i == 0) {
@@ -4718,6 +4718,16 @@ async function manage_multi_edit(p_edit_type, p_pog_index) {
                         //shelfs.Combine = l_combine; //Regression issue 15 20240607 //ASA-1595 Issue 2
                         var [currCombinationIndex, currShelfCombIndx] = [-1, -1]; //ASA-1668 #1
                         shelfs.Combine = l_combine == "S" ? old_shelf_info.Combine : l_combine; //ASA-1595 Issue 2
+                         // Apply spread before combine-generation logic so combined shelves use latest spread.
+                           if (spread_product !== "" && l_sprdprdct_chng == "Y") { //ASA-2041 Issue 1 spread items start
+                            shelfs.SpreadItem = spread_product;
+                            recreate = "Y";
+                            [currCombinationIndex, currShelfCombIndx] = getCombinationShelf(p_pog_index, shelfs.Shelf);
+                            if (currCombinationIndex !== -1 && currShelfCombIndx !== -1) {
+                                g_combinedShelfs[currCombinationIndex].SpreadItem = spread_product;
+                                g_combinedShelfs[currCombinationIndex][currShelfCombIndx].SpreadItem = spread_product;
+                            }
+                        } // ASA-2041  End
                         if (l_combine == "S" && old_shelf_info.Combine !== "N") {
                             //ASA-1668 #1
                             if (combine_ind == "Y" && l_combine !== "N") {

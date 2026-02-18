@@ -1108,7 +1108,6 @@ async function context_paste(p_action, p_camera, p_duplicating, p_item_copy = "Y
 
 
                                  // ASA-2029 -start  Issue no 4
-                                 debugger;
                                 var shelfdtl = g_pog_json[p_pog_index].ModuleInfo[g_module_index].ShelfInfo[g_shelf_index];
                                 let l_x_val = shelfdtl.Combine == "N" ? -1 : shelfdtl.Y + shelfdtl.H/2;
                                 if ((shelfdtl.ObjType == "SHELF" || shelfdtl.ObjType == "HANGINGBAR") && shelfdtl.Combine !== "N") {
@@ -4546,7 +4545,9 @@ async function update_spread_product_final(p_spread_type, p_module_index, p_shel
 	} else {
 		finalAction = "R";
 	}
+    // debugger
 	try {
+         
 		//identify if any change in POG
 		g_pog_edited_ind = "Y";
 		//here for multi select or single select. we reset the items with new spread product and recreate the shelfs.
@@ -4655,6 +4656,7 @@ async function update_spread_product_final(p_spread_type, p_module_index, p_shel
 					logFinalUndoObjectsInfo("ITEM_DELETE", "U", g_allUndoObjectsInfo, "", "Y", "N", "N", "N", "N", "N");
 					g_allUndoObjectsInfo = [];
 					items_arr = g_pog_json[p_pog_index].ModuleInfo[objects.MIndex].ShelfInfo[objects.SIndex].ItemInfo;
+                    var old_spread = g_pog_json[p_pog_index].ModuleInfo[objects.MIndex].ShelfInfo[objects.SIndex].SpreadItem; // ASA-2041 issue 1 (R)
 					$.each(items_arr, function (i, items) {
 						g_pog_json[p_pog_index].ModuleInfo[objects.MIndex].ShelfInfo[objects.SIndex].ItemInfo[i].W = items.RW;
 					});
@@ -4662,9 +4664,12 @@ async function update_spread_product_final(p_spread_type, p_module_index, p_shel
 					var old_comb_spread = -1;
 					g_pog_json[p_pog_index].ModuleInfo[objects.MIndex].ShelfInfo[objects.SIndex].SpreadItem = p_spread_type;
 					[currCombinationIndex, currShelfCombIndx] = getCombinationShelf(p_pog_index, g_pog_json[p_pog_index].ModuleInfo[objects.MIndex].ShelfInfo[objects.SIndex].Shelf);
-					if (currCombinationIndex == 0) {
+					// if (currCombinationIndex == 0) {
+                    if (currCombinationIndex !== -1 && currShelfCombIndx !== -1 && typeof g_combinedShelfs[currCombinationIndex] !== "undefined") { // ASA-2041 issue 1 (R)
 						old_comb_spread = g_combinedShelfs[currCombinationIndex].SpreadItem;
 						g_combinedShelfs[currCombinationIndex].SpreadItem = p_spread_type;
+                        g_combinedShelfs[currCombinationIndex][currShelfCombIndx].SpreadItem = p_spread_type; // ASA-2041 issue 1 (R)
+
 					}
 
 					if (g_pog_json[p_pog_index].ModuleInfo[objects.MIndex].ShelfInfo[objects.SIndex].ObjType == "HANGINGBAR") {
@@ -4683,6 +4688,9 @@ async function update_spread_product_final(p_spread_type, p_module_index, p_shel
 									g_pog_json[p_pog_index].ModuleInfo[objects.MIndex].ShelfInfo[objects.SIndex].ItemInfo[k].X = item_arr.OldItemX;
 									g_pog_json[p_pog_index].ModuleInfo[objects.MIndex].ShelfInfo[objects.SIndex].ItemInfo[k].Y = item_arr.OldItemY;
 								});
+                                if (old_comb_spread > -1) { // ASA-2041 issue 1 (R) 
+									g_combinedShelfs[currCombinationIndex].SpreadItem = old_comb_spread;
+								} // ASA-2041 issue 1 (R)
 								break;
 							}
 						}
@@ -4717,6 +4725,7 @@ async function update_spread_product_final(p_spread_type, p_module_index, p_shel
 	} catch (err) {
 		error_handling(err);
 	}
+   
 }
 
 function open_edit_facings() {

@@ -711,10 +711,10 @@ function logDebug(p_string, p_type) {
     } else {
         logType = "End";
     }
-    // g_dbuDebugEnabled = "Y";
+    g_dbuDebugEnabled = "Y";
     if (g_dbuDebugEnabled == "Y") {
-        apex.debug.log(logType + " | " + p_string + " | " + getDateTime());
-        // console.log(logType + " | " + p_string + " | " + getDateTime());
+        // apex.debug.log(logType + " | " + p_string + " | " + getDateTime());
+        console.log(logType + " | " + p_string + " | " + getDateTime());
     }
 }
 
@@ -6686,11 +6686,29 @@ function dcText(p_txt, p_font_size, p_fgcolor, p_bgcolor, p_width, p_height, p_w
                     var canvasWidth = shelfdtl.canvasW * p_enlarge_no;
                     var canvasHeight = shelfdtl.canvasH * p_enlarge_no;
                 } else {
-                    var [canvasWidth, canvasHeight] = get_visible_size(0.012, p_width * p_enlarge_no, p_height * p_enlarge_no, g_canvas, g_camera);
-                    if (shelfdtl.canvasW == null) {
-                        shelfdtl.canvasW = canvasWidth / p_enlarge_no;
-                        shelfdtl.canvasH = canvasHeight / p_enlarge_no;
+                    // ASA-2045 ISSUE 3
+                    var canvasWidth, canvasHeight;
+
+                    if ((g_manual_zoom_ind === "Y" || g_area_zoom_ind === "Y") && shelfdtl.canvasW != null) {
+                        // Zoom mode: reuse object-space canvas size
+                        canvasWidth  = shelfdtl.canvasW * p_enlarge_no;
+                        canvasHeight = shelfdtl.canvasH * p_enlarge_no;
+                    } else {
+                        // Normal mode OR first render
+                        [canvasWidth, canvasHeight] = get_visible_size(0.012, p_width * p_enlarge_no, p_height * p_enlarge_no, g_canvas, g_camera);
+
+                        // Store object-space size only once (normal mode)
+                        if (shelfdtl.canvasW == null) {
+                            shelfdtl.canvasW = canvasWidth / p_enlarge_no;
+                            shelfdtl.canvasH = canvasHeight / p_enlarge_no;
+                        }
                     }
+                    // END-OF-ASA-2045 ISSUE 3
+                    // var [canvasWidth, canvasHeight] = get_visible_size(0.012, p_width * p_enlarge_no, p_height * p_enlarge_no, g_canvas, g_camera);
+                    // if (shelfdtl.canvasW == null) {
+                    //     shelfdtl.canvasW = canvasWidth / p_enlarge_no;
+                    //     shelfdtl.canvasH = canvasHeight / p_enlarge_no;
+                    // }
                 }
             } else {
                 var [canvasWidth, canvasHeight] = get_visible_size(0.012, p_width * p_enlarge_no, p_height * p_enlarge_no, g_canvas, g_camera);
@@ -6775,6 +6793,7 @@ function dcText(p_txt, p_font_size, p_fgcolor, p_bgcolor, p_width, p_height, p_w
                 }
             }
         }
+
         // ASA-1797 Issue 1 End
         else {
             var metrics = ctx.measureText(p_txt);
@@ -9403,7 +9422,7 @@ async function set_all_items(p_module_index, p_shelf_index, p_a, p_y, p_shelf_ed
             var slope = shelfdtl.Slope;
             var item_x = 0,
                 item_y = 0;
-
+        
             if ((rotation !== 0 && rotation !== "N") || slope !== 0) {
                 var i = 0;
                 var selectedObject = g_scene_objects[p_sceneIndex].scene.children[2].getObjectById(shelfdtl.SObjID);
@@ -18179,9 +18198,8 @@ function crushItem(p_pog_index, p_moduleIndex, p_shelfIndex, p_itemIndex, p_crus
                 pogItem.MDepthCrushed = "Y";
                 auto_d_crush = 'Y';
             }*/
-            // changes for ASA-2024.3 START
+            //ASA-2024.3 Start
             height_manualCrush = typeof pogItem.MVertCrushed == "undefined" || pogItem.MVertCrushed == null || pogItem.MVertCrushed == "N" ? "N" : "Y";
-            // depth_manualCrush = typeof pogItem.MDepthCrushed == "undefined" || pogItem.MDepthCrushed == null || pogItem.MDepthCrushed == "N" ? "N" : "Y";
             if (actualHeight == "H") {
                 crush_height = height_manualCrush == "N" ? pogItem.CHPerc : pogItem.CrushVert;
             } else if (actualHeight == "W") {
@@ -18201,43 +18219,7 @@ function crushItem(p_pog_index, p_moduleIndex, p_shelfIndex, p_itemIndex, p_crus
             } else if (wActualWidth == "D") {
                 crush_width = width_manualCrush == "N" ? pogItem.CDPerc : pogItem.CrushD;
             }
-            // changes for ASA-2024.3 END
-            // backupfor above changes start
-            // //we find out if the item is manually crushed vertically or not.
-            // height_manualCrush = typeof pogItem.MVertCrushed == "undefined" || pogItem.MVertCrushed == null || pogItem.MVertCrushed == "N" ? "N" : "Y"; //Task_26899 //ASA-1383 issue 8
-            // //actualheight is actually the height changed to which dimension after orientation change.based on that we get the crush perc of that dimension.
-            // if (actualHeight == "H") {
-            //     //height_manualCrush = typeof pogItem.MVertCrushed == "undefined" || pogItem.MVertCrushed == "N" ? "N" : "Y";//Task_26899
-            //     crush_height = height_manualCrush == "N" ? pogItem.CHPerc : pogItem.CrushVert;
-            // } else if (actualHeight == "W") {
-            //     //height_manualCrush = typeof pogItem.MHorizCrushed == "undefined" || pogItem.MHorizCrushed == "N" ? "N" : "Y";//Task_26899
-            //     crush_height = height_manualCrush == "N" ? pogItem.CWPerc : pogItem.CrushHoriz;
-            // } else if (actualHeight == "D") {
-            //     //height_manualCrush = typeof pogItem.MDepthCrushed == "undefined" || pogItem.MDepthCrushed == "N" ? "N" : "Y";//Task_26899
-            //     crush_height = height_manualCrush == "N" ? pogItem.CDPerc : pogItem.CrushD;
-            // }
-            // //we find out if the item is manually crushed horizontally or not.
-            // width_manualCrush = typeof pogItem.MHorizCrushed == "undefined" || pogItem.MHorizCrushed == null || pogItem.MHorizCrushed == "N" ? "N" : "Y"; ////Task_26899  //ASA-1383 issue 8
-            // if (wActualWidth == "H") {
-            //     //Task-02_25977
-            //     //when doing mass update we set the below tag MassCrushH. this means if the orientation is changed and width became height also we take the CWperc for crush.
-            //     //instead of CHPerc.
-            //     if (pogItem.MassCrushH == "Y") {
-            //         width_manualCrush = "Y";
-            //         crush_width = width_manualCrush == "N" ? pogItem.CWPerc : pogItem.CrushHoriz;
-            //     } else {
-            //         //width_manualCrush = typeof pogItem.MVertCrushed == "undefined" || pogItem.MVertCrushed == "N" ? "N" : "Y";//Task_26899
-            //         crush_width = width_manualCrush == "N" ? pogItem.CHPerc : pogItem.CrushVert; //Task_26899
-            //     }
-            //     //we get the crush perc based on the change of dimension after orientation of item.
-            // } else if (wActualWidth == "W") {
-            //     //width_manualCrush = typeof pogItem.MHorizCrushed == "undefined" || pogItem.MHorizCrushed == "N" ? "N" : "Y";//Task_26899
-            //     crush_width = width_manualCrush == "N" ? pogItem.CWPerc : pogItem.CrushHoriz;
-            // } else if (wActualWidth == "D") {
-            //     //width_manualCrush = typeof pogItem.MDepthCrushed == "undefined" || pogItem.MDepthCrushed == "N" ? "N" : "Y";//Task_26899
-            //     crush_width = width_manualCrush == "N" ? pogItem.CDPerc : pogItem.CrushD;
-            // }
-            // backupfor above changes end
+            //ASA-2024.3 End
         }
         //there is a possibility that there are multiple items to be crush in depth. so we set all to its RD. that is remove the crushing done before.
         if (p_itemDepthIndxArr.length > 0) {
