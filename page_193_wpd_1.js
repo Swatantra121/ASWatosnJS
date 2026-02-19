@@ -758,7 +758,28 @@ function initiate_values_onload() {
             g_show_live_image_1 = 'N';
             g_compare_pog_flag = 'Y';
             g_curr_canvas = 2;
-            comparePOG(1 , "CFDE4L2G", "20230718", "CFDE4L2G" ,'Y','Y');
+            var currentPog =
+                typeof g_pog_json !== "undefined" &&
+                g_pog_json.length > 0 &&
+                typeof g_pog_json[g_pog_index] !== "undefined"
+                    ? g_pog_json[g_pog_index]
+                    : null;
+            var pogCode = currentPog && currentPog.POGCode ? currentPog.POGCode : $v("P193_OPEN_POG_CODE");
+            var pogVersion = currentPog && currentPog.Version ? currentPog.Version : $v("P193_OPEN_POG_VERSION");
+            var compareInd = 1;
+            var draftId = pogCode;
+
+            if (($v("P193_OPEN_DRAFT") == "Y" || (currentPog && currentPog.Opened == "N")) && $v("P193_DRAFT_LIST") !== "") {
+                compareInd = 2;
+                draftId = $v("P193_DRAFT_LIST");
+            }
+
+            if (pogCode === "" || pogVersion === "") {
+                raise_error("Please open a POG before Show Changes.");
+                return;
+            }
+
+            comparePOG(compareInd, pogCode, pogVersion, draftId, "N", "Y");
         },
         // shortcut: "Alt+O,E",
     });
@@ -7551,7 +7572,28 @@ function getAutofillModShelf(p_dragMouseStart, p_dragMouseEnd, p_pog_json, p_pog
         idx = 0;
         if (selectedModule.length > 0) {
             for (const blkInfo of g_mod_block_list) {
+                if (
+                    typeof blkInfo === "undefined" ||
+                    blkInfo == null ||
+                    typeof blkInfo.BlkModInfo === "undefined" ||
+                    blkInfo.BlkModInfo == null ||
+                    blkInfo.BlkModInfo.length == 0 ||
+                    typeof blkInfo.BlkModInfo[0] === "undefined" ||
+                    blkInfo.BlkModInfo[0] == null ||
+                    typeof blkInfo.BlockDim === "undefined" ||
+                    blkInfo.BlockDim == null ||
+                    typeof blkInfo.BlockDim.FinalTop === "undefined" ||
+                    typeof blkInfo.BlockDim.FinalBtm === "undefined"
+                ) {
+                    continue;
+                }
                 const prevBlk = blkInfo.BlkModInfo[0];
+                if (
+                    typeof prevBlk.dragStart === "undefined" ||
+                    typeof prevBlk.dragEnd === "undefined"
+                ) {
+                    continue;
+                }
                 // if (prevBlk.dragStart < selectedModule[0].dragEnd && prevBlk.dragEnd > selectedModule[0].dragStart && prevBlk.dragTop > selectedModule[0].dragBottom && prevBlk.dragBottom < selectedModule[0].dragTop) {
                 if (prevBlk.dragStart < selectedModule[0].dragEnd && prevBlk.dragEnd > selectedModule[0].dragStart && blkInfo.BlockDim.FinalTop > selectedModule[0].dragBottom && blkInfo.BlockDim.FinalBtm < selectedModule[0].dragTop) {  //ASA-1878
 
@@ -7648,6 +7690,18 @@ async function setAutofillBlock(p_action_ind, p_old_blk_name, p_escape_ind = "N"
         var shelf_arr = [];
         var mod_index = [];
         var final_shelf_arr = [];
+
+        if (
+            p_action_ind !== "U" &&
+            (
+                !Array.isArray(g_autofillModInfo) ||
+                g_autofillModInfo.length == 0 ||
+                !Array.isArray(g_autofillShelfInfo) ||
+                g_autofillShelfInfo.length == 0
+            )
+        ) {
+            return false;
+        }
 
         if (p_action_ind !== "U") {
             block_detail["DragMouseStart"] = g_DragMouseStart;
@@ -7766,6 +7820,9 @@ async function setAutofillBlock(p_action_ind, p_old_blk_name, p_escape_ind = "N"
                     ? p_color
                     : $v("P193_BLK_COLOR");
             var ret_dtl = await colorAutofillBlock(g_DragMouseStart, g_DragMouseEnd, mod_index, sendColor, blockName, p_action_ind, upd_block_dtl, g_pog_index);
+            if (typeof ret_dtl === "undefined" || ret_dtl == null) {
+                return false;
+            }
 
             block_detail["BlockDim"] = ret_dtl;
             g_mod_block_list.push(block_detail);
@@ -7826,9 +7883,11 @@ async function setAutofillBlock(p_action_ind, p_old_blk_name, p_escape_ind = "N"
                 }
                 var retval = await save_blk_dtl_coll(p_action_ind, p_old_blk_name, block_details_arr);
             }
+            return true;
         }
     } catch (err) {
         error_handling(err);
+        return false;
     }
 }
 
@@ -7836,7 +7895,25 @@ async function setAutofillBlock(p_action_ind, p_old_blk_name, p_escape_ind = "N"
 async function colorAutofillBlock(p_dragMouseStart, p_dragMouseEnd, p_mod_index, p_color, p_text, p_update_flag, p_block_detail, p_pog_index, p_swapBlock) {
     try {
         var i = 0;
+        var calc_x = 0,
+            calc_y = 0,
+            calc_width = 0,
+            calc_height = 0;
         var font_size = parseInt($v("P193_POGCR_BLK_TXT_SIZE"));
+        if (!Array.isArray(g_autofillModInfo) || g_autofillModInfo.length == 0) {
+            return null;
+        }
+        if (!Array.isArray(p_mod_index) || p_mod_index.length == 0) {
+            return null;
+        }
+        if (
+            typeof g_pog_json[p_pog_index] === "undefined" ||
+            g_pog_json[p_pog_index] == null ||
+            typeof g_pog_json[p_pog_index].ModuleInfo === "undefined" ||
+            typeof g_pog_json[p_pog_index].ModuleInfo[p_mod_index[0]] === "undefined"
+        ) {
+            return null;
+        }
         var btm_y = g_autofillModInfo[0].dragBottom,
             top_y = g_autofillModInfo[0].dragTop;
 
@@ -7852,9 +7929,9 @@ async function colorAutofillBlock(p_dragMouseStart, p_dragMouseEnd, p_mod_index,
             final_btm = get_below_shelf(l_shelf_details, p_mod_index[0], btm_y, p_pog_index);
             final_top = get_above_shelf(l_shelf_details, p_mod_index[0], top_y, mod_top, p_pog_index);
 
-            var calc_height = final_top - final_btm;
-            var calc_width = g_autofillModInfo[0].dragEnd - g_autofillModInfo[0].dragStart;
-            var calc_x = g_autofillModInfo[0].dragStart + ((g_autofillModInfo[0].dragEnd - g_autofillModInfo[0].dragStart) / 2) - g_pog_json[p_pog_index].ModuleInfo[p_mod_index[0]].X;
+            calc_height = final_top - final_btm;
+            calc_width = g_autofillModInfo[0].dragEnd - g_autofillModInfo[0].dragStart;
+            calc_x = g_autofillModInfo[0].dragStart + ((g_autofillModInfo[0].dragEnd - g_autofillModInfo[0].dragStart) / 2) - g_pog_json[p_pog_index].ModuleInfo[p_mod_index[0]].X;
 
             if (g_pog_json[p_pog_index].ModuleInfo[p_mod_index[0]].Y < final_btm) {
                 var diff = final_btm - g_pog_json[p_pog_index].ModuleInfo[p_mod_index[0]].Y;
@@ -7872,21 +7949,43 @@ async function colorAutofillBlock(p_dragMouseStart, p_dragMouseEnd, p_mod_index,
             final_btm = p_block_detail.BlockDim.FinalBtm;
         }
 
+        if (!Number.isFinite(calc_width) || !Number.isFinite(calc_height) || calc_width <= 0 || calc_height <= 0) {
+            return null;
+        }
+        if (!Number.isFinite(calc_x) || !Number.isFinite(calc_y)) {
+            return null;
+        }
+
         var colorValue = parseInt(p_color.replace("#", "0x"), 16);
         var hex_decimal = new THREE.Color(colorValue);
 
-        p_text = p_text.slice(0, -4);
+        if (typeof p_text !== "string") {
+            p_text = "BLK";
+        }
+        if (p_text.endsWith("_AFP")) {
+            p_text = p_text.slice(0, -4);
+        }
         console.log("val", p_dragMouseStart, p_dragMouseEnd, p_mod_index[0], p_color, p_text);
         console.log("calc_height", calc_width, calc_height, calc_y, final_top, mod_top, final_btm, mod_bottom);
 
         let mesh = dcText(p_text, font_size, 0x000000, colorValue, calc_width, calc_height, "N", "N", "Arial", "", font_size, 0, -1, 4);
+        if (!mesh) {
+            return null;
+        }
         var mod_object = g_world.getObjectById(g_pog_json[p_pog_index].ModuleInfo[p_mod_index[0]].MObjID);
+        if (!mod_object || typeof mod_object.add !== "function") {
+            return null;
+        }
         mod_object.add(mesh);
         mesh.uuid = p_text + "_AFP";
-        mesh.material.opacity = 0.5;
-        mesh.position.x = calc_x;
-        mesh.position.y = calc_y;
-        mesh.position.z = 0.009;
+        if (mesh.material) {
+            mesh.material.opacity = 0.5;
+        }
+        if (mesh.position) {
+            mesh.position.x = calc_x;
+            mesh.position.y = calc_y;
+            mesh.position.z = 0.009;
+        }
         render(p_pog_index);
         g_delete_details = [];
         g_mselect_drag = "N";
@@ -7914,7 +8013,8 @@ async function colorAutofillBlock(p_dragMouseStart, p_dragMouseEnd, p_mod_index,
         }
         return details;
     } catch (err) {
-        error_handling(err);
+        console.warn("colorAutofillBlock skipped due to invalid render state:", err);
+        return null;
     }
 
 }
@@ -14595,6 +14695,30 @@ async function comparePOG(p_compare_ind, p_pog_code, p_pog_version, p_draft_id, 
 	logDebug("function : comparePOG", "E");
 }
 
+async function render_compare_pog_blocks(p_pog_code, p_pog_version, p_compare_index) {
+    var oldPogIndex = g_pog_index;
+    var oldModBlockList = g_mod_block_list;
+    var oldAutoFillActive = g_auto_fill_active;
+    var oldDragMouseStart = g_DragMouseStart;
+    var oldDragMouseEnd = g_DragMouseEnd;
+    try {
+        g_pog_index = p_compare_index;
+        g_auto_fill_active = "Y";
+        g_mod_block_list = [];
+
+        await createDynamicBlocks(p_pog_code, "N", p_pog_version, "N");
+        render(p_compare_index);
+    } catch (err) {
+        error_handling(err);
+    } finally {
+        g_pog_index = oldPogIndex;
+        g_auto_fill_active = oldAutoFillActive;
+        g_mod_block_list = oldModBlockList;
+        g_DragMouseStart = oldDragMouseStart;
+        g_DragMouseEnd = oldDragMouseEnd;
+    }
+}
+
 
 async function get_compare_pog(p_compare_ind, p_pog_code, p_pog_version, p_draft_id, p_prev_version, p_compare_pog = "N") {
     //ASA-1803 Issue 1 added p_compare_pog
@@ -14711,6 +14835,9 @@ async function get_compare_pog(p_compare_ind, p_pog_code, p_pog_version, p_draft
                     var return_val = await create_module_from_json(POG_JSON, new_pog_ind, "F", $v("P193_PRODUCT_BTN_CLICK"), pog_opened, "N", "N", "Y", "Y", "", "Y", g_scene_objects[g_ComViewIndex].scene.children[0], g_scene_objects[g_ComViewIndex].scene, g_pog_index, g_ComViewIndex);
                     removeLoadingIndicator(regionloadWait);
                     render(g_ComViewIndex);
+                    if (p_compare_pog == "Y") {
+                        await render_compare_pog_blocks(new_pog_json.POGCode, new_pog_json.Version, g_ComViewIndex);
+                    }
 
                     if (p_prev_version == "Y") {
                         if (g_show_item_color == "Y") {
@@ -14790,7 +14917,8 @@ async function modifyWindowAfterMinMax(p_scene_objects) {
 async function createDynamicBlocks(
   p_pog_code,
   p_draft_pog,
-  p_pog_version
+  p_pog_version,
+  p_saveColl = "Y"
 ) {
 
   return new Promise((resolve, reject) => {
@@ -14843,13 +14971,17 @@ async function createDynamicBlocks(
               console.log("Shelf Info:", g_autofillShelfInfo);
             
               // Create block
-              setAutofillBlock(
+              var isBlockCreated = await setAutofillBlock(
                 'A',
                 row.block_name,
                 'N',
                 'N',
                 row.color,
               );
+              if (isBlockCreated !== true) {
+                console.warn("Skipped block due to invalid block dimensions:", row.block_name);
+                continue;
+              }
 
               console.log(
                 "Created Block:",
@@ -14860,19 +14992,21 @@ async function createDynamicBlocks(
               // Small delay (render safety)
               await new Promise(r => setTimeout(r, 50));
             }
-            var block_details_arr = [];
-            for (const obj of g_mod_block_list) {
-                var details = {};
-                details["BlkColor"] = obj.BlkColor;
-                details["BlkName"] = obj.BlkName;
-                details["BlkRule"] = obj.BlkRule;
-                details["BlkFilters"] = obj.BlockFilters.join(" AND ");
-                obj["BlkFilters"] = details["BlkFilters"];
-                block_details_arr.push(details);
+            if (p_saveColl == "Y") {
+              var block_details_arr = [];
+              for (const obj of g_mod_block_list) {
+                  var details = {};
+                  details["BlkColor"] = obj.BlkColor;
+                  details["BlkName"] = obj.BlkName;
+                  details["BlkRule"] = obj.BlkRule;
+                  details["BlkFilters"] = obj.BlockFilters.join(" AND ");
+                  obj["BlkFilters"] = details["BlkFilters"];
+                  block_details_arr.push(details);
+              }
+              var retval = await save_blk_dtl_coll('A', 'Blks', block_details_arr);
+              apex.region("mod_block_details").refresh();
+              apex.region("added_attribute").refresh();
             }
-            var retval = await save_blk_dtl_coll('A', 'Blks', block_details_arr);
-            apex.region("mod_block_details").refresh();
-            apex.region("added_attribute").refresh();
 
             console.log("All blocks created");
 
