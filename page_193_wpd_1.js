@@ -739,6 +739,7 @@ function initiate_values_onload() {
         },
         shortcut: "Alt+O,D",
     });
+
     apex.actions.add({
         name: "open-EPOG",
         label: "Open Existing POG",
@@ -758,33 +759,34 @@ function initiate_values_onload() {
             g_show_live_image_1 = 'N';
             g_compare_pog_flag = 'Y';
             g_curr_canvas = 2;
-            var currentPog =
-                typeof g_pog_json !== "undefined" &&
-                g_pog_json.length > 0 &&
-                typeof g_pog_json[g_pog_index] !== "undefined"
-                    ? g_pog_json[g_pog_index]
-                    : null;
-            var pogCode = currentPog && currentPog.POGCode ? currentPog.POGCode : $v("P193_OPEN_POG_CODE");
-            var pogVersion = currentPog && currentPog.Version ? currentPog.Version : $v("P193_OPEN_POG_VERSION");
-            var compareInd = 1;
-            var draftId = pogCode;
-
-            if (($v("P193_OPEN_DRAFT") == "Y" || (currentPog && currentPog.Opened == "N")) && $v("P193_DRAFT_LIST") !== "") {
-                compareInd = 2;
-                draftId = $v("P193_DRAFT_LIST");
+            //  ASA-1986 start
+            let l_currentPog= typeof g_pog_json !== "undefined" && g_pog_json.length > 0 && typeof g_pog_json[g_pog_index] !== "undefined"  ? g_pog_json[g_pog_index] : null;
+            let l_pogCode = l_currentPog && l_currentPog.POGCode ? l_currentPog.POGCode : $v("P193_OPEN_POG_CODE");
+            let l_pogVersion= l_currentPog && l_currentPog.Version ? l_currentPog.Version : $v("P193_OPEN_POG_VERSION");
+            let l_compareInd = 1;
+            let l_draftId = l_pogCode;
+            if (($v("P193_OPEN_DRAFT") == "Y" || (l_currentPog && l_currentPog.Opened == "N")) && $v("P193_DRAFT_LIST") !== "") {
+                l_compareInd = 2;
+                l_draftId = $v("P193_DRAFT_LIST");
             }
-
-            if (pogCode === "" || pogVersion === "") {
+            if (l_pogCode === "" || l_pogVersion === "") {
                 raise_error("Please open a POG before Show Changes.");
                 return;
             }
-
-            comparePOG(compareInd, pogCode, pogVersion, draftId, "N", "Y");
+             comparePOG(l_compareInd, l_pogCode, l_pogVersion, l_draftId, "N", "Y"); //ASA-1986 END
         },
         // shortcut: "Alt+O,E",
     });
-    
-       apex.actions.add({
+
+  apex.actions.add({
+        name: "view-analysis",
+        label: "View Analysis",
+        action: function () {
+            open_view_analysis();
+        },
+    });
+
+    apex.actions.add({
         name: "pog-save",
         label: "Save",
         action: function (event, focusElement, data) {
@@ -1083,7 +1085,6 @@ async function appendMultiCanvasRowCol(p_pog_count, p_type = $v("P193_POGCR_TILE
 //This is called at the beginning of the creation of POG. it will create canvas, scene, camera and assign into its related arrays.
 function init(p_canvasNo) {
     logDebug("function : init", "S");
-    debugger;
     try {
         var canvasName = "maincanvas";
         p_canvasNo = parseInt(p_canvasNo);
@@ -7572,26 +7573,14 @@ function getAutofillModShelf(p_dragMouseStart, p_dragMouseEnd, p_pog_json, p_pog
         idx = 0;
         if (selectedModule.length > 0) {
             for (const blkInfo of g_mod_block_list) {
-                if (
-                    typeof blkInfo === "undefined" ||
-                    blkInfo == null ||
-                    typeof blkInfo.BlkModInfo === "undefined" ||
-                    blkInfo.BlkModInfo == null ||
-                    blkInfo.BlkModInfo.length == 0 ||
-                    typeof blkInfo.BlkModInfo[0] === "undefined" ||
-                    blkInfo.BlkModInfo[0] == null ||
-                    typeof blkInfo.BlockDim === "undefined" ||
-                    blkInfo.BlockDim == null ||
-                    typeof blkInfo.BlockDim.FinalTop === "undefined" ||
-                    typeof blkInfo.BlockDim.FinalBtm === "undefined"
+                //ASA-1986 start
+                 if (
+                    typeof blkInfo === "undefined" || blkInfo == null || typeof blkInfo.BlkModInfo === "undefined" || blkInfo.BlkModInfo == null || blkInfo.BlkModInfo.length == 0 ||  typeof blkInfo.BlkModInfo[0] === "undefined" || blkInfo.BlkModInfo[0] == null || typeof blkInfo.BlockDim === "undefined" ||  blkInfo.BlockDim == null ||  typeof blkInfo.BlockDim.FinalTop === "undefined" || typeof blkInfo.BlockDim.FinalBtm === "undefined"
                 ) {
                     continue;
-                }
+                } //ASA-1986  end 
                 const prevBlk = blkInfo.BlkModInfo[0];
-                if (
-                    typeof prevBlk.dragStart === "undefined" ||
-                    typeof prevBlk.dragEnd === "undefined"
-                ) {
+                 if ( typeof prevBlk.dragStart === "undefined" || typeof prevBlk.dragEnd === "undefined" ) { //ASA-1986 start
                     continue;
                 }
                 // if (prevBlk.dragStart < selectedModule[0].dragEnd && prevBlk.dragEnd > selectedModule[0].dragStart && prevBlk.dragTop > selectedModule[0].dragBottom && prevBlk.dragBottom < selectedModule[0].dragTop) {
@@ -7690,19 +7679,9 @@ async function setAutofillBlock(p_action_ind, p_old_blk_name, p_escape_ind = "N"
         var shelf_arr = [];
         var mod_index = [];
         var final_shelf_arr = [];
-
-        if (
-            p_action_ind !== "U" &&
-            (
-                !Array.isArray(g_autofillModInfo) ||
-                g_autofillModInfo.length == 0 ||
-                !Array.isArray(g_autofillShelfInfo) ||
-                g_autofillShelfInfo.length == 0
-            )
-        ) {
+         if (p_action_ind !== "U" && ( !Array.isArray(g_autofillModInfo) ||   g_autofillModInfo.length == 0 ||!Array.isArray(g_autofillShelfInfo) || g_autofillShelfInfo.length == 0 )  ) { //ASA-1986 start
             return false;
         }
-
         if (p_action_ind !== "U") {
             block_detail["DragMouseStart"] = g_DragMouseStart;
             block_detail["DragMouseEnd"] = g_DragMouseEnd;
@@ -7820,10 +7799,8 @@ async function setAutofillBlock(p_action_ind, p_old_blk_name, p_escape_ind = "N"
                     ? p_color
                     : $v("P193_BLK_COLOR");
             var ret_dtl = await colorAutofillBlock(g_DragMouseStart, g_DragMouseEnd, mod_index, sendColor, blockName, p_action_ind, upd_block_dtl, g_pog_index);
-            if (typeof ret_dtl === "undefined" || ret_dtl == null) {
-                return false;
+             if (typeof ret_dtl === "undefined" || ret_dtl == null) {  return false; // ASA-1986 start
             }
-
             block_detail["BlockDim"] = ret_dtl;
             g_mod_block_list.push(block_detail);
 
@@ -7882,12 +7859,12 @@ async function setAutofillBlock(p_action_ind, p_old_blk_name, p_escape_ind = "N"
                     block_details_arr.push(details);
                 }
                 var retval = await save_blk_dtl_coll(p_action_ind, p_old_blk_name, block_details_arr);
+                return true //ASA-1986 start
             }
-            return true;
         }
     } catch (err) {
         error_handling(err);
-        return false;
+        return false //ASA-1986 start
     }
 }
 
@@ -7895,7 +7872,8 @@ async function setAutofillBlock(p_action_ind, p_old_blk_name, p_escape_ind = "N"
 async function colorAutofillBlock(p_dragMouseStart, p_dragMouseEnd, p_mod_index, p_color, p_text, p_update_flag, p_block_detail, p_pog_index, p_swapBlock) {
     try {
         var i = 0;
-        var calc_x = 0,
+       // ASA-1986 start
+          var calc_x = 0,
             calc_y = 0,
             calc_width = 0,
             calc_height = 0;
@@ -7914,6 +7892,8 @@ async function colorAutofillBlock(p_dragMouseStart, p_dragMouseEnd, p_mod_index,
         ) {
             return null;
         }
+       // ASA-1986 end
+        var font_size = parseInt($v("P193_POGCR_BLK_TXT_SIZE"));
         var btm_y = g_autofillModInfo[0].dragBottom,
             top_y = g_autofillModInfo[0].dragTop;
 
@@ -7928,10 +7908,11 @@ async function colorAutofillBlock(p_dragMouseStart, p_dragMouseEnd, p_mod_index,
         if (p_update_flag !== "U") {
             final_btm = get_below_shelf(l_shelf_details, p_mod_index[0], btm_y, p_pog_index);
             final_top = get_above_shelf(l_shelf_details, p_mod_index[0], top_y, mod_top, p_pog_index);
-
-            calc_height = final_top - final_btm;
-            calc_width = g_autofillModInfo[0].dragEnd - g_autofillModInfo[0].dragStart;
-            calc_x = g_autofillModInfo[0].dragStart + ((g_autofillModInfo[0].dragEnd - g_autofillModInfo[0].dragStart) / 2) - g_pog_json[p_pog_index].ModuleInfo[p_mod_index[0]].X;
+             // ASA-1986 start
+           var  calc_height = final_top - final_btm;
+           var  calc_width = g_autofillModInfo[0].dragEnd - g_autofillModInfo[0].dragStart;
+          var  calc_x = g_autofillModInfo[0].dragStart + ((g_autofillModInfo[0].dragEnd - g_autofillModInfo[0].dragStart) / 2) - g_pog_json[p_pog_index].ModuleInfo[p_mod_index[0]].X;
+             // ASA-1986 End
 
             if (g_pog_json[p_pog_index].ModuleInfo[p_mod_index[0]].Y < final_btm) {
                 var diff = final_btm - g_pog_json[p_pog_index].ModuleInfo[p_mod_index[0]].Y;
@@ -7949,39 +7930,38 @@ async function colorAutofillBlock(p_dragMouseStart, p_dragMouseEnd, p_mod_index,
             final_btm = p_block_detail.BlockDim.FinalBtm;
         }
 
-        if (!Number.isFinite(calc_width) || !Number.isFinite(calc_height) || calc_width <= 0 || calc_height <= 0) {
+         if (!Number.isFinite(calc_width) || !Number.isFinite(calc_height) || calc_width <= 0 || calc_height <= 0) {  // ASA-1986 start
             return null;
         }
-        if (!Number.isFinite(calc_x) || !Number.isFinite(calc_y)) {
+        if (!Number.isFinite(calc_x) || !Number.isFinite(calc_y)) {  // ASA-1986 start
             return null;
         }
-
         var colorValue = parseInt(p_color.replace("#", "0x"), 16);
         var hex_decimal = new THREE.Color(colorValue);
 
-        if (typeof p_text !== "string") {
+         if (typeof p_text !== "string") {  // ASA-1986 start
             p_text = "BLK";
         }
-        if (p_text.endsWith("_AFP")) {
+        if (p_text.endsWith("_AFP")) {  // ASA-1986 start
             p_text = p_text.slice(0, -4);
         }
         console.log("val", p_dragMouseStart, p_dragMouseEnd, p_mod_index[0], p_color, p_text);
         console.log("calc_height", calc_width, calc_height, calc_y, final_top, mod_top, final_btm, mod_bottom);
 
         let mesh = dcText(p_text, font_size, 0x000000, colorValue, calc_width, calc_height, "N", "N", "Arial", "", font_size, 0, -1, 4);
-        if (!mesh) {
+          if (!mesh) { // ASA-1986 start
             return null;
         }
         var mod_object = g_world.getObjectById(g_pog_json[p_pog_index].ModuleInfo[p_mod_index[0]].MObjID);
-        if (!mod_object || typeof mod_object.add !== "function") {
+         if (!mod_object || typeof mod_object.add !== "function") { // ASA-1986 start
             return null;
         }
         mod_object.add(mesh);
         mesh.uuid = p_text + "_AFP";
-        if (mesh.material) {
+          if (mesh.material) {  // ASA-1986 start
             mesh.material.opacity = 0.5;
         }
-        if (mesh.position) {
+        if (mesh.position) { // ASA-1986 start
             mesh.position.x = calc_x;
             mesh.position.y = calc_y;
             mesh.position.z = 0.009;
@@ -8013,7 +7993,8 @@ async function colorAutofillBlock(p_dragMouseStart, p_dragMouseEnd, p_mod_index,
         }
         return details;
     } catch (err) {
-        console.warn("colorAutofillBlock skipped due to invalid render state:", err);
+        // error_handling(err);
+          console.warn("colorAutofillBlock skipped due to invalid render state:", err); // ASA-1986 start
         return null;
     }
 
@@ -8477,7 +8458,6 @@ async function get_existing_pog(pog_code, pog_version, canvasNo, pMultiple, pIma
     g_color_arr = [];
     g_highlightArr = [];
     l_new_pog_ind = "N";
-    debugger;
 
     try {
         //if validate = 'Y' then we create only the json and then try to call item height, width, depth validation also validate shelf.
@@ -8546,7 +8526,6 @@ async function get_existing_pog(pog_code, pog_version, canvasNo, pMultiple, pIma
 }
 
 async function open_existing_pog(p_pog_list_arr, p_openAttr, p_imageLoadInd = "N") {
-    debugger
     try {
         logDebug("function : open_existing ; ", "S");
         addLoadingIndicator(); //ASA-1500
@@ -9238,7 +9217,6 @@ function get_above_shelf(p_shelf_details, p_mod_index, p_top_y, p_mod_top, p_pog
 
 
 async function doMouseUp(p_x, p_y, p_event, p_prevX, p_prevY, p_canvas, p_camera, p_pog_index) {
-    debugger;
     logDebug("function : doMouseUp; x : " + p_x + "; y : " + p_y + "; prevX : " + p_prevX + "; prevY : " + p_prevY, "S");
     /*This is a mouse up function
     this will handle
@@ -13049,7 +13027,6 @@ async function update_item_xy_distance(p_updateObj, p_pog_index, p_newx, p_newy)
 
 function onContextMenu(p_event) {
     logDebug("function : onContextMenu", "S");
-    debugger;
     var valid = "N";
     if (p_event.target.nodeName == "CANVAS" && g_scene_objects.length > 0) {
         set_curr_canvas(p_event);
@@ -14694,8 +14671,8 @@ async function comparePOG(p_compare_ind, p_pog_code, p_pog_version, p_draft_id, 
 	await get_compare_pog(p_compare_ind, p_pog_code, p_pog_version, p_draft_id, p_prev_version, p_compare_pog);
 	logDebug("function : comparePOG", "E");
 }
-
-async function render_compare_pog_blocks(p_pog_code, p_pog_version, p_compare_index) {
+ // ASA-1986 start
+    async function render_compare_pog_blocks(p_pog_code, p_pog_version, p_compare_index) {
     var oldPogIndex = g_pog_index;
     var oldModBlockList = g_mod_block_list;
     var oldAutoFillActive = g_auto_fill_active;
@@ -14717,9 +14694,8 @@ async function render_compare_pog_blocks(p_pog_code, p_pog_version, p_compare_in
         g_DragMouseStart = oldDragMouseStart;
         g_DragMouseEnd = oldDragMouseEnd;
     }
-}
-
-
+} 
+// ASA-1986 end
 async function get_compare_pog(p_compare_ind, p_pog_code, p_pog_version, p_draft_id, p_prev_version, p_compare_pog = "N") {
     //ASA-1803 Issue 1 added p_compare_pog
     logDebug("function : get_compare_pog; compare_ind : " + p_compare_ind + "; pog_code : " + p_pog_code + "; pog_version : " + p_pog_version + "; draft_id : " + p_draft_id + "; prev_version : " + p_prev_version, "S");
@@ -14835,7 +14811,7 @@ async function get_compare_pog(p_compare_ind, p_pog_code, p_pog_version, p_draft
                     var return_val = await create_module_from_json(POG_JSON, new_pog_ind, "F", $v("P193_PRODUCT_BTN_CLICK"), pog_opened, "N", "N", "Y", "Y", "", "Y", g_scene_objects[g_ComViewIndex].scene.children[0], g_scene_objects[g_ComViewIndex].scene, g_pog_index, g_ComViewIndex);
                     removeLoadingIndicator(regionloadWait);
                     render(g_ComViewIndex);
-                    if (p_compare_pog == "Y") {
+                      if (p_compare_pog == "Y") { // ASA-1986 start
                         await render_compare_pog_blocks(new_pog_json.POGCode, new_pog_json.Version, g_ComViewIndex);
                     }
 
@@ -14918,7 +14894,7 @@ async function createDynamicBlocks(
   p_pog_code,
   p_draft_pog,
   p_pog_version,
-  p_saveColl = "Y"
+  p_saveColl = "Y" // ASA-1986 start
 ) {
 
   return new Promise((resolve, reject) => {
@@ -14971,18 +14947,17 @@ async function createDynamicBlocks(
               console.log("Shelf Info:", g_autofillShelfInfo);
             
               // Create block
-              var isBlockCreated = await setAutofillBlock(
+           var isBlockCreated = await setAutofillBlock( // ASA-1986 start
                 'A',
                 row.block_name,
                 'N',
                 'N',
                 row.color,
               );
-              if (isBlockCreated !== true) {
+             if (isBlockCreated !== true) {  // ASA-1986 start
                 console.warn("Skipped block due to invalid block dimensions:", row.block_name);
                 continue;
               }
-
               console.log(
                 "Created Block:",
                 row.block_name,
@@ -14992,22 +14967,21 @@ async function createDynamicBlocks(
               // Small delay (render safety)
               await new Promise(r => setTimeout(r, 50));
             }
-            if (p_saveColl == "Y") {
-              var block_details_arr = [];
-              for (const obj of g_mod_block_list) {
-                  var details = {};
-                  details["BlkColor"] = obj.BlkColor;
-                  details["BlkName"] = obj.BlkName;
-                  details["BlkRule"] = obj.BlkRule;
-                  details["BlkFilters"] = obj.BlockFilters.join(" AND ");
-                  obj["BlkFilters"] = details["BlkFilters"];
-                  block_details_arr.push(details);
-              }
-              var retval = await save_blk_dtl_coll('A', 'Blks', block_details_arr);
-              apex.region("mod_block_details").refresh();
-              apex.region("added_attribute").refresh();
+             if (p_saveColl == "Y") {
+            var block_details_arr = [];
+            for (const obj of g_mod_block_list) {
+                var details = {};
+                details["BlkColor"] = obj.BlkColor;
+                details["BlkName"] = obj.BlkName;
+                details["BlkRule"] = obj.BlkRule;
+                details["BlkFilters"] = obj.BlockFilters.join(" AND ");
+                obj["BlkFilters"] = details["BlkFilters"];
+                block_details_arr.push(details);
             }
-
+            var retval = await save_blk_dtl_coll('A', 'Blks', block_details_arr);
+            apex.region("mod_block_details").refresh();
+            apex.region("added_attribute").refresh();
+             }
             console.log("All blocks created");
 
             //Resolve when done
@@ -15234,3 +15208,15 @@ function wpdCollectAttributeSequence(container) {
 }
 // Initialize
 wpdInitializeAttributeReorder();
+async function open_view_analysis() {
+    logDebug("function : open_view_analysis", "S");
+    try {
+        let l_pog_code = g_pog_json[g_pog_index].POGCode;
+        let l_pog_version = g_pog_json[g_pog_index].Version;
+        await show_view_analysis(l_pog_code, l_pog_version);
+    } catch (err) {
+        error_handling(err);
+    } finally {
+        logDebug("function : open_view_analysis", "E");
+    }
+}
