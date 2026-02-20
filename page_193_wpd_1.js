@@ -13904,6 +13904,11 @@ async function get_compare_pog(p_compare_ind, p_pog_code, p_pog_version, p_draft
                     g_camera = g_scene_objects[g_ComViewIndex].scene.children[0];
 
                     var return_val = await create_module_from_json(POG_JSON, new_pog_ind, "F", $v("P193_PRODUCT_BTN_CLICK"), pog_opened, "N", "N", "Y", "Y", "", "Y", g_scene_objects[g_ComViewIndex].scene.children[0], g_scene_objects[g_ComViewIndex].scene, g_pog_index, g_ComViewIndex);
+                    if (p_compare_pog == "Y") {
+                        var l_old_pog_edited_ind = g_pog_edited_ind;
+                        await clear_item("N", "N", g_ComViewIndex);
+                        g_pog_edited_ind = l_old_pog_edited_ind;
+                    }
                     removeLoadingIndicator(regionloadWait);
                     render(g_ComViewIndex);
                     if (p_compare_pog == "Y") { // ASA-1986 start
