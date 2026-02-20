@@ -760,9 +760,9 @@ function initiate_values_onload() {
             g_compare_pog_flag = 'Y';
             g_curr_canvas = 2;
             //  ASA-1986 start
-            let l_currentPog= typeof g_pog_json !== "undefined" && g_pog_json.length > 0 && typeof g_pog_json[g_pog_index] !== "undefined"  ? g_pog_json[g_pog_index] : null;
+            let l_currentPog = typeof g_pog_json !== "undefined" && g_pog_json.length > 0 && typeof g_pog_json[g_pog_index] !== "undefined" ? g_pog_json[g_pog_index] : null;
             let l_pogCode = l_currentPog && l_currentPog.POGCode ? l_currentPog.POGCode : $v("P193_OPEN_POG_CODE");
-            let l_pogVersion= l_currentPog && l_currentPog.Version ? l_currentPog.Version : $v("P193_OPEN_POG_VERSION");
+            let l_pogVersion = l_currentPog && l_currentPog.Version ? l_currentPog.Version : $v("P193_OPEN_POG_VERSION");
             let l_compareInd = 1;
             let l_draftId = l_pogCode;
             if (($v("P193_OPEN_DRAFT") == "Y" || (l_currentPog && l_currentPog.Opened == "N")) && $v("P193_DRAFT_LIST") !== "") {
@@ -773,12 +773,12 @@ function initiate_values_onload() {
                 raise_error("Please open a POG before Show Changes.");
                 return;
             }
-             comparePOG(l_compareInd, l_pogCode, l_pogVersion, l_draftId, "N", "Y"); //ASA-1986 END
+            comparePOG(l_compareInd, l_pogCode, l_pogVersion, l_draftId, "N", "Y"); //ASA-1986 END
         },
         // shortcut: "Alt+O,E",
     });
 
-  apex.actions.add({
+    apex.actions.add({
         name: "view-analysis",
         label: "View Analysis",
         action: function () {
@@ -7574,13 +7574,13 @@ function getAutofillModShelf(p_dragMouseStart, p_dragMouseEnd, p_pog_json, p_pog
         if (selectedModule.length > 0) {
             for (const blkInfo of g_mod_block_list) {
                 //ASA-1986 start
-                 if (
-                    typeof blkInfo === "undefined" || blkInfo == null || typeof blkInfo.BlkModInfo === "undefined" || blkInfo.BlkModInfo == null || blkInfo.BlkModInfo.length == 0 ||  typeof blkInfo.BlkModInfo[0] === "undefined" || blkInfo.BlkModInfo[0] == null || typeof blkInfo.BlockDim === "undefined" ||  blkInfo.BlockDim == null ||  typeof blkInfo.BlockDim.FinalTop === "undefined" || typeof blkInfo.BlockDim.FinalBtm === "undefined"
+                if (
+                    typeof blkInfo === "undefined" || blkInfo == null || typeof blkInfo.BlkModInfo === "undefined" || blkInfo.BlkModInfo == null || blkInfo.BlkModInfo.length == 0 || typeof blkInfo.BlkModInfo[0] === "undefined" || blkInfo.BlkModInfo[0] == null || typeof blkInfo.BlockDim === "undefined" || blkInfo.BlockDim == null || typeof blkInfo.BlockDim.FinalTop === "undefined" || typeof blkInfo.BlockDim.FinalBtm === "undefined"
                 ) {
                     continue;
                 } //ASA-1986  end 
                 const prevBlk = blkInfo.BlkModInfo[0];
-                 if ( typeof prevBlk.dragStart === "undefined" || typeof prevBlk.dragEnd === "undefined" ) { //ASA-1986 start
+                if (typeof prevBlk.dragStart === "undefined" || typeof prevBlk.dragEnd === "undefined") { //ASA-1986 start
                     continue;
                 }
                 // if (prevBlk.dragStart < selectedModule[0].dragEnd && prevBlk.dragEnd > selectedModule[0].dragStart && prevBlk.dragTop > selectedModule[0].dragBottom && prevBlk.dragBottom < selectedModule[0].dragTop) {
@@ -7639,7 +7639,7 @@ function getAutofillModShelf(p_dragMouseStart, p_dragMouseEnd, p_pog_json, p_pog
     }
 }
 
-async function setAutofillBlock(p_action_ind, p_old_blk_name, p_escape_ind = "N",p_new_ind = 'Y',p_color = '#ffffff') {
+async function setAutofillBlock(p_action_ind, p_old_blk_name, p_escape_ind = "N", p_new_ind = 'Y', p_color = '#ffffff') {
     try {
         var block_detail = {};
         var filters_arr = [];
@@ -7670,16 +7670,16 @@ async function setAutofillBlock(p_action_ind, p_old_blk_name, p_escape_ind = "N"
         }
 
         block_detail["BlkName"] = blockName;
-        if(p_new_ind == 'N'){ //garit
-          block_detail["BlkColor"] = p_color;
-        }else {
-           block_detail["BlkColor"] = $v("P193_BLK_COLOR");
-        }        
+        if (p_new_ind == 'N') { //garit
+            block_detail["BlkColor"] = p_color;
+        } else {
+            block_detail["BlkColor"] = $v("P193_BLK_COLOR");
+        }
         block_detail["BlkRule"] = $v("P193_BLK_RULE");
         var shelf_arr = [];
         var mod_index = [];
         var final_shelf_arr = [];
-         if (p_action_ind !== "U" && ( !Array.isArray(g_autofillModInfo) ||   g_autofillModInfo.length == 0 ||!Array.isArray(g_autofillShelfInfo) || g_autofillShelfInfo.length == 0 )  ) { //ASA-1986 start
+        if (p_action_ind !== "U" && (!Array.isArray(g_autofillModInfo) || g_autofillModInfo.length == 0 || !Array.isArray(g_autofillShelfInfo) || g_autofillShelfInfo.length == 0)) { //ASA-1986 start
             return false;
         }
         if (p_action_ind !== "U") {
@@ -7735,18 +7735,18 @@ async function setAutofillBlock(p_action_ind, p_old_blk_name, p_escape_ind = "N"
         block_detail["g_delete_details"] = final_shelf_arr;
         if (p_new_ind != 'N') //garit
         {
-        var model = apex.region("block_filters").widget().interactiveGrid("getViews", "grid").model;
+            var model = apex.region("block_filters").widget().interactiveGrid("getViews", "grid").model;
 
-        model.forEach(function (record) {
-            var filters = typeof model.getValue(record, "FILTER") == "object" ? model.getValue(record, "FILTER").v : model.getValue(record, "FILTER");
-            var value = model.getValue(record, "VALUE");
-            filter_val.push(filters + "#" + value);
-            if (filters !== "") {
-                var filter_list = filters.split("-");
-                attr_arr.push(filter_list[0]);
-                filters_arr.push(filter_list[0] + " = " + (filter_list[1] == "C" ? '"' : "") + value + (filter_list[1] == "C" ? '"' : ""));
-            }
-        });
+            model.forEach(function (record) {
+                var filters = typeof model.getValue(record, "FILTER") == "object" ? model.getValue(record, "FILTER").v : model.getValue(record, "FILTER");
+                var value = model.getValue(record, "VALUE");
+                filter_val.push(filters + "#" + value);
+                if (filters !== "") {
+                    var filter_list = filters.split("-");
+                    attr_arr.push(filter_list[0]);
+                    filters_arr.push(filter_list[0] + " = " + (filter_list[1] == "C" ? '"' : "") + value + (filter_list[1] == "C" ? '"' : ""));
+                }
+            });
         }
         for (const obj of g_mod_block_list) {
             blk_name_arr.push(obj.BlkName);
@@ -7788,18 +7788,19 @@ async function setAutofillBlock(p_action_ind, p_old_blk_name, p_escape_ind = "N"
                 }
             }
             if (p_new_ind != 'N') //garit
-            { 
-             apex.region("block_filters").widget().interactiveGrid("getActions").set("edit", false);
-             apex.region("block_filters").widget().interactiveGrid("getViews", "grid").model.clearChanges();
-             apex.region("block_filters").refresh();
-             clear_blinking();
+            {
+                apex.region("block_filters").widget().interactiveGrid("getActions").set("edit", false);
+                apex.region("block_filters").widget().interactiveGrid("getViews", "grid").model.clearChanges();
+                apex.region("block_filters").refresh();
+                clear_blinking();
             }
             var sendColor =
                 (p_new_ind == 'N')
                     ? p_color
                     : $v("P193_BLK_COLOR");
             var ret_dtl = await colorAutofillBlock(g_DragMouseStart, g_DragMouseEnd, mod_index, sendColor, blockName, p_action_ind, upd_block_dtl, g_pog_index);
-             if (typeof ret_dtl === "undefined" || ret_dtl == null) {  return false; // ASA-1986 start
+            if (typeof ret_dtl === "undefined" || ret_dtl == null) {
+                return false; // ASA-1986 start
             }
             block_detail["BlockDim"] = ret_dtl;
             g_mod_block_list.push(block_detail);
@@ -7872,8 +7873,8 @@ async function setAutofillBlock(p_action_ind, p_old_blk_name, p_escape_ind = "N"
 async function colorAutofillBlock(p_dragMouseStart, p_dragMouseEnd, p_mod_index, p_color, p_text, p_update_flag, p_block_detail, p_pog_index, p_swapBlock) {
     try {
         var i = 0;
-       // ASA-1986 start
-          var calc_x = 0,
+        // ASA-1986 start
+        var calc_x = 0,
             calc_y = 0,
             calc_width = 0,
             calc_height = 0;
@@ -7892,7 +7893,7 @@ async function colorAutofillBlock(p_dragMouseStart, p_dragMouseEnd, p_mod_index,
         ) {
             return null;
         }
-       // ASA-1986 end
+        // ASA-1986 end
         var font_size = parseInt($v("P193_POGCR_BLK_TXT_SIZE"));
         var btm_y = g_autofillModInfo[0].dragBottom,
             top_y = g_autofillModInfo[0].dragTop;
@@ -7908,11 +7909,11 @@ async function colorAutofillBlock(p_dragMouseStart, p_dragMouseEnd, p_mod_index,
         if (p_update_flag !== "U") {
             final_btm = get_below_shelf(l_shelf_details, p_mod_index[0], btm_y, p_pog_index);
             final_top = get_above_shelf(l_shelf_details, p_mod_index[0], top_y, mod_top, p_pog_index);
-             // ASA-1986 start
-           var  calc_height = final_top - final_btm;
-           var  calc_width = g_autofillModInfo[0].dragEnd - g_autofillModInfo[0].dragStart;
-          var  calc_x = g_autofillModInfo[0].dragStart + ((g_autofillModInfo[0].dragEnd - g_autofillModInfo[0].dragStart) / 2) - g_pog_json[p_pog_index].ModuleInfo[p_mod_index[0]].X;
-             // ASA-1986 End
+            // ASA-1986 start
+            var calc_height = final_top - final_btm;
+            var calc_width = g_autofillModInfo[0].dragEnd - g_autofillModInfo[0].dragStart;
+            var calc_x = g_autofillModInfo[0].dragStart + ((g_autofillModInfo[0].dragEnd - g_autofillModInfo[0].dragStart) / 2) - g_pog_json[p_pog_index].ModuleInfo[p_mod_index[0]].X;
+            // ASA-1986 End
 
             if (g_pog_json[p_pog_index].ModuleInfo[p_mod_index[0]].Y < final_btm) {
                 var diff = final_btm - g_pog_json[p_pog_index].ModuleInfo[p_mod_index[0]].Y;
@@ -7930,7 +7931,7 @@ async function colorAutofillBlock(p_dragMouseStart, p_dragMouseEnd, p_mod_index,
             final_btm = p_block_detail.BlockDim.FinalBtm;
         }
 
-         if (!Number.isFinite(calc_width) || !Number.isFinite(calc_height) || calc_width <= 0 || calc_height <= 0) {  // ASA-1986 start
+        if (!Number.isFinite(calc_width) || !Number.isFinite(calc_height) || calc_width <= 0 || calc_height <= 0) {  // ASA-1986 start
             return null;
         }
         if (!Number.isFinite(calc_x) || !Number.isFinite(calc_y)) {  // ASA-1986 start
@@ -7939,7 +7940,7 @@ async function colorAutofillBlock(p_dragMouseStart, p_dragMouseEnd, p_mod_index,
         var colorValue = parseInt(p_color.replace("#", "0x"), 16);
         var hex_decimal = new THREE.Color(colorValue);
 
-         if (typeof p_text !== "string") {  // ASA-1986 start
+        if (typeof p_text !== "string") {  // ASA-1986 start
             p_text = "BLK";
         }
         if (p_text.endsWith("_AFP")) {  // ASA-1986 start
@@ -7949,16 +7950,16 @@ async function colorAutofillBlock(p_dragMouseStart, p_dragMouseEnd, p_mod_index,
         console.log("calc_height", calc_width, calc_height, calc_y, final_top, mod_top, final_btm, mod_bottom);
 
         let mesh = dcText(p_text, font_size, 0x000000, colorValue, calc_width, calc_height, "N", "N", "Arial", "", font_size, 0, -1, 4);
-          if (!mesh) { // ASA-1986 start
+        if (!mesh) { // ASA-1986 start
             return null;
         }
         var mod_object = g_world.getObjectById(g_pog_json[p_pog_index].ModuleInfo[p_mod_index[0]].MObjID);
-         if (!mod_object || typeof mod_object.add !== "function") { // ASA-1986 start
+        if (!mod_object || typeof mod_object.add !== "function") { // ASA-1986 start
             return null;
         }
         mod_object.add(mesh);
         mesh.uuid = p_text + "_AFP";
-          if (mesh.material) {  // ASA-1986 start
+        if (mesh.material) {  // ASA-1986 start
             mesh.material.opacity = 0.5;
         }
         if (mesh.position) { // ASA-1986 start
@@ -7994,7 +7995,7 @@ async function colorAutofillBlock(p_dragMouseStart, p_dragMouseEnd, p_mod_index,
         return details;
     } catch (err) {
         // error_handling(err);
-          console.warn("colorAutofillBlock skipped due to invalid render state:", err); // ASA-1986 start
+        console.warn("colorAutofillBlock skipped due to invalid render state:", err); // ASA-1986 start
         return null;
     }
 
@@ -8182,10 +8183,10 @@ async function open_draft_pog(p_imageLoadInd = "N", p_draft_pog_list, p_open_att
         await get_json_data([$v("P193_DRAFT_LIST")], p_imageLoadInd, pog_desc)
         removeLoadingIndicator(regionloadWait); //ASA-1500
         upload_file_flag = "N";
-        g_auto_fill_active = "N";        
+        g_auto_fill_active = "N";
         await auto_fill_setup(0);
         if (!g_mod_block_list || g_mod_block_list.length === 0) { //Garit
-           await createDynamicBlocks($v('P193_OPEN_POG_CODE'),$v('P193_OPEN_DRAFT'),$v('P193_OPEN_POG_VERSION'));
+            await createDynamicBlocks($v('P193_OPEN_POG_CODE'), $v('P193_OPEN_DRAFT'), $v('P193_OPEN_POG_VERSION'));
         } else {
             apex.region("mod_block_details").refresh();
             apex.region("added_attribute").refresh();
@@ -8638,22 +8639,23 @@ async function open_existing_pog(p_pog_list_arr, p_openAttr, p_imageLoadInd = "N
                     var retval = await get_existing_pog(pog_code_list[0], pog_version_list[0], 0, "N", "N");
                     //ASA-1803 Added for refresh sales.
                     // await refresh_sales_data(13, "", $v("P193_POGCR_FONTSIZE_DAYSOFSUPP"), g_hide_show_dos_label, g_show_days_of_supply, "N", "N", "N", pog_code_list[0], pog_code_list[0], "N", g_pog_index, "Y");
-                         
+
                     // if ($v("P193_POGCR_ITEM_DIM_AUTO_REFRESH") == "Y") {
                     //     //ASA-1812 Refresh Item Dimension. Issue 3
                     //     await itemDimUpdate(g_pog_index);
                     // }
                     removeLoadingIndicator(regionloadWait); //ASA-1500    
-                    g_auto_fill_active = "N"; 
+                    g_auto_fill_active = "N";
                     $s("P193_OPEN_DRAFT", 'N'); //Garit
                     await auto_fill_setup(0);
                     if (!g_mod_block_list || g_mod_block_list.length === 0) { //Garit
-                       await createDynamicBlocks($v('P193_OPEN_POG_CODE'),$v('P193_OPEN_DRAFT'),$v('P193_OPEN_POG_VERSION'));
-                     } else {
-                       apex.region("mod_block_details").refresh();
-                     }                
+                        await createDynamicBlocks($v('P193_OPEN_POG_CODE'), $v('P193_OPEN_DRAFT'), $v('P193_OPEN_POG_VERSION'));
+                    } else {
+                        apex.region("mod_block_details").refresh();
+                    }
+                    add_pog_versions();
                     render(0);
-                    animate_all_pog();                    
+                    animate_all_pog();
                 }
                 doSomething();
             }
@@ -8842,7 +8844,7 @@ async function open_existing_pog(p_pog_list_arr, p_openAttr, p_imageLoadInd = "N
                     }
                 }
             }
-        }       
+        }
         logDebug("function : open_existing ; ", "E");
 
     } catch (err) {
@@ -8850,11 +8852,11 @@ async function open_existing_pog(p_pog_list_arr, p_openAttr, p_imageLoadInd = "N
     }
 }
 
-async function auto_fill_setup(p_pog_index) {
+async function auto_fill_setup(p_pog_index, p_af_version = '') {
 
     console.log("pog json length", g_pog_json[p_pog_index], g_pog_json.length);
 
-    return new Promise((resolve, reject) => {  
+    return new Promise((resolve, reject) => {
 
         if (g_all_pog_flag == "N" || (g_all_pog_flag == "Y" && g_pog_json.length == 1)) {
 
@@ -8870,19 +8872,20 @@ async function auto_fill_setup(p_pog_index) {
                         x02: $v("P193_OPEN_POG_CODE"),
                         x03: $v("P193_OPEN_DRAFT") == "Y" ? $v("P193_DRAFT_LIST") : $v("P193_OPEN_POG_VERSION"),
                         x04: $v("P193_OPEN_DRAFT"),
+                        x05: p_af_version,
                     },
                     {
                         dataType: "json",
 
                         success: async function (pData) {
 
-                            try {  
+                            try {
 
                                 var return_data = $.trim(pData).split(",");
 
                                 if (return_data[0] == "ERROR") {
                                     raise_error(pData);
-                                    resolve(); 
+                                    resolve();
                                     return;
                                 }
 
@@ -8919,7 +8922,7 @@ async function auto_fill_setup(p_pog_index) {
                                     i++;
                                 }
 
-                                if (item_exists) {
+                                if ((item_exists) || p_af_version != '') {
 
                                     async function doSomething() {
 
@@ -8928,9 +8931,11 @@ async function auto_fill_setup(p_pog_index) {
                                         g_undo_final_obj_arr = [];
                                         g_redo_final_obj_arr = [];
                                         g_prev_undo_action = "";
-
-                                        await clear_item("N", "N", p_pog_index);
-
+                                        
+                                        if (p_af_version == ''){
+                                           await clear_item("N", "N", p_pog_index);
+                                        }
+                                        
                                         g_undo_final_obj_arr = [];
                                         g_redo_final_obj_arr = [];
                                         g_auto_fill_reg_open = "Y";
@@ -8980,7 +8985,7 @@ async function auto_fill_setup(p_pog_index) {
                                                     g_mod_block_list = g_autofill_detail["BlkInfo"];
                                                 }
 
-                                                await doSomething(); 
+                                                await doSomething();
                                             }
                                         }
                                     }
@@ -9002,7 +9007,7 @@ async function auto_fill_setup(p_pog_index) {
                 );
 
             } else {
-                resolve(); 
+                resolve();
             }
 
         } else {
@@ -9010,7 +9015,7 @@ async function auto_fill_setup(p_pog_index) {
             resolve();
         }
 
-    }); 
+    });
 }
 
 
@@ -13025,292 +13030,6 @@ async function update_item_xy_distance(p_updateObj, p_pog_index, p_newx, p_newy)
     }
 }
 
-function onContextMenu(p_event) {
-    logDebug("function : onContextMenu", "S");
-    var valid = "N";
-    if (p_event.target.nodeName == "CANVAS" && g_scene_objects.length > 0) {
-        set_curr_canvas(p_event);
-        g_canvas = p_event.target;
-        g_pog_index = parseInt(g_canvas.getAttribute("data-indx"));
-        g_context_opened = "Y";
-        var is_divider = "N";
-        var canvas_width = 0,
-            border = 0,
-            g_duplicate_fixel_flag = "N";
-        if (g_compare_pog_flag == "Y") {
-            border = 5;
-        }
-        console.log("event", p_event.target, g_pog_index);
-        //getting the canvas bounding area and find out the client x and y where right click was done.
-        var r = g_canvas.getBoundingClientRect();
-        var start_x = r.left;
-        var start_y = r.top;
-        var x = p_event.clientX - r.left;
-        var y = p_event.clientY - r.top;
-        prevX = startX = x;
-        prevY = startY = y;
-        //Pass that to doMouseDown function to find out which object was hit.
-        g_dragging = doMouseDown(x, y, start_x, start_y, p_event, g_canvas, "Y", g_pog_index);
-        console.log("return from MouseDown", g_dragging);
-        console.log("constext ", g_start_canvas, g_ComViewIndex, g_compare_view, g_compare_pog_flag);
-        if (g_carpark_item_flag == "N" && g_carpark_edit_flag == "N" && ((g_start_canvas == g_ComViewIndex && g_compare_view == "POG" && g_compare_pog_flag == "Y") || (g_start_canvas !== g_ComViewIndex && g_compare_pog_flag == "Y") || g_compare_pog_flag == "N")) {
-            p_event.preventDefault();
-            new_details = JSON.parse(JSON.stringify(g_delete_details));
-            for (const objects of new_details) {
-                objects.ShelfInfo = "";
-            }
-            //there is a check on role based privileges for logged in user like AI_EDIT_IND, AI_DELETE_IND.
-            //this below part considers only Multi select using mouse drag or ctrl select (which is also multi select)
-            //basic menu that will show are as below
-            //1. Copy, 2. Delete, 3. Edit facings, 4. Edit Color
-            //5. Edit - Edit Product - When only items are selected, both Edit Product and Edit Fixture will show when both Fixel and Item are selected.
-            //6. Spread Product - when any Fixel is selected.
-            //7. Multi Edit -- this is opening when there are more than one POG on screen (Note: this is not working as expected. its opening details of a single item now.)
-            //ASA-1681 issue 1, added !(g_shelf_index == -1 && g_item_index == -1). As it is only for shelf and item multi selection
-            if ((g_multiselect == "Y" || g_ctrl_select == "Y") && new_details.length > 0 && g_compare_view !== "EDIT_PALLET" && !(g_shelf_index == -1 && g_item_index == -1)) {
-                $("#context-menu a.cut, #context-menu a.edit, #context-menu a.edit_location, #context-menu a.duplicate, #context-menu a.edit_item_loc").css("display", "none");
-                $("#context-menu a.copy, #context-menu a.paste").css("display", "block");
-                if (g_pog_json.length > 1) { //ASA-1272
-                    $("#context-menu a.multedit").css("display", "block");
-                } else {
-                    $("#context-menu a.multedit").css("display", "none");
-                }
-                if (g_cut_action_done == "Y" || g_copy_action_done == "Y" || g_multi_copy_done == "Y") {
-                    $("#context-menu a.paste").css("color", "white").attr("onclick", 'context_func("paste","RESET_PASTE")').css("cursor", "pointer"); //1780 Added RESET_PASTE
-                } else {
-                    $("#context-menu a.paste").removeAttr("onclick").css("cursor", "auto").css("color", "grey");
-                }
-                if (JsonContains(new_details, "Object", "SHELF") && JsonContains(new_details, "ObjType", "SHELF") && JsonContains(new_details, "Object", "ITEM")) {
-                    $(".edit_products, .edit_fixtures, #context-menu a.spread_product, #context-menu a.multi_edit").css("display", "block");
-                    g_mselect_drag = 'Y';
-                    $(".edit_submenu").css("top", "85%");
-                    $(".submenu").css("top", "50%");
-                    if (JsonContains(new_details, "Object", "ITEM")) {
-                        $("#context-menu a.edit_facings").css("display", "block");
-                        $('input[name="horizfacing"]').val("");
-                        $('input[name="vertfacing"]').val("");
-                        $('input[name="depthfacing"]').val("");
-                        $(".facing_submenu").css("top", "57%");
-                        $(".submenu").css("top", "43%");
-                    } else {
-                        $("#context-menu a.edit_facings").css("display", "none");
-                    }
-                } else if (JsonContains(new_details, "Object", "SHELF") && JsonContains(new_details, "ObjType", "SHELF")) { //ASA-1272
-                    $(".edit_fixtures, #context-menu a.spread_product, #context-menu a.multi_edit").css("display", "block");
-                    $(".edit_products").css("display", "none");
-                    g_mselect_drag = 'Y';
-                    $(".edit_submenu").css("top", "85%");
-                    $(".submenu").css("top", "50%");
-                    $("#context-menu a.edit_facings").css("display", "none");
-                } else if (JsonContains(new_details, "Object", "ITEM")) {
-                    $("#context-menu a.multi_edit").css("display", "block");
-                    g_mselect_drag = 'Y';
-                    $(".edit_products").css("display", "block");
-                    $("#context-menu a.multedit").css("display", "none");
-                    $(".edit_fixtures").css("display", "none");
-                    $(".edit_submenu").css("top", "83%");
-                    if (typeof g_pog_json[g_pog_index].ModuleInfo[g_module_index].ShelfInfo[g_shelf_index].ItemInfo[g_item_index] !== "undefined") {
-                        if ($v("P193_POGCR_DISPLAY_ITEM") == "Y" && g_pog_json[g_pog_index].ModuleInfo[g_module_index].ShelfInfo[g_shelf_index].ItemInfo[g_item_index].MerchStyle == 3) {
-                            $("#context-menu a.edit_facings").css("display", "none"); //Kush
-                        } else {
-                            $("#context-menu a.edit_facings").css("display", "block");
-                        }
-                    } else {
-                        $("#context-menu a.edit_facings").css("display", "block");
-                    }
-
-                    //	$("#context-menu a.edit_facings").css("display", "block");//kush
-                    $('input[name="horizfacing"]').val("");
-                    $('input[name="vertfacing"]').val("");
-                    $('input[name="depthfacing"]').val("");
-                    $("#context-menu a.spread_product").css("display", "none");
-                    $(".facing_submenu").css("top", "50%");
-                } else if (JsonContains(new_details, "Object", "SHELF") && JsonContains(new_details, "ObjType", "TEXTBOX")) {      //ASA-1669
-                    $(".edit_fixtures, #context-menu a.multi_edit").css("display", "block");
-                    $(".edit_products").css("display", "none");
-                    g_mselect_drag = 'Y';
-                    $(".edit_submenu").css("top", "85%");
-                    $(".submenu").css("top", "50%");
-                    $("#context-menu a.edit_facings").css("display", "none");
-                } else {
-                    $("#context-menu a.spread_product, #context-menu a.edit_facings").css("display", "none");
-                }
-                if (JsonContains(new_details, "Object", "SHELF") || JsonContains(new_details, "Object", "ITEM")) {
-                    $("#context-menu a.edit_color").css("display", "block");
-                } else {
-                    console.log("new_details context 7", new_details);
-                    $("#context-menu a.edit_color").css("display", "none");
-                }
-
-                if ($v("P193_DELETE_IND") == "Y") {
-                    $("#context-menu a.delete").css("display", "block");
-                } else {
-                    $("#context-menu a.delete").css("display", "none");
-                }
-            } else {//This below block is used for single select of any object and right clicked.
-                //menu list shown for each object is as below 
-                //(Note: Paste will show only when g_cut_action_done, g_copy_action_done,g_multi_copy_done = 'Y')
-                //Right click on item - 1. Copy, 2. Cut, 3. Delete, 4. Edit, 5. Edit Facings, 6. Edit Color, 7. Edit Location (active when fixel is CHEST)
-                //Right click on any fixel(including DIVIDER) 1. Copy, 2. Cut, 3. Delete, 4. Edit, 5. Edit Location, 6. Spread Product (Only for SHELF and HANGINGBAR), 7. Duplicate Fixel
-                //Right click on Module - 1. Copy, 2. Cut, 3. Delete, 4. Edit
-                //Right click outside the POG in blank area(POG Edit) - 1. Copy, 2. Cut, 3. Delete, 4. Edit
-                //Right click on item on the carpark - 1. Edit
-                g_multiselect = "N";
-                g_ctrl_select = "N";
-                $("#context-menu a.edit_color").css("display", "none");
-                $("#context-menu a.multi_edit").css("display", "none");
-                g_mselect_drag = 'N';
-                if (g_pog_json.length > 1) {
-                    $("#context-menu a.multedit").css("display", "block");
-                } else {
-                    $("#context-menu a.multedit").css("display", "none");
-                }
-                if (g_cut_action_done == "Y" || g_copy_action_done == "Y" || g_multi_copy_done == "Y") {
-                    $("#context-menu a.paste").css("color", "white").attr("onclick", 'context_func("paste","RESET_PASTE")').css("cursor", "pointer"); //1780 Added RESET_PASTE
-                } else {
-                    $("#context-menu a.paste").removeAttr("onclick").css("cursor", "auto").css("color", "grey");
-                }
-                if ($v("P193_DELETE_IND") == "Y") {
-                    $("#context-menu a.delete").css("display", "block");
-                } else {
-                    $("#context-menu a.delete").css("display", "none");
-                }
-                if ($v("P193_EDIT_IND") == "Y") {
-                    $("#context-menu a.cut, #context-menu a.copy, #context-menu a.paste, #context-menu a.edit").css("display", "block");
-
-                    if (g_shelf_edit_flag == "Y" && g_compare_view !== "EDIT_PALLET") {
-                        $("#context-menu a.edit_location, #context-menu a.duplicate").css("display", "block");
-                        $("#context-menu a.edit_facings, #context-menu a.edit_color, #context-menu a.multedit, #context-menu a.edit_item_loc").css("display", "none");
-                        if (g_shelf_object_type == "SHELF" || g_shelf_object_type == "HANGINGBAR") {
-                            $("#context-menu a.spread_product").css("display", "block");
-                            $(".submenu").css("top", "50%");
-                        } else {
-                            $("#context-menu a.spread_product").css("display", "none");
-                        }
-                    } else if (g_item_edit_flag == "Y" && g_pog_json[g_pog_index].ModuleInfo[g_module_index].ShelfInfo[g_shelf_index].ItemInfo[g_item_index].Item == "DIVIDER") {
-                        if (g_pog_json[g_pog_index].ModuleInfo[g_module_index].ShelfInfo[g_shelf_index].ItemInfo[g_item_index].Item == "DIVIDER") {
-                            $("#context-menu a.edit_location").css("display", "block");
-                        } else {
-                            $("#context-menu a.edit_location").css("display", "none");
-                        }
-                        $("#context-menu a.duplicate").css("display", "block");
-                        $("#context-menu a.edit_facings, #context-menu a.spread_product, #context-menu a.edit_color, #context-menu a.multedit, #context-menu a.edit_item_loc").css("display", "none");
-                    } else {
-                        $("#context-menu a.edit_item_loc").css("display", "none");
-                        $("#context-menu a.edit_location, #context-menu a.duplicate").css("display", "none");
-                        if (g_item_edit_flag == "Y" && g_pog_json[g_pog_index].ModuleInfo[g_module_index].ShelfInfo[g_shelf_index].ItemInfo[g_item_index].Item !== "DIVIDER") {
-                            if (g_pog_json[g_pog_index].ModuleInfo[g_module_index].ShelfInfo[g_shelf_index].ObjType == 'CHEST' && g_chest_as_pegboard == 'Y') { //ASA-1300
-                                $("#context-menu a.edit_item_loc").css("display", "block");
-                            }
-                            if ((typeof g_pog_json[g_pog_index].ModuleInfo[g_module_index].ShelfInfo[g_shelf_index].ItemInfo[g_item_index].BottomObjID !== "undefined" && g_pog_json[g_pog_index].ModuleInfo[g_module_index].ShelfInfo[g_shelf_index].ItemInfo[g_item_index].BottomObjID !== "") || (typeof g_pog_json[g_pog_index].ModuleInfo[g_module_index].ShelfInfo[g_shelf_index].ItemInfo[g_item_index].TopObjID !== "undefined" && g_pog_json[g_pog_index].ModuleInfo[g_module_index].ShelfInfo[g_shelf_index].ItemInfo[g_item_index].TopObjID !== "")) {
-                                $(".input-group").css("display", "none");
-                            } else {
-                                $(".input-group").css("display", "");
-                                $("#context-menu a.multedit").css("display", "none");
-                            }
-                            // ASA-1109
-                            $(".input-group2").css("display", "");
-                            $('input[name="horizfacing"]').val(g_pog_json[g_pog_index].ModuleInfo[g_module_index].ShelfInfo[g_shelf_index].ItemInfo[g_item_index].BHoriz);
-                            $('input[name="vertfacing"]').val(g_pog_json[g_pog_index].ModuleInfo[g_module_index].ShelfInfo[g_shelf_index].ItemInfo[g_item_index].BVert);
-                            $('input[name="depthfacing"]').val(g_pog_json[g_pog_index].ModuleInfo[g_module_index].ShelfInfo[g_shelf_index].ItemInfo[g_item_index].BaseD);
-
-                            if (g_prev_undo_action !== "FACING_CHANGE" && (g_pog_json[g_pog_index].ModuleInfo[g_module_index].ShelfInfo[g_shelf_index].ItemInfo[g_item_index].OldItemBaseHoriz == "" || typeof g_pog_json[g_pog_index].ModuleInfo[g_module_index].ShelfInfo[g_shelf_index].ItemInfo[g_item_index].OldItemBaseHoriz == "undefined")) {
-                                g_pog_json[g_pog_index].ModuleInfo[g_module_index].ShelfInfo[g_shelf_index].ItemInfo[g_item_index].OldItemBaseHoriz = g_pog_json[g_pog_index].ModuleInfo[g_module_index].ShelfInfo[g_shelf_index].ItemInfo[g_item_index].BHoriz;
-                                g_pog_json[g_pog_index].ModuleInfo[g_module_index].ShelfInfo[g_shelf_index].ItemInfo[g_item_index].OldItemBaseVert = g_pog_json[g_pog_index].ModuleInfo[g_module_index].ShelfInfo[g_shelf_index].ItemInfo[g_item_index].BVert;
-                                g_pog_json[g_pog_index].ModuleInfo[g_module_index].ShelfInfo[g_shelf_index].ItemInfo[g_item_index].OldItemBaseDepth = g_pog_json[g_pog_index].ModuleInfo[g_module_index].ShelfInfo[g_shelf_index].ItemInfo[g_item_index].BaseD;
-                            }
-                            g_incre_mod_index = g_module_index;
-                            g_incre_shelf_index = g_shelf_index;
-                            g_incre_item_index = g_item_index;
-
-                            if ($v("P193_POGCR_DISPLAY_ITEM") == "Y" && g_pog_json[g_pog_index].ModuleInfo[g_module_index].ShelfInfo[g_shelf_index].ItemInfo[g_item_index].MerchStyle == 3) {
-                                $("#context-menu a.edit_facings").css("display", "none"); //Kush
-                            } else {
-                                $("#context-menu a.edit_facings").css("display", "block");
-                            }
-                            $(".facing_submenu").css("top", "74%");
-                            $("#context-menu a.edit_color").css("display", "block");
-                            $("#context-menu a.duplicate").css("display", "none");
-                        } else {
-                            $("#context-menu a.edit_facings").css("display", "none");
-                        }
-                        if (g_module_edit_flag == "Y") {
-                            $("#context-menu a.multedit").css("display", "none");
-                        }
-                        $("#context-menu a.spread_product").css("display", "none");
-                    }
-                } else {
-                    $("#context-menu a.cut, #context-menu a.copy, #context-menu a.paste, #context-menu a.edit, #context-menu a.edit_location, #context-menu a.duplicate, #context-menu a.edit_facings, #context-menu a.spread_product").css("display", "none");
-                }
-            }
-            valid = "Y";
-        } else if (g_carpark_item_flag == "Y") {
-            p_event.preventDefault();
-            $("#context-menu a.cut, #context-menu a.copy, #context-menu a.paste, #context-menu a.edit_location, #context-menu a.duplicate, #context-menu a.edit_facings, #context-menu a.spread_product, #context-menu a.delete, #context-menu a.edit_color, #context-menu a.multi_edit, #context-menu a.multedit, #context-menu a.edit_item_loc").css("display", "none"); //ASA-1418
-            g_mselect_drag = 'N';
-            $("#context-menu a.edit").css("display", "block");
-            valid = "Y";
-        }
-        //Below block will set the position of the context menu and the submenus for example Edit Facings. according to the mouse right click location.
-        if (valid == "Y") {
-            var header = document.getElementById("t_Header");
-            var breadcrumb = document.getElementById("t_Body_title");
-            var top_bar = document.getElementById("top_bar");
-            var side_nav = document.getElementById("t_Body_nav");
-            var button_cont = document.getElementById("side_bar");
-            var canvas_btn = document.getElementById("maincanvas-btns");
-            var canvas_btn_height = typeof canvas_btn !== "undefined" && canvas_btn !== null ? canvas_btn.offsetHeight : 0;
-            var devicePixelRatio = window.devicePixelRatio;
-            var padding = parseFloat($(".t-Body-contentInner").css("padding-left").replace("px", ""));
-
-            var header_height = header.offsetHeight; // devicePixelRatio;
-            var breadcrumb_height = breadcrumb.offsetHeight; // devicePixelRatio;
-            var top_bar_height = top_bar.offsetHeight; // devicePixelRatio;
-            var side_nav_width = side_nav.offsetWidth; // devicePixelRatio;
-            var btn_cont_width = button_cont.offsetWidth; //devicePixelRatio;
-            var contextElement = document.getElementById("context-menu");
-
-            var inner_width_edit = parseInt(p_event.clientX - $(".t-Region-body").scrollLeft() + contextElement.offsetWidth);
-            var window_width = parseInt($(window).width() - (side_nav_width + btn_cont_width));
-            var inner_width_noedit = parseInt(p_event.clientX - $(".t-Region-body").scrollLeft() + contextElement.offsetWidth);
-
-            //if (event.clientY + contextElement.offsetHeight > window.innerHeight) { beacuse when we click shelf or item from bottom second last shelf its show the context menu not properly in biottom
-            if (p_event.clientY > (window.innerHeight / 2)) { //ASA-1236
-                contextElement.style.top = p_event.clientY - $(document).scrollTop() - contextElement.offsetHeight + "px"; //+ (header_height + breadcrumb_height + top_bar_height + padding) - contextElement.offsetHeight + border + canvas_btn_height + "px";
-            } else {
-                contextElement.style.top = p_event.clientY - $(document).scrollTop() + "px"; //+ (header_height + breadcrumb_height + top_bar_height + padding) + border + canvas_btn_height + "px";
-            }
-
-            if (inner_width_edit > window_width && (g_shelf_edit_flag == "Y" || g_item_edit_flag == "Y")) {
-                contextElement.style.left = p_event.clientX - $(".t-Region-body").scrollLeft() - contextElement.offsetWidth + "px"; // + (side_nav_width + btn_cont_width + padding)) + border - contextElement.offsetWidth + "px";
-                if (g_shelf_edit_flag == "Y") {
-                    $(".submenu").css("right", "100%"); //Regression 21 Kush
-                } else {
-                    $(".facing_submenu").css("right", "100%"); //Regression 21 Kush
-                }
-                $(".edit_submenu").css("right", "190px");
-            } else if (inner_width_noedit > window_width) {
-                contextElement.style.left = p_event.clientX - $(".t-Region-body").scrollLeft() - contextElement.offsetWidth + "px"; // + (side_nav_width + btn_cont_width + padding)) + border - contextElement.offsetWidth + "px";
-                $(".submenu").css("right", "-200px");
-                $(".edit_submenu").css("right", "-200px");
-                $(".facing_submenu").css("right", "-190px");
-            } else {
-                contextElement.style.left = p_event.clientX - $(".t-Region-body").scrollLeft() + "px"; // + (side_nav_width + btn_cont_width + padding)) + border + "px";
-                $(".submenu").css("right", "-200px");
-                $(".edit_submenu").css("right", "-200px");
-                if (p_event.clientX > (window_width / 2)) { // ASA-1236 Submenu option of facing in right side screen should be hide so i add this logic to check the user click x is greater than the window center
-                    $(".facing_submenu").css("right", "100%"); //Regression 21 Kush
-                } else {
-                    $(".facing_submenu").css("right", "-190px");
-                }
-            }
-            console.log("contextElement.style.top", contextElement.style.top, contextElement.style.left, p_event);
-
-            contextElement.classList.add("active");
-        }
-    }
-    logDebug("function : onContextMenu", "E");
-}
 
 async function open_edit_modal_popup(p_object_ind, p_module_ind, p_shelf_ind, p_duplicate_fixel, p_pog_index, p_edit = "N") {
     logDebug("function : open_edit_modal_popup; object_ind : " + p_object_ind + "; module_ind : " + p_module_ind + "; shelf_ind : " + p_shelf_ind + "; duplicate_fixel : " + p_duplicate_fixel, "S");
@@ -14667,12 +14386,12 @@ function setDetailsArray(p_objID, p_mIndex, p_sIndex, p_objWidth, p_objHeight, p
 }
 
 async function comparePOG(p_compare_ind, p_pog_code, p_pog_version, p_draft_id, p_prev_version, p_compare_pog = 'N') { //ASA-1803 Issue 1 added p_compare_pog
-	logDebug("function : comparePOG", "S");
-	await get_compare_pog(p_compare_ind, p_pog_code, p_pog_version, p_draft_id, p_prev_version, p_compare_pog);
-	logDebug("function : comparePOG", "E");
+    logDebug("function : comparePOG", "S");
+    await get_compare_pog(p_compare_ind, p_pog_code, p_pog_version, p_draft_id, p_prev_version, p_compare_pog);
+    logDebug("function : comparePOG", "E");
 }
- // ASA-1986 start
-    async function render_compare_pog_blocks(p_pog_code, p_pog_version, p_compare_index) {
+// ASA-1986 start
+async function render_compare_pog_blocks(p_pog_code, p_pog_version, p_compare_index) {
     var oldPogIndex = g_pog_index;
     var oldModBlockList = g_mod_block_list;
     var oldAutoFillActive = g_auto_fill_active;
@@ -14682,8 +14401,13 @@ async function comparePOG(p_compare_ind, p_pog_code, p_pog_version, p_draft_id, 
         g_pog_index = p_compare_index;
         g_auto_fill_active = "Y";
         g_mod_block_list = [];
-
-        await createDynamicBlocks(p_pog_code, "N", p_pog_version, "N");
+        await auto_fill_setup(1);
+          if (!g_mod_block_list || g_mod_block_list.length === 0) { //Garit
+                 await createDynamicBlocks(p_pog_code, "N", p_pog_version, "N");
+                         }
+                   else{     
+                    apex.region("mod_block_details").refresh();
+                    }
         render(p_compare_index);
     } catch (err) {
         error_handling(err);
@@ -14694,7 +14418,7 @@ async function comparePOG(p_compare_ind, p_pog_code, p_pog_version, p_draft_id, 
         g_DragMouseStart = oldDragMouseStart;
         g_DragMouseEnd = oldDragMouseEnd;
     }
-} 
+}
 // ASA-1986 end
 async function get_compare_pog(p_compare_ind, p_pog_code, p_pog_version, p_draft_id, p_prev_version, p_compare_pog = "N") {
     //ASA-1803 Issue 1 added p_compare_pog
@@ -14811,7 +14535,7 @@ async function get_compare_pog(p_compare_ind, p_pog_code, p_pog_version, p_draft
                     var return_val = await create_module_from_json(POG_JSON, new_pog_ind, "F", $v("P193_PRODUCT_BTN_CLICK"), pog_opened, "N", "N", "Y", "Y", "", "Y", g_scene_objects[g_ComViewIndex].scene.children[0], g_scene_objects[g_ComViewIndex].scene, g_pog_index, g_ComViewIndex);
                     removeLoadingIndicator(regionloadWait);
                     render(g_ComViewIndex);
-                      if (p_compare_pog == "Y") { // ASA-1986 start
+                    if (p_compare_pog == "Y") { // ASA-1986 start
                         await render_compare_pog_blocks(new_pog_json.POGCode, new_pog_json.Version, g_ComViewIndex);
                     }
 
@@ -14841,165 +14565,167 @@ async function get_compare_pog(p_compare_ind, p_pog_code, p_pog_version, p_draft
 }
 
 async function modifyWindowAfterMinMax(p_scene_objects) {
-	g_scene_objects = [];
-	console.log("modify");
-	g_canvas_objects = [];
-	var old_pogIndex = g_pog_index;
-	for (var i = 0; i < p_scene_objects.length; i++) {
-		init(i);
-		var canvasName = "maincanvas";
-		if (i > 0) {
-			canvasName = "maincanvas" + (i + 1);
-		}
-		g_camera = p_scene_objects[i].scene.getObjectByProperty("type", "PerspectiveCamera");
-		g_scene = p_scene_objects[i].scene;
-		g_pog_index = i;
-		console.log("scene", g_scene.uuid);
-		var canvasContainerH = $("#" + canvasName).parent()[0].offsetHeight;
-		var canvasContainerW = $("#" + canvasName).parent()[0].offsetWidth;
-		var canvasBtns = $("#" + canvasName + "-btns")[0];
-		var canvasBtns_height;
-		if (typeof canvasBtns !== "undefined") {
-			canvasBtns_height = canvasBtns.offsetHeight;
-		} else {
-			canvasBtns_height = 0;
-		}
-		var canvasWidthOrg = canvasContainerW;
-		var canvasHeightOrg = canvasContainerH - canvasBtns_height;
-		$("#" + canvasName)
-			.css("height", canvasHeightOrg + "px !important")
-			.css("width", canvasWidthOrg + "px !important");
-		$("#" + canvasName).height(canvasHeightOrg); //ASA-1107
-		$("#" + canvasName).width(canvasWidthOrg); //ASA-1107
-		g_camera.aspect = canvasWidthOrg / canvasHeightOrg;
-		g_camera.fov = (360 / Math.PI) * Math.atan(g_tanFOV);
-		g_camera.updateProjectionMatrix();
+    g_scene_objects = [];
+    console.log("modify");
+    g_canvas_objects = [];
+    var old_pogIndex = g_pog_index;
+    for (var i = 0; i < p_scene_objects.length; i++) {
+        init(i);
+        var canvasName = "maincanvas";
+        if (i > 0) {
+            canvasName = "maincanvas" + (i + 1);
+        }
+        g_camera = p_scene_objects[i].scene.getObjectByProperty("type", "PerspectiveCamera");
+        g_scene = p_scene_objects[i].scene;
+        g_pog_index = i;
+        console.log("scene", g_scene.uuid);
+        var canvasContainerH = $("#" + canvasName).parent()[0].offsetHeight;
+        var canvasContainerW = $("#" + canvasName).parent()[0].offsetWidth;
+        var canvasBtns = $("#" + canvasName + "-btns")[0];
+        var canvasBtns_height;
+        if (typeof canvasBtns !== "undefined") {
+            canvasBtns_height = canvasBtns.offsetHeight;
+        } else {
+            canvasBtns_height = 0;
+        }
+        var canvasWidthOrg = canvasContainerW;
+        var canvasHeightOrg = canvasContainerH - canvasBtns_height;
+        $("#" + canvasName)
+            .css("height", canvasHeightOrg + "px !important")
+            .css("width", canvasWidthOrg + "px !important");
+        $("#" + canvasName).height(canvasHeightOrg); //ASA-1107
+        $("#" + canvasName).width(canvasWidthOrg); //ASA-1107
+        g_camera.aspect = canvasWidthOrg / canvasHeightOrg;
+        g_camera.fov = (360 / Math.PI) * Math.atan(g_tanFOV);
+        g_camera.updateProjectionMatrix();
 
-		var details = get_min_max_xy(i);
-		var details_arr = details.split("###");
-		set_camera_z(g_camera, parseFloat(details_arr[2]), parseFloat(details_arr[3]), parseFloat(details_arr[0]), parseFloat(details_arr[1]), g_offset_z, parseFloat(details_arr[4]), parseFloat(details_arr[5]), true, i);
+        var details = get_min_max_xy(i);
+        var details_arr = details.split("###");
+        set_camera_z(g_camera, parseFloat(details_arr[2]), parseFloat(details_arr[3]), parseFloat(details_arr[0]), parseFloat(details_arr[1]), g_offset_z, parseFloat(details_arr[4]), parseFloat(details_arr[5]), true, i);
 
-		objects = {};
-		objects["scene"] = g_scene;
-		objects["renderer"] = g_renderer;
-		console.log("objects", objects);
-		g_scene_objects.push(objects);
-		set_indicator_objects(i);
-		render(i);
-	}
-	g_pog_index = old_pogIndex;
+        objects = {};
+        objects["scene"] = g_scene;
+        objects["renderer"] = g_renderer;
+        console.log("objects", objects);
+        g_scene_objects.push(objects);
+        set_indicator_objects(i);
+        render(i);
+    }
+    g_pog_index = old_pogIndex;
 }
 
 async function createDynamicBlocks(
-  p_pog_code,
-  p_draft_pog,
-  p_pog_version,
-  p_saveColl = "Y" // ASA-1986 start
+    p_pog_code,
+    p_draft_pog,
+    p_pog_version,
+    p_saveColl = "Y",
+    p_attr_val = "",
 ) {
 
-  return new Promise((resolve, reject) => {
+    return new Promise((resolve, reject) => {
 
-    apex.server.process(
-      "CREATE_DYNAMIC_BLOCK",
-      {
-        x01: p_pog_code,
-        x02: p_pog_version,
-        //p_clob_01: JSON.stringify(g_pog_json[g_pog_index])
-      },
-      {
-        dataType: "json",
+        apex.server.process(
+            "CREATE_DYNAMIC_BLOCK",
+            {
+                x01: p_pog_code,
+                x02: p_pog_version,
+                x03: p_attr_val,
+                //p_clob_01: JSON.stringify(g_pog_json[g_pog_index])
+            },
+            {
+                dataType: "json",
 
-        success: async function (data) {
+                success: async function (data) {
 
-          try {
+                    try {
 
-            console.log("Blocks:", data);
-            for (const row of data) {
+                        console.log("Blocks:", data);
+                        for (const row of data) {
 
-              // Create start/end coords
-               g_DragMouseStart = {
-                x: Number(row.x1),
-                y: Number(row.y1)
-              };
+                            // Create start/end coords
+                            g_DragMouseStart = {
+                                x: Number(row.x1),
+                                y: Number(row.y1)
+                            };
 
-               g_DragMouseEnd = {
-                x: Number(row.x2),
-                y: Number(row.y2)
-              };
+                            g_DragMouseEnd = {
+                                x: Number(row.x2),
+                                y: Number(row.y2)
+                            };
 
-              console.log(
-                "Start:", g_DragMouseStart,
-                "End:", g_DragMouseEnd
-              );
+                            console.log(
+                                "Start:", g_DragMouseStart,
+                                "End:", g_DragMouseEnd
+                            );
 
-              // Get autofill info
-              [
-                g_autofillModInfo,
-                g_autofillShelfInfo
-              ] = getAutofillModShelf(
-                    g_DragMouseStart,
-                    g_DragMouseEnd,
-                    g_pog_json,
-                    g_pog_index
-              );
+                            // Get autofill info
+                            [
+                                g_autofillModInfo,
+                                g_autofillShelfInfo
+                            ] = getAutofillModShelf(
+                                g_DragMouseStart,
+                                g_DragMouseEnd,
+                                g_pog_json,
+                                g_pog_index
+                            );
 
-              console.log("Mod Info:", g_autofillModInfo);
-              console.log("Shelf Info:", g_autofillShelfInfo);
-            
-              // Create block
-           var isBlockCreated = await setAutofillBlock( // ASA-1986 start
-                'A',
-                row.block_name,
-                'N',
-                'N',
-                row.color,
-              );
-             if (isBlockCreated !== true) {  // ASA-1986 start
-                console.warn("Skipped block due to invalid block dimensions:", row.block_name);
-                continue;
-              }
-              console.log(
-                "Created Block:",
-                row.block_name,
-                row.color
-              );
+                            console.log("Mod Info:", g_autofillModInfo);
+                            console.log("Shelf Info:", g_autofillShelfInfo);
 
-              // Small delay (render safety)
-              await new Promise(r => setTimeout(r, 50));
+                            // Create block
+                            var isBlockCreated = await setAutofillBlock( // ASA-1986 start
+                                'A',
+                                row.block_name,
+                                'N',
+                                'N',
+                                row.color,
+                            );
+                            if (isBlockCreated !== true) {  // ASA-1986 start
+                                console.warn("Skipped block due to invalid block dimensions:", row.block_name);
+                                continue;
+                            }
+                            console.log(
+                                "Created Block:",
+                                row.block_name,
+                                row.color
+                            );
+
+                            // Small delay (render safety)
+                            await new Promise(r => setTimeout(r, 50));
+                        }
+                        if (p_saveColl == "Y") {
+                            var block_details_arr = [];
+                            for (const obj of g_mod_block_list) {
+                                var details = {};
+                                details["BlkColor"] = obj.BlkColor;
+                                details["BlkName"] = obj.BlkName;
+                                details["BlkRule"] = obj.BlkRule;
+                                details["BlkFilters"] = obj.BlockFilters.join(" AND ");
+                                obj["BlkFilters"] = details["BlkFilters"];
+                                block_details_arr.push(details);
+                            }
+                            var retval = await save_blk_dtl_coll('A', 'Blks', block_details_arr);
+                            apex.region("mod_block_details").refresh();
+                            apex.region("added_attribute").refresh();
+                        }
+                        console.log("All blocks created");
+
+                        //Resolve when done
+                        resolve(true);
+
+                    } catch (e) {
+                        reject(e);
+                    }
+                },
+
+                error: function (err) {
+                    console.error("AJAX Error:", err);
+                    reject(err);
+                }
             }
-             if (p_saveColl == "Y") {
-            var block_details_arr = [];
-            for (const obj of g_mod_block_list) {
-                var details = {};
-                details["BlkColor"] = obj.BlkColor;
-                details["BlkName"] = obj.BlkName;
-                details["BlkRule"] = obj.BlkRule;
-                details["BlkFilters"] = obj.BlockFilters.join(" AND ");
-                obj["BlkFilters"] = details["BlkFilters"];
-                block_details_arr.push(details);
-            }
-            var retval = await save_blk_dtl_coll('A', 'Blks', block_details_arr);
-            apex.region("mod_block_details").refresh();
-            apex.region("added_attribute").refresh();
-             }
-            console.log("All blocks created");
+        );
 
-            //Resolve when done
-            resolve(true);
-
-          } catch (e) {
-            reject(e);
-          }
-        },
-
-        error: function (err) {
-          console.error("AJAX Error:", err);
-          reject(err);
-        }
-      }
-    );
-
-  });
+    });
 }
 
 async function save_af_version() {
@@ -15047,7 +14773,7 @@ async function save_af_version() {
                         function (okPressed) {
                             if (okPressed) {
                                 proceed_save('U');
-                            }else{ 
+                            } else {
                                 proceed_save('N');
                             }
                         }
@@ -15060,7 +14786,7 @@ async function save_af_version() {
                         function (okPressed) {
                             if (okPressed) {
                                 proceed_save('D');
-                            }else{
+                            } else {
                                 console.log('NO ACTION');
                             }
                         }
@@ -15073,141 +14799,142 @@ async function save_af_version() {
                         function (okPressed) {
                             if (okPressed) {
                                 proceed_save('O');
-                             }else{ 
+                            } else {
                                 console.log('NO ACTION');
                             }
                         }
                     );
                 }
-               if (pText == "NO") {
-                proceed_save('S');
+                if (pText == "NO") {
+                    proceed_save('S');
                 }
             }
         }
     );
 
-    function proceed_save(p_action) {    
-                const l_af_version = getAfVersion();            
-                g_autofill_detail['AFPOGCode'] = l_pog_code;
-                g_autofill_detail['AFPOGVersion'] = l_pog_code_version;
-                g_autofill_detail['AFVersion'] = l_af_version, //$v('P193_AF_VERSION');
-                g_autofill_detail['BlkSelType'] = 'M';
-                g_autofill_detail['AutofillRule'] = $v('P193_AUTOFILL_RULE');
-                g_autofill_detail['BlkInfo'] = g_mod_block_list;
+    function proceed_save(p_action) {
+        const l_af_version = getAfVersion();
+        g_autofill_detail['AFPOGCode'] = l_pog_code;
+        g_autofill_detail['AFPOGVersion'] = l_pog_code_version;
+        g_autofill_detail['AFVersion'] = l_af_version, //$v('P193_AF_VERSION');
+            g_autofill_detail['BlkSelType'] = 'M';
+        g_autofill_detail['AutofillRule'] = $v('P193_AUTOFILL_RULE');
+        g_autofill_detail['BlkInfo'] = g_mod_block_list;
 
-                apex.server.process(
-                    "SAVE_AUTOFILL",
-                    {
-                        x01: g_autofill_detail["AFPOGCode"],
-                        x02: $v('P193_AF_VERSION'), //g_autofill_detail["AFVersion"],
-                        x03: g_autofill_detail["AutofillRule"],
-                        x04: g_autofill_detail["BlkSelType"],
-                        x05:
-                            g_autofill_detail["AFPOGVersion"] == "" ||
-                            typeof g_autofill_detail["AFPOGVersion"] == "undefined"
-                                ? g_autofill_detail["AFVersion"]
-                                : g_autofill_detail["AFPOGVersion"],
+        apex.server.process(
+            "SAVE_AUTOFILL",
+            {
+                x01: g_autofill_detail["AFPOGCode"],
+                x02: $v('P193_AF_VERSION'), //g_autofill_detail["AFVersion"],
+                x03: g_autofill_detail["AutofillRule"],
+                x04: g_autofill_detail["BlkSelType"],
+                x05:
+                    g_autofill_detail["AFPOGVersion"] == "" ||
+                        typeof g_autofill_detail["AFPOGVersion"] == "undefined"
+                        ? g_autofill_detail["AFVersion"]
+                        : g_autofill_detail["AFPOGVersion"],
 
-                        p_clob_01: JSON.stringify(
-                            filterAutoFillJsontag(g_autofill_detail)
-                        ),
-                        x06: p_action,
-                        x07: l_af_version
-                    },
-                    {
-                        dataType: "text",
+                p_clob_01: JSON.stringify(
+                    filterAutoFillJsontag(g_autofill_detail)
+                ),
+                x06: p_action,
+                x07: l_af_version
+            },
+            {
+                dataType: "text",
 
-                        success: function (pData) {
+                success: function (pData) {
 
-                            var return_data = $.trim(pData).split(",");
-                            if (return_data[0] == "ERROR") {
-                                raise_error(pData);
-                            }
-                        },
+                    var return_data = $.trim(pData).split(",");
+                    if (return_data[0] == "ERROR") {
+                        raise_error(pData);
                     }
-                );
+                },
             }
+        );
+    }
 }
 
 function getAfVersion() {
-  const now = new Date();
+    const now = new Date();
 
-  const YYYY = now.getFullYear();
-  const MM   = String(now.getMonth() + 1).padStart(2, "0");
-  const DD   = String(now.getDate()).padStart(2, "0");
-  const HH   = String(now.getHours()).padStart(2, "0");
-  const MI   = String(now.getMinutes()).padStart(2, "0");
-  const SS   = String(now.getSeconds()).padStart(2, "0");
+    const YYYY = now.getFullYear();
+    const MM = String(now.getMonth() + 1).padStart(2, "0");
+    const DD = String(now.getDate()).padStart(2, "0");
+    const HH = String(now.getHours()).padStart(2, "0");
+    const MI = String(now.getMinutes()).padStart(2, "0");
+    const SS = String(now.getSeconds()).padStart(2, "0");
 
-  return Number(`${YYYY}${MM}${DD}${HH}${MI}${SS}`);
+    return Number(`${YYYY}${MM}${DD}${HH}${MI}${SS}`);
 }
 
 
 
 // Reorder Attributes
 function wpdInitializeAttributeReorder() {
-  const containers = document.querySelectorAll(
-    ".u-tC"
-  );
-  containers.forEach(container => {
-    let draggedChip = null;
-    container.addEventListener("dragstart", function(e) {
-      const chip = e.target.closest(".attr-chip");
-      if (!chip) return;
-      draggedChip = chip;
-      chip.classList.add("dragging");
+    const containers = document.querySelectorAll(
+        ".u-tC"
+    );
+    containers.forEach(container => {
+        let draggedChip = null;
+        container.addEventListener("dragstart", function (e) {
+            const chip = e.target.closest(".attr-chip");
+            if (!chip) return;
+            draggedChip = chip;
+            chip.classList.add("dragging");
+        });
+        container.addEventListener("dragend", function (e) {
+            const chip = e.target.closest(".attr-chip");
+            if (!chip) return;
+            chip.classList.remove("dragging");
+            draggedChip = null;
+        });
+        container.addEventListener("dragover", function (e) {
+            e.preventDefault();
+            if (!draggedChip) return;
+            const insertBeforeElement =
+                wpdGetAttributeInsertPosition(container, e.clientY);
+            if (insertBeforeElement == null) {
+                container.appendChild(draggedChip);
+            } else {
+                container.insertBefore(draggedChip, insertBeforeElement);
+            }
+        });
     });
-    container.addEventListener("dragend", function(e) {
-      const chip = e.target.closest(".attr-chip");
-      if (!chip) return;
-      chip.classList.remove("dragging");
-      draggedChip = null;
-    });
-    container.addEventListener("dragover", function(e) {
-      e.preventDefault();
-      if (!draggedChip) return;
-      const insertBeforeElement =
-        wpdGetAttributeInsertPosition(container, e.clientY);
-      if (insertBeforeElement == null) {
-        container.appendChild(draggedChip);
-      } else {
-        container.insertBefore(draggedChip, insertBeforeElement);
-      }
-    });
-  });
 }
 function wpdGetAttributeInsertPosition(container, mouseY) {
-  const chips = [
-    ...container.querySelectorAll(".attr-chip:not(.dragging)")
-  ];
-  return chips.reduce((closest, chip) => {
-    const box = chip.getBoundingClientRect();
-    const offset = mouseY - box.top - box.height / 2;
-    if (offset < 0 && offset > closest.offset) {
-      return {
-        offset: offset,
-        element: chip
-      };
-    } else {
-      return closest;
-    }
-  }, {
-    offset: Number.NEGATIVE_INFINITY
-  }).element;
+    const chips = [
+        ...container.querySelectorAll(".attr-chip:not(.dragging)")
+    ];
+    return chips.reduce((closest, chip) => {
+        const box = chip.getBoundingClientRect();
+        const offset = mouseY - box.top - box.height / 2;
+        if (offset < 0 && offset > closest.offset) {
+            return {
+                offset: offset,
+                element: chip
+            };
+        } else {
+            return closest;
+        }
+    }, {
+        offset: Number.NEGATIVE_INFINITY
+    }).element;
 }
 function wpdCollectAttributeSequence(container) {
-  const chips = container.querySelectorAll(".attr-chip");
-  const sequence = [];
-  chips.forEach((chip, index) => {
-    sequence.push({
-      seq_id: chip.dataset.seq,
-      new_position: index + 1
+    const chips = container.querySelectorAll(".attr-chip");
+    const sequence = [];
+    chips.forEach((chip, index) => {
+        sequence.push({
+            seq_id: chip.dataset.seq,
+            new_position: index + 1
+        });
     });
-  });
-  return sequence;
+    return sequence;
 }
 // Initialize
 wpdInitializeAttributeReorder();
+
 async function open_view_analysis() {
     logDebug("function : open_view_analysis", "S");
     try {
@@ -15220,3 +14947,120 @@ async function open_view_analysis() {
         logDebug("function : open_view_analysis", "E");
     }
 }
+
+
+
+function add_pog_versions() {
+    logDebug("function : add_pog_versions", "S");
+    try {
+        const select = document.getElementById("top_ver");
+        if (!select) return;
+        select.innerHTML = "";
+        const defaultOption = document.createElement("option");
+        defaultOption.value = "";
+        defaultOption.textContent = "Select";
+        select.appendChild(defaultOption);
+        const versions = $v("P193_AF_VERSIONS");
+        const defaultVersion = $v("P193_AF_VERSION");
+        if (versions && versions.trim() !== "") {
+            const versionArray = versions.split(":");
+            versionArray.forEach(function (ver) {
+                const trimmedVer = ver.trim();
+                const option = document.createElement("option");
+                option.value = trimmedVer;
+                option.textContent = trimmedVer;
+                if (trimmedVer === defaultVersion) {
+                    option.selected = true;
+                }
+                select.appendChild(option);
+            });
+        }
+        logDebug("function : add_pog_versions", "E");
+
+    } catch (err) {
+        logDebug("function : add_pog_versions", "E");
+        error_handling(err);
+    }
+}
+
+
+function apply_attribute_selection() {
+    logDebug("function : apply_attribute_selection", "S");
+    try {
+        const select = document.getElementById("attr_select");
+        if (!select) return;
+        select.innerHTML = "";
+        const defaultOption = document.createElement("option");
+        defaultOption.value = "Default";
+        defaultOption.textContent = "Default";
+        select.appendChild(defaultOption);
+        const chips = document.querySelectorAll(".attr-chip");
+        chips.forEach(chip => {
+            const nameEl = chip.querySelector(".attr-name");
+            const valueEl = chip.querySelector(".attr-value");
+            if (nameEl && valueEl) {
+                const option = document.createElement("option");
+                option.textContent = nameEl.textContent.trim();
+                option.value = valueEl.textContent.trim();
+                select.appendChild(option);
+            }
+        });
+        logDebug("function : apply_attribute_selection", "E");
+
+    } catch (err) {
+        logDebug("function : apply_attribute_selection", "E");
+        error_handling(err);
+    }
+}
+
+async function handle_attribute_change(selectElement) {
+    logDebug("function : handle_attribute_change", "S");
+    try {
+        var selectedValue = selectElement.value;
+        var selectedText = selectElement.options[selectElement.selectedIndex].text;
+        for (const obj of g_mod_block_list) {
+            for (const child of obj.BlockDim.ColorObj.children) {
+                if (child.uuid == obj.BlkName) {
+                    obj.BlockDim.ColorObj.remove(child);
+                    break;
+                }
+            }
+        }
+        render(g_pog_index);
+        g_mod_block_list = [];
+        await createDynamicBlocks($v('P193_OPEN_POG_CODE'), $v('P193_OPEN_DRAFT'), $v('P193_OPEN_POG_VERSION'), "Y", (selectedValue === 'Default') ? '' : selectedValue);
+        logDebug("function : handle_attribute_change", "E");
+
+    } catch (err) {
+        logDebug("function : handle_attribute_change", "E");
+        error_handling(err);
+    }
+}
+
+async function handle_version_change(selectElement) {
+    logDebug("function : handle_version_change", "S");
+    try {
+        var selectedValue = selectElement.value;
+        var selectedText = selectElement.options[selectElement.selectedIndex].text;
+       for (const obj of g_mod_block_list) {
+            for (const child of obj.BlockDim.ColorObj.children) {
+                if (child.uuid == obj.BlkName) {
+                    obj.BlockDim.ColorObj.remove(child);
+                    break;
+                }
+            }
+        }
+        render(g_pog_index);
+        g_mod_block_list = [];
+        g_autofill_detail = [];
+        g_auto_fill_active = "N";
+        await auto_fill_setup(0,selectedValue);
+        logDebug("function : handle_version_change", "E");
+
+    } catch (err) {
+        logDebug("function : handle_version_change", "E");
+        error_handling(err);
+    }
+}
+
+
