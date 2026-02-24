@@ -1407,6 +1407,7 @@ async function update_item_xy_distance(p_updateObj, p_pog_index, p_newx, p_newy)
     }
 }
 
+
 function doMouseDown(p_x, p_y, p_startX, p_startY, p_event, p_canvas, p_context_call, p_pog_index) {
     logDebug("function : doMouseDown; x : " + p_x + "; y : " + p_y + "; startX : " + p_startX + "; startY : " + p_startY + "; context_call : " + p_context_call, "S");
     /*This is a mouse down listner function
@@ -1506,8 +1507,10 @@ function doMouseDown(p_x, p_y, p_startX, p_startY, p_event, p_canvas, p_context_
             //and send all the childrens in the world. which will give you back list of object hit on that position in an array.
             //index 0 object will be the nearest to the mouse and others are behind them.
             new_camera.updateProjectionMatrix();
-            g_raycaster.setFromCamera(new THREE.Vector2(a, b), new_camera);
+            g_raycaster.setFromCamera(new THREE.Vector2(a, b), new_camera);            
             g_intersects = g_raycaster.intersectObjects(new_world.children); // no need for recusion since all objects are top-level
+            console.log(g_intersects);
+
 
             $s("P25_SELECTED_CANVAS", `${g_curr_canvas}`);
 
@@ -7322,14 +7325,14 @@ function get_nearest_item(p_module_index, p_shelf_index, p_final_x, p_item_index
                 upd_item_index = 0;
             }
         } 
-       else {  // ASA-2066 Issue 2 start
-            if (p_edit_ind == "N" && spread_product !== "R" && upd_item_index > -1) { 
+    else {
+            if (p_edit_ind == "N" && spread_product !== "R" && upd_item_index > -1) { // ASA-2066 Issue 2 start
                 if (p_final_x >= items_arr[upd_item_index].X) {
                  upd_item_index = upd_item_index + 1;
             }
             
-            } 
-        }// ASA-2066 Issue 2 
+            } // ASA-2066 Issue 2 
+        }
         logDebug("function : get_nearest_item", "E");
         return [upd_item_index, bottom_item_ind, bottom_item_flag];
     } catch (err) {

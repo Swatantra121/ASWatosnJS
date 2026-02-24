@@ -2418,8 +2418,8 @@ function open_save_draft() {
         console.log("templete opened");
 
         if (g_all_pog_flag == "Y") {
-            $s("P25_DRAFT_SAVE_TYPE", "M");
-          //  $s("P25_SAVE_OPTION", "SAVE");  asa2050
+           // $s("P25_DRAFT_SAVE_TYPE", "M");  asa2045
+           $s("P25_SAVE_OPTION", "SAVE");  
             $s("P25_POG_DESCRIPTION", "");
             $s("P25_POG_DESCRIPTION", g_pog_json[g_pog_index].Desc7 !== "" ? g_pog_json[g_pog_index].Desc7 : g_pog_json[g_pog_index].POGCode); //ASA-1765 #issue 5
             $("#P25_POG_DESCRIPTION_CONTAINER").hide();

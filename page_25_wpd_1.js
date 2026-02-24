@@ -2362,14 +2362,7 @@ async function create_module_from_json(p_pog_json_arr, p_new_pog_ind, p_pog_type
             ""); //Regression 29(Portal Issue) added p_calc_dayofsupply
 
         g_pog_json[p_pog_index].MassUpdate = "N"; //ASA-1809, Set this to N, as for saving POG draft or existing the coordinates in JSON has been update with respect to WPD
-         debugger;
-        // ✅ Store default camera Z AFTER module creation
-        if (typeof g_default_camera_z === "undefined" || g_default_camera_z === 0) {
-            if (g_camera && g_camera.position && g_camera.position.z !== 0) {
-                g_default_camera_z = g_camera.position.z;
-                console.log("Stored default camera Z (WPD):", g_default_camera_z);
-            }
-        }
+        
 
 
         //This after refresh event is needed because Division/Dept/Subdept are cascading LOV and setting value is always removed by refresh

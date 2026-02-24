@@ -64,7 +64,6 @@ async function create_module_from_json(p_pog_json_arr, p_new_pog_ind, p_pog_type
 
 async function add_status_bar(p_statusLblList, p_objInfoRegionID, p_hightlightProduct, p_showSOH, p_pog_index, p_CusPogCode, p_statusbarFontSize) {
     try {
-        debugger;
         logDebug("function : add_status_bar; ", "S");
         var desc_list_arr = p_statusLblList.split(",");
         var append_detail = '';
@@ -1575,11 +1574,3 @@ async function recreate_pegboard_items(p_module_index, p_shelf_index, p_shelf_ob
     }
 }
 
-// WPD 3 
-function add_pog_code_header() {
-	$("#canvas-holder #block_title").remove();
-	for (var i = 0; i < g_scene_objects.length; i++) {
-		var canvas_id = g_canvas_objects[i].getAttribute("id");
-		$("#" + canvas_id + "-btns").append('<span id="block_title" style="float:left">' + g_pog_json[i].POGCode + "</span>");
-	}
-}

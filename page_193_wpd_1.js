@@ -12,7 +12,7 @@ g_delete_details = [];
 g_ComViewIndex = -1;
 g_show_changes_block_snapshot = [];  //ASA-1986 
 g_show_live_image = "N";
- //ASA-1986 start
+//ASA-1986 start
 function wpdBuildShowChangesBlockSnapshot(p_block_list) {
     var snapshot = [];
     if (!Array.isArray(p_block_list)) {
@@ -39,7 +39,7 @@ function wpdBuildShowChangesBlockSnapshot(p_block_list) {
     }
     return snapshot;
 }
- //ASA-1986  end
+//ASA-1986  end
 function wpdCaptureShowChangesBlockSnapshot(p_block_list, p_force = "N") {
     if (p_force == "Y" || !Array.isArray(g_show_changes_block_snapshot) || g_show_changes_block_snapshot.length === 0) {
         g_show_changes_block_snapshot = wpdBuildShowChangesBlockSnapshot(p_block_list);
@@ -793,6 +793,7 @@ function initiate_values_onload() {
                 return;
             }
             // g_open_from = 'O';
+
             g_show_live_image = 'N';
             g_show_live_image_1 = 'N';
             g_compare_pog_flag = 'Y';
@@ -1612,6 +1613,7 @@ async function onWindowResize(p_event) {
 }
 
 async function create_module_from_json(p_pog_json_arr, p_new_pog_ind, p_pog_type, p_product_open, p_pog_opened, p_stop_loading, p_create_pdf_ind, p_recreate, p_create_json, p_pog_version, p_save_pdf, p_camera, p_scene, p_pog_index, p_orgPogIndex, p_ImageLoadInd = "N", p_UpdateIndex = "N", p_old_POGJSON = []) {
+    debugger;
     try {
         typeof p_save_pdf == "undefined" ? "Y" : p_save_pdf;
         load_orientation_json();
@@ -8225,12 +8227,13 @@ async function open_draft_pog(p_imageLoadInd = "N", p_draft_pog_list, p_open_att
         g_auto_fill_active = "N";
         await auto_fill_setup(0);
         if (!g_mod_block_list || g_mod_block_list.length === 0) { //Garit
-            await createDynamicBlocks($v('P193_OPEN_POG_CODE'), $v('P193_OPEN_DRAFT'), $v('P193_OPEN_POG_VERSION'));
+            await createDynamicBlocks($v('P193_OPEN_POG_CODE'), $v('P193_EXISTING_DRAFT_VER'), $v('P193_OPEN_POG_VERSION'));
         } else {
             apex.region("mod_block_details").refresh();
+            $("#added_attribute").show();
             apex.region("added_attribute").refresh();
         }
-            wpdCaptureShowChangesBlockSnapshot(g_mod_block_list, "Y");  //ASA-1986 
+        wpdCaptureShowChangesBlockSnapshot(g_mod_block_list, "Y");  //ASA-1986 
     }
 }
 
@@ -8589,6 +8592,7 @@ async function open_existing_pog(p_pog_list_arr, p_openAttr, p_imageLoadInd = "N
         g_colorBackup = "N";
         g_mod_block_list = [];
         g_show_changes_block_snapshot = [];  //ASA-1986 
+        $s("P193_EXISTING_DRAFT_VER", "");
         // switchCanvasView($v("P193_POGCR_TILE_VIEW"));
         appendMultiCanvasRowCol(1, $v("P193_POGCR_TILE_VIEW"));
         try { console.log('open_existing_pog: after appendMultiCanvasRowCol, g_canvas_objects.length=', g_canvas_objects.length, 'DOM canvas count=', document.querySelectorAll('canvas').length); } catch (e) { }
@@ -8689,11 +8693,18 @@ async function open_existing_pog(p_pog_list_arr, p_openAttr, p_imageLoadInd = "N
                     g_auto_fill_active = "N";
                     $s("P193_OPEN_DRAFT", 'N'); //Garit
                     await auto_fill_setup(0);
-                    if (!g_mod_block_list || g_mod_block_list.length === 0) { //Garit
-                        await createDynamicBlocks($v('P193_OPEN_POG_CODE'), $v('P193_OPEN_DRAFT'), $v('P193_OPEN_POG_VERSION'));
+                    if (!g_mod_block_list || g_mod_block_list.length === 0) {
+
+                        await createDynamicBlocks(
+                            $v('P193_OPEN_POG_CODE'),
+                            $v('P193_OPEN_DRAFT'),
+                            $v('P193_OPEN_POG_VERSION')
+                        );
+
                     } else {
                         apex.region("mod_block_details").refresh();
                     }
+                    await runattrCollections();
                     wpdCaptureShowChangesBlockSnapshot(g_mod_block_list, "Y"); // ASA-1986
                     add_pog_versions();
                     render(0);
@@ -8911,10 +8922,9 @@ async function auto_fill_setup(p_pog_index, p_af_version = '') {
                     "GET_AUTOFILL",
                     {
                         x01: $v("P193_OPEN_POG_CODE"),
-                        x02: $v("P193_OPEN_POG_CODE"),
-                        x03: $v("P193_OPEN_DRAFT") == "Y" ? $v("P193_DRAFT_LIST") : $v("P193_OPEN_POG_VERSION"),
-                        x04: $v("P193_OPEN_DRAFT"),
-                        x05: p_af_version,
+                        x02: $v("P193_OPEN_DRAFT") == "Y" ? $v("P193_EXISTING_DRAFT_VER") : $v("P193_OPEN_POG_VERSION"),
+                        x03: $v("P193_OPEN_DRAFT"),
+                        x04: p_af_version,
                     },
                     {
                         dataType: "json",
@@ -8973,11 +8983,11 @@ async function auto_fill_setup(p_pog_index, p_af_version = '') {
                                         g_undo_final_obj_arr = [];
                                         g_redo_final_obj_arr = [];
                                         g_prev_undo_action = "";
-                                        
-                                        if (p_af_version == ''){
-                                           await clear_item("N", "N", p_pog_index);
+
+                                        if (p_af_version == '') {
+                                            await clear_item("N", "N", p_pog_index);
                                         }
-                                        
+
                                         g_undo_final_obj_arr = [];
                                         g_redo_final_obj_arr = [];
                                         g_auto_fill_reg_open = "Y";
@@ -9025,7 +9035,7 @@ async function auto_fill_setup(p_pog_index, p_af_version = '') {
                                                     g_autofill_detail["BlkInfo"] = g_mod_block_list;
                                                     await save_blk_dtl_coll("Y", "", g_mod_block_list);
                                                     g_mod_block_list = g_autofill_detail["BlkInfo"];
-                                                     wpdCaptureShowChangesBlockSnapshot(g_mod_block_list, p_af_version !== '' ? "Y" : "N");  //ASA-1986 
+                                                    wpdCaptureShowChangesBlockSnapshot(g_mod_block_list, p_af_version !== '' ? "Y" : "N");  //ASA-1986 
                                                 }
 
                                                 await doSomething();
@@ -14006,6 +14016,7 @@ async function createDynamicBlocks(
                 x01: p_pog_code,
                 x02: p_pog_version,
                 x03: p_attr_val,
+                x04: p_draft_pog,
                 //p_clob_01: JSON.stringify(g_pog_json[g_pog_index])
             },
             {
@@ -14082,8 +14093,9 @@ async function createDynamicBlocks(
                             }
                             var retval = await save_blk_dtl_coll('A', 'Blks', block_details_arr);
                             apex.region("mod_block_details").refresh();
+                            $("#added_attribute").show();
                             apex.region("added_attribute").refresh();
-                             wpdCaptureShowChangesBlockSnapshot(g_mod_block_list); // ASA-1986
+                            wpdCaptureShowChangesBlockSnapshot(g_mod_block_list); // ASA-1986
                         }
                         console.log("All blocks created");
 
@@ -14205,12 +14217,10 @@ async function save_af_version() {
                 x02: $v('P193_AF_VERSION'), //g_autofill_detail["AFVersion"],
                 x03: g_autofill_detail["AutofillRule"],
                 x04: g_autofill_detail["BlkSelType"],
-                x05:
-                    g_autofill_detail["AFPOGVersion"] == "" ||
+                x05: g_autofill_detail["AFPOGVersion"] == "" ||
                         typeof g_autofill_detail["AFPOGVersion"] == "undefined"
                         ? g_autofill_detail["AFVersion"]
                         : g_autofill_detail["AFPOGVersion"],
-
                 p_clob_01: JSON.stringify(
                     filterAutoFillJsontag(g_autofill_detail)
                 ),
@@ -14405,8 +14415,9 @@ async function handle_attribute_change(selectElement) {
         }
         render(g_pog_index);
         g_mod_block_list = [];
-        await createDynamicBlocks($v('P193_OPEN_POG_CODE'), $v('P193_OPEN_DRAFT'), $v('P193_OPEN_POG_VERSION'), "Y", (selectedValue === 'Default') ? '' : selectedValue);
+        await createDynamicBlocks($v('P193_OPEN_POG_CODE'), $v('P193_EXISTING_DRAFT_VER'), $v('P193_OPEN_POG_VERSION'), "Y", (selectedValue === 'Default') ? '' : selectedValue);
         apex.region("mod_block_details").refresh();
+        await runattrCollections();
         logDebug("function : handle_attribute_change", "E");
 
     } catch (err) {
@@ -14420,7 +14431,7 @@ async function handle_version_change(selectElement) {
     try {
         var selectedValue = selectElement.value;
         var selectedText = selectElement.options[selectElement.selectedIndex].text;
-       for (const obj of g_mod_block_list) {
+        for (const obj of g_mod_block_list) {
             for (const child of obj.BlockDim.ColorObj.children) {
                 if (child.uuid == obj.BlkName) {
                     obj.BlockDim.ColorObj.remove(child);
@@ -14434,6 +14445,7 @@ async function handle_version_change(selectElement) {
         g_auto_fill_active = "N";
         await auto_fill_setup(0, selectedValue);
         apex.region("mod_block_details").refresh();
+        await runattrCollections();
         wpdCaptureShowChangesBlockSnapshot(g_mod_block_list, "Y"); //ASA-1986 
         logDebug("function : handle_version_change", "E");
 
@@ -14479,7 +14491,7 @@ function onContextMenu(p_event) {
                 objects.ShelfInfo = "";
             }
             valid = "Y";
-        }        
+        }
         //Below block will set the position of the context menu and the submenus for example Edit Facings. according to the mouse right click location.
         if (valid == "Y") {
             var header = document.getElementById("t_Header");
@@ -14514,7 +14526,7 @@ function onContextMenu(p_event) {
                 contextElement.style.left = p_event.clientX - $(".t-Region-body").scrollLeft() - contextElement.offsetWidth + "px"; // + (side_nav_width + btn_cont_width + padding)) + border - contextElement.offsetWidth + "px";
             } else if (inner_width_noedit > window_width) {
                 contextElement.style.left = p_event.clientX - $(".t-Region-body").scrollLeft() - contextElement.offsetWidth + "px"; // + (side_nav_width + btn_cont_width + padding)) + border - contextElement.offsetWidth + "px";              
-            } 
+            }
             else {
                 contextElement.style.left = p_event.clientX - $(".t-Region-body").scrollLeft() + "px"; // + (side_nav_width + btn_cont_width + padding)) + border + "px";               
             }
@@ -14527,25 +14539,759 @@ function onContextMenu(p_event) {
 }
 
 async function context_func(p_action) {
-	logDebug("function : context_func; action : " + p_action, "S");
-	if (typeof g_pog_json !== "undefined" && g_pog_json.length > 0) {
-		if (p_action != "copy_pogc_image" && p_action != "zoom_selected_pogc" && g_module_edit_flag == "N" && g_shelf_edit_flag == "N" && g_item_edit_flag == "N" && p_action !== "edit" && g_multiselect !== "Y" && p_action !== "muledit") {
-			alert(get_message("NO_OBJECT_ERROR"));
-		} else {
-			if (p_action == "add") {
-				context_add();
-			} else if (p_action == "delete") {
-				delete_blk_details('BLK_PREGNANCY TEST KIT_1_AFP');
-			} else if (p_action == "edit") {
-				open_blk_details('BLK_PREGNANCY TEST KIT_1_AFP', 'Y');
-			}
-		}
-	}
-	g_taskItemInContext = "";
-	g_context_opened = "N";
-	logDebug("function : context_func", "E");
+    logDebug("function : context_func; action : " + p_action, "S");
+    if (typeof g_pog_json !== "undefined" && g_pog_json.length > 0) {
+        if (p_action != "copy_pogc_image" && p_action != "zoom_selected_pogc" && g_module_edit_flag == "N" && g_shelf_edit_flag == "N" && g_item_edit_flag == "N" && p_action !== "edit" && g_multiselect !== "Y" && p_action !== "muledit") {
+            alert(get_message("NO_OBJECT_ERROR"));
+        } else {
+            if (p_action == "add") {
+                context_add();
+            } else if (p_action == "delete") {
+                delete_blk_details('BLK_PREGNANCY TEST KIT_1_AFP');
+            } else if (p_action == "edit") {
+                open_blk_details('BLK_PREGNANCY TEST KIT_1_AFP', 'Y');
+            }
+        }
+    }
+    g_taskItemInContext = "";
+    g_context_opened = "N";
+    logDebug("function : context_func", "E");
+}
+
+function createAttributeCollection() {
+    return apex.server.process(
+        "CREATE_ATTRIBUTE_COLL",
+        {
+            x01: $v("P193_OPEN_POG_CODE"),
+            x02: $v("P193_AF_VERSION")
+        },
+        {
+            dataType: "text"
+        }
+    );
+}
+
+async function runattrCollections() {
+    try {
+        let pData = await createAttributeCollection();
+
+        $("#added_attribute").show();
+        apex.region("added_attribute").refresh();
+
+        let return_data = $.trim(pData).split(",");
+
+        if (return_data[0] === "ERROR") {
+            raise_error(pData);
+            return;
+        }
+    } catch (err) {
+        console.error(err);
+        raise_error("Server Error");
+    }
 }
 
 
 
+function doMouseDown(p_x, p_y, p_startX, p_startY, p_event, p_canvas, p_context_call, p_pog_index) {
+    logDebug("function : doMouseDown; x : " + p_x + "; y : " + p_y + "; startX : " + p_startX + "; startY : " + p_startY + "; context_call : " + p_context_call, "S");
+    /*This is a mouse down listner function
+    this function handles
+    1. find the object that has been clicked and find out which is this object
+    it can be module, shelf, item or empty place outside POG. Get the indexes
+    of the object clicked and setting all global variable for future use.
+    2. setting blinking of the clicked object.
+    3. if user trying to do multi select prepare the multi select element
+    4. if user is trying to drag objects after multi select setting distance from cursor.
 
+     */
+    try {
+        if (g_scene_objects.length > 0) {
+            // ASA-1085, x12
+            var header = document.getElementById("t_Header");
+            var breadcrumb = document.getElementById("t_Body_title");
+            var top_bar = document.getElementById("top_bar");
+            var side_nav = document.getElementById("t_Body_nav");
+            var button_cont = document.getElementById("side_bar");
+            var devicePixelRatio = window.devicePixelRatio;
+            var scroll_top = $(document).scrollTop();
+            var scroll_left = $(".t-Region-body").scrollLeft();
+
+            var header_height = header.offsetHeight; // * devicePixelRatio;
+            var breadcrumb_height = breadcrumb.offsetHeight; // * devicePixelRatio;
+            var top_bar_height = top_bar.offsetHeight; //* devicePixelRatio;
+            var side_nav_width = side_nav.offsetWidth; //* devicePixelRatio;
+            var btn_cont_width = button_cont.offsetWidth; //* devicePixelRatio;
+            var padding = parseFloat($(".t-Body-contentInner").css("padding-left").replace("px", "")) * devicePixelRatio;
+
+            g_global_counter = g_global_counter + 1;
+            g_start_coorX = p_startX;
+            g_start_coorY = p_startY;
+            g_taskItemInContext = true;
+            g_taskItemInContext1 = true;
+
+            //if the g_multiselect box is on hide it
+            if (p_context_call == "N") {
+                g_selection.style.visibility = "hidden";
+            }
+
+            var new_camera = {};
+            var new_world = {};
+            if (typeof g_scene_objects[g_pog_index] !== "undefined" && g_scene_objects.length > 0) {
+                new_camera = g_scene_objects[g_pog_index].scene.children[0];
+                new_world = g_scene_objects[g_pog_index].scene.children[2];
+            }
+            var newArray = [];
+            for (var i = 0, len = g_undo_final_obj_arr.length; i < len; i++) {
+                if (g_undo_final_obj_arr[i][0].length > 0) {
+                    if (typeof g_undo_final_obj_arr[i][0][0] !== "undefined") {
+                        if (typeof g_undo_final_obj_arr[i][0][0].CurrCanvas == "undefined") {
+                            newArray.push(g_undo_final_obj_arr[i]);
+                        }
+                    }
+                }
+            }
+            g_undo_final_obj_arr = newArray;
+            var newArray = [];
+            for (var i = 0, len = g_redo_final_obj_arr.length; i < len; i++) {
+                if (typeof g_redo_final_obj_arr[i][0][0] !== "undefined") {
+                    if (typeof g_redo_final_obj_arr[i][0][0].CurrCanvas == "undefined") {
+                        newArray.push(g_redo_final_obj_arr[i]);
+                    }
+                }
+            }
+            g_redo_final_obj_arr = newArray;
+            g_curr_canvas = g_pog_index;
+            g_start_canvas = g_pog_index;
+            reset_indicators();
+            if (g_show_item_color == "Y") {
+                g_pog_json[p_pog_index].GroupingType = g_scene_objects[g_pog_index].Indicators.canvas_color_flag;
+                $s("P193_SELECT_COLOR_TYPE", g_scene_objects[g_pog_index].Indicators.canvas_color_flag);
+            }
+
+            var width = p_canvas.width;
+            var height = p_canvas.height;
+            var a = (2 * p_x) / width - 1;
+            var b = 1 - (2 * p_y) / height;
+            g_carpark_item_flag = "N";
+            g_carpark_edit_flag = "N";
+            g_module_edit_flag = "N";
+            g_shelf_edit_flag = "N";
+            g_item_edit_flag = "N";
+            g_module_index = -1;
+            g_shelf_index = -1;
+            g_module_cnt = -1;
+            g_item_index = -1;
+            g_module_width = -1;
+            comp_obj_id = -1;
+            g_module_X = "";
+            g_shelf_max_merch = "";
+            g_shelf_basket_spread = "";
+            render(g_pog_index);
+            //g_raycaster is used to find the objects that hit on the mouse click position. we need to set camera in that position
+            //and send all the childrens in the world. which will give you back list of object hit on that position in an array.
+            //index 0 object will be the nearest to the mouse and others are behind them.
+            new_camera.updateProjectionMatrix();
+            g_raycaster.setFromCamera(new THREE.Vector2(a, b), new_camera);
+            g_intersects = g_raycaster.intersectObjects(new_world.children); // no need for recusion since all objects are top-level
+
+            $s("P193_SELECTED_CANVAS", `${g_curr_canvas}`);
+
+            //if there is no objects behing cursor its the empty place outside POG. for that we use an invisible object to find the location.
+            if (g_intersects.length == 0) {
+                g_mselect_drag = "N"; //ASA-1692
+                g_multiselect = "N"; //ASA-1681
+                g_ctrl_select = "N"; //ASA-1681
+                g_delete_details = []; //ASA-1681
+                $("#draggable_table .product_list_blink").removeClass("product_list_blink"); //ASA-1681
+                //if any other item is blinking stop blink
+                if (g_intersected && g_intersected.length > 0) {
+                    for (var i = 0; i < g_intersected.length; i++) {
+                        if (typeof g_intersected[i] !== "undefined") {
+                            if (typeof g_intersected[i].BorderColour !== "undefined") {
+                                g_select_color = g_intersected[i].BorderColour;
+                            }
+                            g_intersected[i].WireframeObj.material.color.setHex(g_intersected[i].BorderColour);
+                            if (g_intersected[i].ImageExists == "Y" && g_show_live_image == "Y") {
+                                g_intersected[i].WireframeObj.material.transparent = true;
+                                g_intersected[i].WireframeObj.material.opacity = 0.0025;
+                            }
+                        }
+                    }
+                    clearInterval(g_myVar);
+                    g_select_color = 0x000000;
+                    render(g_pog_index);
+                }
+                //add invisible object into g_scene_objects[p_pog_index].scene.children[2]. to find location. after getting location remove it.
+                new_world.add(g_targetForDragging);
+                g_targetForDragging.position.set(0, 0, 0);
+                render(g_pog_index);
+
+                g_intersects = g_raycaster.intersectObjects(new_world.children);
+                //now get the x y position.
+                if (g_intersects.length > 0) {
+                    var locationX = g_intersects[0].point.x;
+                    var locationY = g_intersects[0].point.y;
+                    g_drag_z = g_intersects[0].point.z;
+                    g_drag_z = g_drag_z + 0.001;
+
+                    var coords = new THREE.Vector3(locationX, locationY, locationZ);
+                    new_world.worldToLocal(coords);
+                    var a = Math.min(19, Math.max(-19, coords.x)); // clamp coords to the range -19 to 19, so object stays on ground
+                    var p_y = Math.min(19, Math.max(-19, coords.y));
+                    if (p_context_call == "N") {
+                        g_DragMouseStart.x = a;
+                        g_DragMouseStart.y = p_y;
+                        g_DragMouseEnd.x = a;
+                        g_DragMouseEnd.y = p_y;
+                    }
+                    //this vector is used to create a multi select drag box. which will be used when mouse up to find out how many
+                    //objects did user select and place all of them in g_delete_details array.
+                    g_startMouse.x = p_event.clientX + scroll_left - (btn_cont_width + padding);
+                    g_startMouse.y = p_event.clientY + scroll_top - (breadcrumb_height + padding + header_height + top_bar_height);
+                    g_prevMouse.x = a;
+                    g_prevMouse.y = p_y;
+                    g_nextMouse = g_prevMouse.clone();
+                    new_world.remove(g_targetForDragging);
+                    g_intersected = [];
+                    g_select_zoom_arr = [];
+                    //if ctrl is holded that means duplicate of fixel is in progress.
+                    if (g_context_opened == "N" && !p_event.shiftKey) {
+                        var x2 = g_startMouse.x;
+                        var y2 = g_startMouse.y;
+                        g_selecting = true;
+                        g_selection.style.left = g_startMouse.x + "px";
+                        g_selection.style.top = g_startMouse.y + "px";
+                        g_selection.style.width = x2 - g_startMouse.x + "px";
+                        g_selection.style.height = y2 - g_startMouse.y + "px";
+                        g_selection.style.visibility = "visible";
+                        return true;
+                    } else if (p_event.shiftKey && g_manual_zoom_ind == "Y") {
+                        return true;
+                    } else {
+                        if (g_context_opened == "Y" && !p_event.shiftKey) {
+                            //Task_71070
+                            g_mselect_drag = "N";
+                            g_context_opened = "N";
+                        }
+                        return false;
+                    }
+                } else {
+                    g_intersected = [];
+                    g_select_zoom_arr = [];
+                    return false;
+                }
+            } else {
+                //if cursor is inside the POG.
+                if (g_intersects.length > 0) {
+                    /*if the object behind cursor is not recognised or by mistake the invisible item to find location
+                    is still inside the g_scene_objects[p_pog_index].scene.children[2]. then take details from intersect[1]*/
+                    if (g_intersects[0].object.uuid == "drag_object") {
+                        var item = g_intersects[1];
+                        g_objectHit = item.object;
+                        var locationX = g_intersects[1].point.x;
+                        g_mousedown_locx = g_intersects[1].point.x;
+                        var locationY = g_intersects[1].point.y;
+                        var locationZ = g_intersects[1].point.z;
+                        g_drag_z = g_intersects[1].point.z;
+                    } else {
+                        var item = g_intersects[0];
+                        g_objectHit = item.object;
+                        var locationX = g_intersects[0].point.x;
+                        g_mousedown_locx = g_intersects[0].point.x;
+                        var locationY = g_intersects[0].point.y;
+                        var locationZ = g_intersects[0].point.z;
+                        g_drag_z = g_objectHit.position.z;
+                    }
+
+                    var coords = new THREE.Vector3(locationX, locationY, locationZ);
+                    new_world.worldToLocal(coords);
+                    var a = Math.min(19, Math.max(-19, coords.x)); // clamp coords to the range -19 to 19, so object stays on ground
+                    var z = g_drag_z;
+                    g_drag_z = g_drag_z + 0.001;
+                    g_itemDragZ = g_objectHit.position.z;
+                    g_itemDragX = g_objectHit.position.x;
+                    var p_y = Math.min(19, Math.max(-19, coords.y));
+
+                    g_objectHit_uuid = g_objectHit.uuid; //to check whether the dragged item is shelf or item to restrict its movement.
+                    g_objectHit_id = g_objectHit.id;
+
+                    /*if g_multiselect is done already and then user clicks of any object
+                    inside g_multiselect, calculate distance from cursor.
+                    for setting all objects position while dragging.
+                     */
+                    i = 0;
+                    var valid = "N";
+                    if (g_multiselect == "Y" || g_ctrl_select == "Y") {
+                        for (const objects of g_delete_details) {
+                            if (objects.ObjID == g_objectHit_id) {
+                                valid = "Y";
+                            }
+                        }
+                        if (valid == "Y") {
+                            update_item_xy_distance("Y", p_pog_index, a, p_y);
+                            g_mselect_drag = "Y";
+                        }
+                    } else {
+                        g_mselect_drag = "N";
+                    }
+                    //find the cursor hit object is what and its details
+                    get_object_identity(g_pog_index, g_multiselect, g_multi_copy_done, a, p_y);
+
+                    //turn of multi g_selection indicator
+                    if (p_context_call == "N" && g_ctrl_select == "N") {
+                        g_multiselect = "N";
+                    }
+
+                    //if there is a shelf then update the distance of each item inside the shelf.
+                    if (g_module_index !== -1 && g_shelf_index !== -1) {
+                        update_item_distance(g_module_index, g_shelf_index, g_pog_index);
+                    }
+                    //edit pallet will have facility to move the items inside the pallet. but only on the edit pallet view. so main view pallet items
+                    //will also move according to it.
+                    if (g_ComViewIndex == g_pog_index && g_compare_view == "EDIT_PALLET") {
+                        //ASA-1085
+                        if (g_intersects.length > 0) {
+                            var select_obj = g_pog_json[g_ComViewIndex].ModuleInfo[g_module_index].ShelfInfo[g_shelf_index].ItemInfo[g_item_index];
+                            if (typeof select_obj !== "undefined") {
+                                if (select_obj.TopObjID == "" || typeof select_obj.TopObjID == "undefined") {
+                                    for (const obj of g_intersects) {
+                                        var k = 0;
+                                        for (const Modules of g_pog_json[g_ComViewIndex].ModuleInfo) {
+                                            var i = 0;
+                                            for (const Shelf of Modules.ShelfInfo) {
+                                                var j = 0;
+                                                for (const items of Shelf.ItemInfo) {
+                                                    if (items.ObjID == obj.object.id) {
+                                                        var selectedObject = g_scene_objects[g_ComViewIndex].scene.children[2].getObjectById(items.ObjID);
+                                                        if (g_shelf_object_type !== "PEGBOARD") {
+                                                            selectedObject.Distance = items.Distance;
+                                                        } else {
+                                                            selectedObject.PegBoardX = items.PegBoardX;
+                                                            selectedObject.PegBoardY = items.PegBoardY;
+                                                        }
+                                                        selectedObject.ItemInfo = items;
+                                                        selectedObject.IIndex = j;
+                                                        selectedObject.StartCanvas = g_start_canvas;
+                                                        selectedObject.MIndex = g_module_index;
+                                                        selectedObject.SIndex = g_shelf_index;
+                                                        selectedObject.old_position_x = selectedObject.position.x;
+                                                        selectedObject.old_position_y = selectedObject.position.y;
+                                                        selectedObject.old_position_z = selectedObject.position.z;
+                                                        g_drag_items_arr.push(selectedObject);
+                                                    }
+                                                    j++;
+                                                }
+                                                i++;
+                                            }
+                                            k++;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        if (g_drag_items_arr.length == 0) {
+                            return false;
+                        }
+                    }
+                    //set blinking of selected object
+                    if (g_intersects.length > 0 && p_context_call == "N" && g_mselect_drag !== "Y") {
+                        //ASA-1107
+                        if (p_event.altKey == false) {
+                            if (g_intersected) {
+                                if (g_intersected[0] != g_intersects[0].object) {
+                                    for (var i = 0; i < g_intersected.length; i++) {
+                                        if (typeof g_intersected[i] !== "undefined") {
+                                            if (typeof g_intersected[i].BorderColour !== "undefined") {
+                                                g_select_color = g_intersected[i].BorderColour;
+                                            }
+                                            g_intersected[i].WireframeObj.material.color.setHex(g_intersected[i].BorderColour);
+                                            if (g_intersected[i].ImageExists == "Y" && g_show_live_image == "Y") {
+                                                g_intersected[i].WireframeObj.material.transparent = true;
+                                                g_intersected[i].WireframeObj.material.opacity = 0.0025;
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                            g_intersected = [];
+                            g_select_zoom_arr = [];
+                            g_intersected.push(g_objectHit);
+                        } else if (p_event.altKey == true) {
+                            g_select_zoom_arr.push(g_objectHit);
+                            g_intersected.push(g_objectHit);
+                            if (g_item_edit_flag == "Y" || g_shelf_edit_flag == "Y") {
+                                //ASA-1272
+                                var items = g_pog_json[p_pog_index].ModuleInfo[g_module_index].ShelfInfo[g_shelf_index].ItemInfo[g_item_index];
+                                var shelfs = g_pog_json[p_pog_index].ModuleInfo[g_module_index].ShelfInfo[g_shelf_index];
+                                add_ctrl_select_items(g_shelf_edit_flag == "Y" ? "S" : "I", g_shelf_edit_flag == "Y" ? {} : items, shelfs, g_module_index, g_shelf_index, g_item_index, g_pog_json[p_pog_index].ModuleInfo[g_module_index].MObjID, g_objectHit_id, p_pog_index);
+                                g_ctrl_select = "Y";
+                                g_multiselect = "Y";
+                                g_multiItemCopy = "Y";
+                            }
+                        }
+                        render_animate_selected();
+                    } else {
+                        if (g_intersected) {
+                            for (var i = 0; i < g_intersected.length; i++) {
+                                if (typeof g_intersected[i] !== "undefined") {
+                                    g_select_color = g_intersected[i].BorderColour;
+                                    g_intersected[i].WireframeObj.material.color.setHex(g_intersected[i].BorderColour);
+                                    if (g_intersected[i].ImageExists == "Y" && (g_show_live_image == "Y" || g_show_live_image_comp == "Y")) {
+                                        g_intersected[i].WireframeObj.material.transparent = true;
+                                        g_intersected[i].WireframeObj.material.opacity = 0.0025;
+                                    }
+                                }
+                            }
+                            clearInterval(g_myVar);
+                            g_select_color = 0x000000;
+                            render(g_pog_index);
+                        }
+                    }
+                    //this block is restricted to compare view screens. set blinkin of similar item its PREVIOUS_VERSION or EDIT_PALLET
+                    if (g_pog_index == g_ComViewIndex) {
+                        if (g_compare_view !== "POG" && typeof comp_obj_id !== "undefined" && g_compare_view !== "PREV_VERSION" && g_compare_view !== "EDIT_PALLET") {
+                            var selectedObject = g_scene_objects[g_ComBaseIndex].scene.children[2].getObjectById(comp_obj_id);
+                            if (typeof selectedObject !== "undefined") {
+                                g_intersected.push(selectedObject);
+                            }
+                            clearInterval(g_myVar);
+                            g_select_color = 0x000000;
+                            render_animate_selected();
+                            // } else if (g_compare_view == "POG" || g_compare_view == "PREV_VERSION" || g_compare_view == "EDIT_PALLET") {    //ASA-1548 Issue 1
+                        } else if (g_compare_view == "POG" || (g_compare_view == "PREV_VERSION" && p_event.altKey == false) || g_compare_view == "EDIT_PALLET") {
+                            //ASA-1548 Issue 1
+                            //ASA-1085
+                            var item_list = get_similar_items(g_objectHit_uuid, "I", g_ComBaseIndex);
+                            g_intersected = []; //ASA-1548 Issue 1
+                            if (item_list.length > 0) {
+                                for (var i = 0; i < item_list.length; i++) {
+                                    g_intersected.push(item_list[i]);
+                                }
+                                clearInterval(g_myVar);
+                                g_select_color = 0x000000;
+                                //ASA-1548 Issue 1 - Start
+                                render_animate_selected();
+                                // var old_renderer = g_renderer,
+                                //     old_scene = g_scene,
+                                //     old_cam = g_camera;
+                                // for (obj of g_scene_objects) {
+                                //     g_renderer = obj.renderer;
+                                //     g_scene = obj.scene;
+                                //     g_camera = obj.scene.children[0];
+                                //     render_animate_selected();
+                                // }
+                                // g_renderer = old_renderer;
+                                // g_scene = old_scene;
+                                // g_camera = old_cam;
+                                //ASA-1548 Issue 1 - End
+                            }
+                        }
+                        // } else if ((g_module_edit_flag == "Y" || g_shelf_edit_flag == "Y" || g_item_edit_flag == "Y") && g_ComViewIndex > -1) { //ASA-1548 Issue 1
+                    } else if ((g_module_edit_flag == "Y" || g_shelf_edit_flag == "Y" || g_item_edit_flag == "Y") && g_ComViewIndex > -1 && p_event.altKey == false) {
+                        //ASA-1548 Issue 1
+                        if (g_compare_view !== "POG" && typeof comp_obj_id !== "undefined" && g_compare_pog_flag == "Y") {
+                            if (g_scene_objects[g_ComViewIndex].scene.children[2].children.length > 0) {
+                                var selectedObject = g_scene_objects[g_ComViewIndex].scene.children[2].getObjectById(comp_obj_id);
+                                g_intersected = []; //ASA-1548 Issue 1
+                                if (typeof selectedObject !== "undefined") {
+                                    g_intersected.push(selectedObject);
+                                }
+                                clearInterval(g_myVar);
+                                g_select_color = 0x000000;
+                                render_animate_selected();
+                            }
+                        } else {
+                            if (g_item_edit_flag == "Y") {
+                                var item_list = get_similar_items(g_objectHit_uuid, "I", g_ComViewIndex);
+                                g_intersected = []; //ASA-1548 Issue 1
+                                if (item_list.length > 0) {
+                                    for (var i = 0; i < item_list.length; i++) {
+                                        g_intersected.push(item_list[i]);
+                                    }
+                                    clearInterval(g_myVar);
+                                    g_select_color = 0x000000;
+                                    render_animate_selected();
+                                }
+                            }
+                        }
+                    }
+
+                    g_drag_x = g_module_X; //g_objectHit.position.x;
+                    //ASA-1422
+                    if (g_shift_mutli_item_select == "Y" && g_item_index !== -1) {
+                        var clickedItem;
+                        if (g_carpark_item_flag == "Y") {
+                            clickedItem = g_pog_json[p_pog_index].ModuleInfo[g_module_index].Carpark[0].ItemInfo[g_item_index];
+                        } else {
+                            clickedItem = g_pog_json[p_pog_index].ModuleInfo[g_module_index].ShelfInfo[g_shelf_index].ItemInfo[g_item_index];
+                        }
+                        clickedItem.isCarpark = g_carpark_item_flag;
+                        if ($.isEmptyObject(g_shift_multi_item_first)) {
+                            g_shift_multi_item_first = clickedItem;
+                        } else {
+                            g_shift_multi_item_last = clickedItem;
+                        }
+                    }
+                    if (g_shelf_index !== -1 && g_module_index !== -1) {
+                        var retval = update_item_distance(g_module_index, g_shelf_index, g_pog_index);
+                    }
+                    render(g_pog_index);
+                    if (nvl(g_pog_json) !== 0 && g_compare_view !== "PREV_VERSION" && (g_item_edit_flag == "Y" || g_shelf_edit_flag == "Y")) {
+                        backupPog("S", g_shelf_index, g_module_index, g_pog_index);
+                    }
+                    //if its carpark shelf its not allowed to move anywhere.
+                    //ASA-1085
+                    if (g_carpark_edit_flag == "Y" || (g_shelf_edit_flag == "Y" && g_pog_index == g_ComViewIndex && g_compare_view == "EDIT_PALLET")) {
+                        return false;
+                        //its hit object is module or base or notch dont allow to drag.
+                    } else if (g_pog_index == g_ComViewIndex && g_compare_view !== "EDIT_PALLET" && g_compare_view !== "PREV_VERSION") {
+                        //ASA-1170
+                        return false;
+                        //its hit object is module or base or notch dont allow to drag.
+                    } else if (g_module_edit_flag == "Y" || g_module_obj_array.indexOf(g_objectHit) !== -1 || g_objectHit_uuid.match(/BASE.*/) || g_objectHit_uuid.match(/NOTCH.*/)) {
+                        //if ctrl key is pressed and object hit is module then module to be duplicated.
+                        if (g_auto_fill_active == "N") {
+                            //ASA-1085 added autofill condition
+                            if (p_event.ctrlKey && g_module_edit_flag == "Y") {
+                                context_copy("S", p_pog_index);
+                                g_duplicating = "Y";
+                            } else if (p_event.ctrlKey && g_item_edit_flag == "Y") {
+                                context_copy("S", p_pog_index);
+                                g_duplicating = "Y";
+                                g_dupShelfDepth = g_pog_json[p_pog_index].ModuleInfo[g_module_index].ShelfInfo[g_shelf_index].D;
+                            }
+                        }
+                        else if (g_auto_fill_active == "Y" && g_mod_block_list.length > 0) {
+                        //     for (colorObj of g_mod_block_list) {
+                        //         if (colorObj.mod_index[0] == g_module_index) {
+                        //             var fnTop = colorObj.BlockDim.FinalTop;
+                        //             var fnBtm = colorObj.BlockDim.FinalBtm;
+                        //             if (fnTop > p_y && fnBtm < p_y) {
+                        //                 var objUuid = colorObj.BlkName;
+                        //                 var coloredModule = colorObj.BlockDim.ColorObj;
+                        //                 g_dragItem = coloredModule.getObjectByProperty("uuid", objUuid);
+                        //                 return true;
+                        //             }
+                        //         }
+                        //     }
+                        //ASA- 1965-Task-3
+                        var hitMatchesUuid = function (uid) {
+					    	    try {
+					    	        if (typeof g_raycaster === 'undefined') return false;
+					    	        // find the mesh for this block (if available)
+					    	        for (const cObj of g_mod_block_list) {
+					    	            if (cObj.BlkName === uid) {
+					    	                var coloredModule = cObj.BlockDim && cObj.BlockDim.ColorObj ? cObj.BlockDim.ColorObj : null;
+					    	                if (!coloredModule) return false;
+					    	                var mesh = coloredModule.getObjectByProperty("uuid", uid);
+					    	                if (!mesh) return false;
+					    	                var hits = g_raycaster.intersectObject(mesh, true);
+					    	                return hits && hits.length > 0;
+					    	            }
+					    	        }
+					    	    } catch (e) {
+					    	        return false;
+					    	    }
+					    	    return false;
+					    	};
+
+					    	for (colorObj of g_mod_block_list) {
+					    	    if (colorObj.mod_index[0] == g_module_index) {
+					    	        // Consider the raycast intersections and ancestor chain so we detect a block
+					    	        // even if the immediate hit was the module/group.
+					    	        if (hitMatchesUuid(colorObj.BlkName)) {
+					    	            var objUuid = colorObj.BlkName;
+					    	            var coloredModule = colorObj.BlockDim.ColorObj;
+					    	            g_dragItem = coloredModule.getObjectByProperty("uuid", objUuid);
+					    	            return true;
+					    	        }
+					    	    }
+					    	}  //1965- END
+                        }    //ASA-1697 commented else-if block
+
+                        /*setting the g_multiselect element if user wants to do g_multiselect.
+                        g_multiselect is only allow when mousedown happened on module or outside POG.
+                         */
+                        if (g_context_opened == "N") {
+                            g_startMouse.x = p_event.clientX + scroll_left - (btn_cont_width + padding);
+                            g_startMouse.y = p_event.clientY + scroll_top - (breadcrumb_height + padding + header_height + top_bar_height);
+                            g_prevMouse.x = a;
+                            g_prevMouse.y = p_y;
+                            g_nextMouse = g_prevMouse.clone();
+                            g_DragMouseStart.x = a;
+                            g_DragMouseStart.y = p_y;
+                            g_DragMouseEnd.x = a;
+                            g_DragMouseEnd.y = p_y;
+
+                            var x2 = g_startMouse.x + 1;
+                            var y2 = g_startMouse.y + 1;
+                            if (!p_event.shiftKey) {
+                                g_selecting = true;
+                                g_selection.style.left = g_startMouse.x + "px";
+                                g_selection.style.top = g_startMouse.y + "px";
+                                g_selection.style.width = x2 - g_startMouse.x + "px";
+                                g_selection.style.height = y2 - g_startMouse.y + "px";
+                                g_selection.style.visibility = "visible";
+                            }
+                            if (g_intersected) {
+                                for (var i = 0; i < g_intersected.length; i++) {
+                                    if (typeof g_intersected[i] !== "undefined") {
+                                        g_select_color = g_intersected[i].BorderColour;
+                                        g_intersected[i].WireframeObj.material.color.setHex(g_intersected[i].BorderColour);
+                                        if (g_intersected[i].ImageExists == "Y" && g_show_live_image == "Y") {
+                                            g_intersected[i].WireframeObj.material.transparent = true;
+                                            g_intersected[i].WireframeObj.material.opacity = 0.0025;
+                                        }
+                                    }
+                                }
+                                clearInterval(g_myVar);
+                                g_select_color = 0x000000;
+                                render(g_pog_index);
+                                g_intersected = [];
+                                g_select_zoom_arr = [];
+                            }
+                            g_select_zoom_arr.push(g_objectHit);
+                            g_intersected.push(g_objectHit);
+                            if (g_pog_index == g_ComViewIndex && g_module_edit_flag == "Y" && typeof comp_obj_id !== "undefined") {
+                                var selectedObject = g_scene_objects[g_ComViewIndex].scene.children[2].getObjectById(comp_obj_id);
+                                if (typeof selectedObject !== "undefined") {
+                                    g_intersected.push(selectedObject);
+                                }
+                            } else if (g_module_edit_flag == "Y" && g_compare_pog_flag == "Y" && typeof comp_obj_id !== "undefined") {
+                                if (g_scene_objects[g_ComViewIndex].scene.children[2].children.length > 0) {
+                                    var selectedObject = g_scene_objects[p_pog_index].scene.children[2].getObjectById(comp_obj_id);
+                                    if (typeof selectedObject !== "undefined") {
+                                        g_intersected.push(selectedObject);
+                                    }
+                                }
+                            } else if (g_objectHit_uuid.match(/BASE.*/) && g_compare_pog_flag == "Y" && typeof g_pog_json[p_pog_index].CompBaseObjID !== "undefined") {
+                                var selectedObject = g_scene_objects[g_ComViewIndex].scene.children[2].getObjectById(g_pog_json[p_pog_index].CompBaseObjID);
+                                if (typeof selectedObject !== "undefined") {
+                                    g_intersected.push(selectedObject);
+                                }
+                            }
+                            render_animate_selected();
+                            return true;
+                        } else {
+                            return false;
+                        }
+                    } else if (g_auto_fill_active == "N") {
+                        //This is the logic to create a multi select box to do multi select of objects inside the chest. as chest is very big
+                        //user expect to click on any place in chest and drag so items can be multi select.
+                        //Note: Chest drag will happen when user hold Character C and then click on chest and move.
+                        g_dragItem = g_objectHit;
+                        if (g_chest_move == "N" && g_shelf_object_type == "CHEST" && g_shelf_edit_flag == "Y" && g_chest_as_pegboard == "Y") {
+                            //ASA-1300
+                            g_startMouse.x = p_event.clientX + scroll_left - (btn_cont_width + padding);
+                            g_startMouse.y = p_event.clientY + scroll_top - (breadcrumb_height + padding + header_height + top_bar_height);
+                            g_prevMouse.x = a;
+                            g_prevMouse.y = p_y;
+                            g_nextMouse = g_prevMouse.clone();
+                            g_DragMouseStart.x = a;
+                            g_DragMouseStart.y = p_y;
+                            g_DragMouseEnd.x = a;
+                            g_DragMouseEnd.y = p_y;
+                            var x2 = g_startMouse.x + 1;
+                            var y2 = g_startMouse.y + 1;
+                            if (!p_event.shiftKey) {
+                                g_selecting = true;
+                                g_selection.style.left = g_startMouse.x + "px";
+                                g_selection.style.top = g_startMouse.y + "px";
+                                g_selection.style.width = x2 - g_startMouse.x + "px";
+                                g_selection.style.height = y2 - g_startMouse.y + "px";
+                                g_selection.style.visibility = "visible";
+                            }
+                        } else {
+                            if (g_shelf_edit_flag == "Y" && g_shelf_object_type !== "DIVIDER" && g_shelf_object_type !== "TEXTBOX") {
+                                g_dragItem.ShelfInfo = g_pog_json[p_pog_index].ModuleInfo[g_module_index].ShelfInfo[g_shelf_index];
+                                g_dragItem.StartCanvas = g_start_canvas;
+                                g_dragItem.MIndex = g_module_index;
+                                g_dragItem.SIndex = g_shelf_index;
+                                var j = 0;
+                                for (const items of g_pog_json[p_pog_index].ModuleInfo[g_module_index].ShelfInfo[g_shelf_index].ItemInfo) {
+                                    var selectedObject = new_world.getObjectById(items.ObjID);
+                                    if (typeof selectedObject !== "undefined") {
+                                        if (g_shelf_object_type !== "PEGBOARD") {
+                                            selectedObject.Distance = items.Distance;
+                                        } else {
+                                            selectedObject.PegBoardX = items.PegBoardX;
+                                            selectedObject.PegBoardY = items.PegBoardY;
+                                        }
+                                        selectedObject.ItemInfo = items;
+                                        selectedObject.IIndex = j;
+                                        selectedObject.StartCanvas = g_start_canvas;
+                                        selectedObject.MIndex = g_module_index;
+                                        selectedObject.SIndex = g_shelf_index;
+                                        g_drag_items_arr.push(selectedObject);
+                                    }
+                                    j++;
+                                }
+                            } else if (g_item_edit_flag == "Y") {
+                                g_dragItem.ItemInfo = g_pog_json[p_pog_index].ModuleInfo[g_module_index].ShelfInfo[g_shelf_index].ItemInfo[g_item_index];
+                                g_dragItem.MIndex = g_module_index;
+                                g_dragItem.SIndex = g_shelf_index;
+                                g_dragItem.IIndex = g_item_index;
+                                g_dragItem.StartCanvas = g_start_canvas;
+                            } else if (g_shelf_edit_flag == "Y") {
+                                g_dragItem.ShelfInfo = g_pog_json[p_pog_index].ModuleInfo[g_module_index].ShelfInfo[g_shelf_index];
+                                g_dragItem.StartCanvas = g_start_canvas;
+                                g_dragItem.MIndex = g_module_index;
+                                g_dragItem.SIndex = g_shelf_index;
+                            }
+                            if (p_event.ctrlKey && g_shelf_edit_flag == "Y") {
+                                context_copy("S", p_pog_index);
+                                g_duplicating = "Y";
+                                render_animate_selected(); //ASA-1107
+                            } else if (p_event.ctrlKey && g_item_edit_flag == "Y") {
+                                context_copy("S", p_pog_index);
+                                g_duplicating = "Y";
+                                g_dupShelfDepth = g_pog_json[p_pog_index].ModuleInfo[g_module_index].ShelfInfo[g_shelf_index].D;
+                                render_animate_selected(); //ASA-1107
+                            }
+                        }
+                        if (p_context_call == "N") {
+                            return true;
+                        }
+                    }
+                    // else if (g_auto_fill_active == "Y") {//after doing autofill setup. user can move the module block to place in another module.
+                    //     //ASA-1085 added autofill block to drag
+                    //     for (colorObj of g_mod_block_list) {
+                    //         if (colorObj.mod_index[0] == g_module_index) {
+                    //             var fnTop = colorObj.BlockDim.FinalTop;
+                    //             var fnBtm = colorObj.BlockDim.FinalBtm;
+                    //             if (fnTop > p_y && fnBtm < p_y) {
+                    //                 var objUuid = colorObj.BlkName;
+                    //                 var coloredModule = colorObj.BlockDim.ColorObj;
+                    //                 g_dragItem = coloredModule.getObjectByProperty("uuid", objUuid);
+                    //                 return true;
+                    //             }
+                    //         }
+                    //     }
+                    // }    //ASA-1697 commented else-if block
+                } else {
+                    //if no objects found remove blinking.
+                    if (g_intersected) {
+                        for (var i = 0; i < g_intersected.length; i++) {
+                            if (typeof g_intersected[i] !== "undefined") {
+                                g_select_color = g_intersected[i].BorderColour;
+                                g_intersected[i].WireframeObj.material.color.setHex(g_intersected[i].BorderColour);
+                                if (g_intersected[i].ImageExists == "Y" && g_show_live_image == "Y") {
+                                    g_intersected[i].WireframeObj.material.transparent = true;
+                                    g_intersected[i].WireframeObj.material.opacity = 0.0025;
+                                }
+                            }
+                        }
+                        clearInterval(g_myVar);
+                        g_select_color = 0x000000;
+                        render(g_pog_index);
+                        g_intersected = [];
+                        g_select_zoom_arr = [];
+                    }
+                }
+            }
+            logDebug("function : doMouseDown", "E");
+        }
+    } catch (err) {
+        error_handling(err);
+    }
+}

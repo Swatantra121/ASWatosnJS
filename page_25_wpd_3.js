@@ -9301,46 +9301,45 @@ async function save_draft(p_saveType, p_description, p_draftVersion) {
 							pog_info["Version"] = new_pogjson[0].Version;
 							pog_info["status"] = "Y";
 							if (g_all_pog_flag == "Y") {
+                               
 								// ASA-1924 Start
                                 //pog_info["description"] = new_pogjson[0].POGCode;
 								if (typeof p_description == "undefined" || p_description == "") {
+                                    
 									pog_info["description"] = new_pogjson[0].description;
+                                     
 								} else {
+                                     
 									pog_info["description"] = p_description;
+                                     
 								}
 								// ASA-1924 End
+                                pog_info["saveType"] = p_saveType;  //ASA-2045 Issue-1
+								//pog_info["saveType"] = "N";  
+                                                                
+								pog_info["draftVersion"] = p_draftVersion; //ASA-1425 Issue 4
+                                 
 
-								//pog_info["saveType"] = "N";  asa-2050
-                                pog_info["saveType"] = p_saveType;
-								//pog_info["draftVersion"] = p_draftVersion; //ASA-1425 Issue 4
-                                //start-asa2050
-                                if (p_saveType == "S") {
-                                    pog_info["draftVersion"] = g_pog_json[i].DraftVersion;
-                                    g_pog_json[i].DraftVersion = g_pog_json[i].DraftVersion;
-                                   
-                                } else {
-                                    pog_info["draftVersion"] = p_draftVersion;
-                                   // g_pog_json[i].DraftVersion = p_draftVersion;
-                                   for (let idx = 0; idx < g_pog_json.length; idx++) {
-                                        if (g_pog_json[idx].selected === true) {
-                                            g_pog_json[idx].DraftVersion = p_draftVersion;
-                                            
-                                        }
-                                    }
-                                }
-                                //end-asa2050
                                
 							} else {
 								if (typeof p_description == "undefined" || p_description == "") {
+                                     
 									pog_info["description"] = new_pogjson[0].description;
+                                    
 								} else {
+                                     
 									pog_info["description"] = p_description;
+                                     
 								}
 								if (p_saveType == "S") {
+                                    
 									pog_info["draftVersion"] = p_draftVersion;
+                                   
 								} else {
+                                   
 									pog_info["draftVersion"] = p_draftVersion; //ASA-1425 Issue 4
 								}
+                                
 								pog_info["saveType"] = p_saveType;
 							}
 							pog_info["pogjson"] = JSON.stringify(new_pogjson);
@@ -9367,6 +9366,7 @@ async function save_draft(p_saveType, p_description, p_draftVersion) {
 		console.log("pog_list", pog_list);
 		apex.server.process(
 			"SAVE_DRAFT",
+             
 			{
 				p_clob_01: JSON.stringify(pog_list),
 			},
@@ -9386,6 +9386,7 @@ async function save_draft(p_saveType, p_description, p_draftVersion) {
 							//ASA-1694 Start
 							if (typeof g_autofill_detail["AFVersion"] != "undefined") {
 								//Regression 5 20250217
+                               
 								g_autofill_detail["AFPOGVersion"] = "";
 								apex.server.process(
 									"SAVE_AUTOFILL",
