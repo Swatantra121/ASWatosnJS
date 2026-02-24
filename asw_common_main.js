@@ -20122,11 +20122,13 @@ async function setCombinedShelfItems(p_pog_index, p_combinationIndex, p_currShel
                     itemX = get_item_xaxis(items_arr[i].W, items_arr[i].H, items_arr[i].D, currShelf.ObjType, p_locationX, horiz_gap, spread_product, horiz_gap, currModIndx, currShlfIndx, item_cnt, p_edit_ind, g_pog_json[p_pog_index].ModuleInfo[currModIndx].ShelfInfo[currShlfIndx].ItemInfo.length, p_shelf_edit, p_pog_index);
                     //This below will find the new module and shelf index where this item should be moved and that will be stored in an array.
                     [newModIndex, newShlfIndex] = updateCombinedItemInfo(p_pog_index, currModIndx, currShlfIndx, itemX, p_combinationIndex);
+                    items_arr[i].OldX = items_arr[i].X; //ASA-2041 issue 3 // ASA-2041: Shifted OldX & X update before transfer check to ensure correct position tracking for all items.
+                    items_arr[i].X = itemX; //ASA-2041 issue 3
                     //we first get the new x axis based on its spread product setting for combination and then check if that item will be part of that shelf which it was
                     //before. then mark TransferItem = 'Y'
                     if (!(newModIndex == currModIndx && newShlfIndex == currShlfIndx)) {
-                        items_arr[i].OldX = items_arr[i].X; //ASA-1329
-                        items_arr[i].X = itemX; //ASA-1329
+                        // items_arr[i].OldX = items_arr[i].X; //ASA-1329   2041 issue 3  
+                        // items_arr[i].X = itemX; //ASA-1329 2041 issue 3 
                         var info = {};
                         info["NewMIndex"] = newModIndex;
                         info["NewSIndex"] = newShlfIndex;
