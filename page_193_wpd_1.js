@@ -12,6 +12,7 @@ g_delete_details = [];
 g_ComViewIndex = -1;
 g_show_changes_block_snapshot = [];  //ASA-1986 
 g_show_live_image = "N";
+g_selected_block  = [];
 //ASA-1986 start
 function wpdBuildShowChangesBlockSnapshot(p_block_list) {
     var snapshot = [];
@@ -804,15 +805,20 @@ function initiate_values_onload() {
             let l_pogVersion = l_currentPog && l_currentPog.Version ? l_currentPog.Version : $v("P193_OPEN_POG_VERSION");
             let l_compareInd = 1;
             let l_draftId = l_pogCode;
-            if (($v("P193_OPEN_DRAFT") == "Y" || (l_currentPog && l_currentPog.Opened == "N")) && $v("P193_DRAFT_LIST") !== "") {
+            if (($v("P193_OPEN_DRAFT") == "Y" || (l_currentPog && l_currentPog.Opened == "N")) && $v("P193_EXISTING_DRAFT_VER") !== "") {
                 l_compareInd = 2;
-                l_draftId = $v("P193_DRAFT_LIST");
+                l_draftId = $v("P193_EXISTING_DRAFT_VER");
             }
-            if (l_pogCode === "" || l_pogVersion === "") {
+            if ((l_pogCode === "" || l_pogVersion === "" ) && l_draftId ==="") {
                 raise_error("Please open a POG before Show Changes.");
+                
                 return;
             }
-            comparePOG(l_compareInd, l_pogCode, l_pogVersion, l_draftId, "N", "Y", g_show_changes_block_snapshot); //ASA-1986 END
+            else{
+                comparePOG(l_compareInd, l_pogCode, l_pogVersion, l_draftId, "N", "Y", g_show_changes_block_snapshot); //ASA-1986 END
+            }
+            // comparePOG(l_compareInd, l_pogCode, l_pogVersion, l_draftId, "N", "Y", g_show_changes_block_snapshot); //ASA-1986 END
+            
         },
         // shortcut: "Alt+O,E",
     });
@@ -949,6 +955,9 @@ function initiate_values_onload() {
 // this function needs to be common
 async function appendMultiCanvasRowCol(p_pog_count, p_type = $v("P193_POGCR_TILE_VIEW"), p_appendFlag = "N", p_compareWith) {
     console.log("dynamic rows cols");
+        if (typeof bindSplitterResizeSync === "function") {
+        bindSplitterResizeSync();
+    }
     if (p_type == "H") {
         $(".viewH").addClass("view_active");
         $(".viewV").removeClass("view_active");
@@ -8195,11 +8204,11 @@ async function open_draft_pog(p_imageLoadInd = "N", p_draft_pog_list, p_open_att
         var desc = records[0].DescriptionDetails;
         var pog_desc = records[0].Description;
         $s("P193_DRAFT_LIST", pog_sequence_id);
-        $s("P193_POG_DESCRIPTION", pog_desc);
+        $s("P193_OPEN_POG_CODE", desc);
+        $s("P193_OPEN_POG_VERSION", "");
         $s("P193_OPEN_DRAFT", 'Y');
         var draftVer = records[0].DraftVersion;
         $s("P193_EXISTING_DRAFT_VER", draftVer);
-        sessionStorage.setItem("P193_EXISTING_DRAFT_VER", draftVer);
         addLoadingIndicator(); //ASA-1500
         var p = apex.server.process(
             'GET_POG_JSON',
@@ -8227,12 +8236,14 @@ async function open_draft_pog(p_imageLoadInd = "N", p_draft_pog_list, p_open_att
         g_auto_fill_active = "N";
         await auto_fill_setup(0);
         if (!g_mod_block_list || g_mod_block_list.length === 0) { //Garit
-            await createDynamicBlocks($v('P193_OPEN_POG_CODE'), $v('P193_EXISTING_DRAFT_VER'), $v('P193_OPEN_POG_VERSION'));
+            await createDynamicBlocks($v('P193_OPEN_POG_CODE'), $v('P193_OPEN_DRAFT'), $v('P193_OPEN_POG_VERSION'),$v('P193_EXISTING_DRAFT_VER'));
         } else {
             apex.region("mod_block_details").refresh();
             $("#added_attribute").show();
             apex.region("added_attribute").refresh();
         }
+        await runattrCollections();
+        add_pog_versions();
         wpdCaptureShowChangesBlockSnapshot(g_mod_block_list, "Y");  //ASA-1986 
     }
 }
@@ -8698,7 +8709,8 @@ async function open_existing_pog(p_pog_list_arr, p_openAttr, p_imageLoadInd = "N
                         await createDynamicBlocks(
                             $v('P193_OPEN_POG_CODE'),
                             $v('P193_OPEN_DRAFT'),
-                            $v('P193_OPEN_POG_VERSION')
+                            $v('P193_OPEN_POG_VERSION'),
+                            $v('P193_EXISTING_DRAFT_VER')
                         );
 
                     } else {
@@ -9305,6 +9317,12 @@ async function doMouseUp(p_x, p_y, p_event, p_prevX, p_prevY, p_canvas, p_camera
         var l_final_x = Math.min(19, Math.max(-19, coords.x)); // clamp coords to the range -19 to 19, so object stays on ground
         var l_final_y = Math.min(19, Math.max(-19, coords.y));
         var z = g_drag_z;
+      // In Show Changes (POG compare view), a plain click should not trigger drag-end camera refit.
+        // Without this guard, click-only selection may execute drag-end paths and unexpectedly change zoom.
+        var isClickWithoutDrag = Math.abs(p_x - p_prevX) <= 2 && Math.abs(p_y - p_prevY) <= 2;
+        if (g_compare_pog_flag == "Y" && g_compare_view == "POG" && isClickWithoutDrag && g_selecting !== true && g_auto_fill_active == "N") {
+            return;
+        }
         if (g_shelf_edit_flag == "Y") {
             //ASA-1769 issue 1
             if (g_shelf_object_type == "SHELF") {
@@ -10511,7 +10529,7 @@ async function doMouseUp(p_x, p_y, p_event, p_prevX, p_prevY, p_canvas, p_camera
                 //---------------------CAMERA SETTING BASED ON NEW OVERALL HEIGHT AND WIDTH OF ALL MODULES   -----------------------------------------------
 
                 if (g_shelf_edit_flag == "Y") {
-                    if (g_manual_zoom_ind == "N") {
+                    if (g_manual_zoom_ind == "N"  && !isClickWithoutDrag) { // here this  check the  isclicking 
                         var details = get_min_max_xy(p_pog_index);
                         var details_arr = details.split("###");
                         set_camera_z(p_camera, parseFloat(details_arr[2]), parseFloat(details_arr[3]), parseFloat(details_arr[0]), parseFloat(details_arr[1]), g_offset_z, parseFloat(details_arr[4]), parseFloat(details_arr[5]), false, p_pog_index);
@@ -13733,6 +13751,23 @@ async function comparePOG(p_compare_ind, p_pog_code, p_pog_version, p_draft_id, 
     await get_compare_pog(p_compare_ind, p_pog_code, p_pog_version, p_draft_id, p_prev_version, p_compare_pog, p_show_change_blocks);  //ASA-1986 
     logDebug("function : comparePOG", "E");
 }
+function fit_pog_to_canvas_default(p_pog_index) {
+    try {
+        if (typeof p_pog_index === "undefined" || p_pog_index === null || p_pog_index < 0) {
+            return;
+        }
+        if (!Array.isArray(g_scene_objects) || typeof g_scene_objects[p_pog_index] === "undefined") {
+            return;
+        }
+        var details = get_min_max_xy(p_pog_index);
+        var details_arr = details.split("###");
+        var fitCamera = g_scene_objects[p_pog_index].scene.children[0];
+        set_camera_z(fitCamera, parseFloat(details_arr[2]), parseFloat(details_arr[3]), parseFloat(details_arr[0]), parseFloat(details_arr[1]), g_offset_z, parseFloat(details_arr[4]), parseFloat(details_arr[5]), false, p_pog_index);
+        render(p_pog_index);
+    } catch (err) {
+        error_handling(err);
+    }
+}
 // ASA-1986 start
 async function render_compare_pog_blocks_from_snapshot(p_blocks_snapshot, p_compare_index) {
     var blocksToRender = Array.isArray(p_blocks_snapshot) ? wpdBuildShowChangesBlockSnapshot(p_blocks_snapshot) : [];
@@ -13783,11 +13818,20 @@ async function render_compare_pog_blocks(p_pog_code, p_pog_version, p_compare_in
         } else {
             await auto_fill_setup(1);
             if (!g_mod_block_list || g_mod_block_list.length === 0) {
-                await createDynamicBlocks(p_pog_code, "N", p_pog_version, "N");
+                await createDynamicBlocks(p_pog_code, "N", p_pog_version, "N",$v('P193_EXISTING_DRAFT_VER'));
             } else {
                 apex.region("mod_block_details").refresh();
             }
         }
+             // Keep Show Changes compare canvas at default fitted view on open.
+        fit_pog_to_canvas_default(p_compare_index);
+        
+        // Keep Show Changes compare canvas at default fitted view on open.
+        var details = get_min_max_xy(p_compare_index);
+        var details_arr = details.split("###");
+        var compareCamera = g_scene_objects[p_compare_index].scene.children[0];
+        set_camera_z(compareCamera, parseFloat(details_arr[2]), parseFloat(details_arr[3]), parseFloat(details_arr[0]), parseFloat(details_arr[1]), g_offset_z, parseFloat(details_arr[4]), parseFloat(details_arr[5]), false, p_compare_index);
+
         render(p_compare_index);
     } catch (err) {
         error_handling(err);
@@ -13923,6 +13967,14 @@ async function get_compare_pog(p_compare_ind, p_pog_code, p_pog_version, p_draft
                     render(g_ComViewIndex);
                     if (p_compare_pog == "Y") { // ASA-1986 start
                         await render_compare_pog_blocks(new_pog_json.POGCode, new_pog_json.Version, g_ComViewIndex, p_show_change_blocks);
+                            fit_pog_to_canvas_default(g_ComBaseIndex);
+                        fit_pog_to_canvas_default(g_ComViewIndex);
+                        if (typeof window !== "undefined" && typeof window.requestAnimationFrame === "function") {
+                            window.requestAnimationFrame(function () {
+                                fit_pog_to_canvas_default(g_ComBaseIndex);
+                                fit_pog_to_canvas_default(g_ComViewIndex);
+                            });
+                        }
                     }
 
                     if (p_prev_version == "Y") {
@@ -14004,6 +14056,7 @@ async function createDynamicBlocks(
     p_pog_code,
     p_draft_pog,
     p_pog_version,
+    p_pog_draft_version = "",
     p_saveColl = "Y",
     p_attr_val = "",
 ) {
@@ -14016,7 +14069,7 @@ async function createDynamicBlocks(
                 x01: p_pog_code,
                 x02: p_pog_version,
                 x03: p_attr_val,
-                x04: p_draft_pog,
+                x04: p_draft_pog == "Y" ? p_pog_draft_version : "",
                 //p_clob_01: JSON.stringify(g_pog_json[g_pog_index])
             },
             {
@@ -14123,7 +14176,8 @@ async function save_af_version() {
 
     var l_pog_code = $v('P193_OPEN_POG_CODE');
     var l_pog_code_version = $v('P193_OPEN_POG_VERSION');
-    var l_seq_no = $v('P193_DRAFT_LIST');
+    var l_open_draft = $v('P193_OPEN_DRAFT');
+    var l_draft_version = $v('P193_EXISTING_DRAFT_VER');
 
     var mod_tot = 0;
 
@@ -14145,7 +14199,8 @@ async function save_af_version() {
         "CHECK_AUTOFILL_EXISTS",
         {
             x01: l_pog_code,
-            x02: l_pog_code_version
+            x02: l_pog_code_version,
+            x03: l_open_draft == 'Y' ? l_draft_version : "",
         },
         {
             dataType: "text",
@@ -14203,12 +14258,16 @@ async function save_af_version() {
 
     function proceed_save(p_action) {
         const l_af_version = getAfVersion();
+        var l_pog_code = $v('P193_OPEN_POG_CODE');
+        var l_pog_code_version = $v('P193_OPEN_POG_VERSION');
         g_autofill_detail['AFPOGCode'] = l_pog_code;
         g_autofill_detail['AFPOGVersion'] = l_pog_code_version;
         g_autofill_detail['AFVersion'] = l_af_version, //$v('P193_AF_VERSION');
             g_autofill_detail['BlkSelType'] = 'M';
         g_autofill_detail['AutofillRule'] = $v('P193_AUTOFILL_RULE');
         g_autofill_detail['BlkInfo'] = g_mod_block_list;
+        var l_open_draft = $v('P193_OPEN_DRAFT');
+        var l_draft_version = $v('P193_EXISTING_DRAFT_VER');
 
         apex.server.process(
             "SAVE_AUTOFILL",
@@ -14217,15 +14276,13 @@ async function save_af_version() {
                 x02: $v('P193_AF_VERSION'), //g_autofill_detail["AFVersion"],
                 x03: g_autofill_detail["AutofillRule"],
                 x04: g_autofill_detail["BlkSelType"],
-                x05: g_autofill_detail["AFPOGVersion"] == "" ||
-                        typeof g_autofill_detail["AFPOGVersion"] == "undefined"
-                        ? g_autofill_detail["AFVersion"]
-                        : g_autofill_detail["AFPOGVersion"],
+                x05: g_autofill_detail['AFPOGVersion'],
                 p_clob_01: JSON.stringify(
                     filterAutoFillJsontag(g_autofill_detail)
                 ),
                 x06: p_action,
-                x07: l_af_version
+                x07: l_af_version,
+                x08: l_open_draft == 'Y' ? l_draft_version : "",
             },
             {
                 dataType: "text",
@@ -14415,9 +14472,9 @@ async function handle_attribute_change(selectElement) {
         }
         render(g_pog_index);
         g_mod_block_list = [];
-        await createDynamicBlocks($v('P193_OPEN_POG_CODE'), $v('P193_EXISTING_DRAFT_VER'), $v('P193_OPEN_POG_VERSION'), "Y", (selectedValue === 'Default') ? '' : selectedValue);
+        await createDynamicBlocks($v('P193_OPEN_POG_CODE'), $v('P193_OPEN_DRAFT'), $v('P193_OPEN_POG_VERSION'),$v('P193_EXISTING_DRAFT_VER'), "Y", (selectedValue == 'Default') ? '' : selectedValue);
         apex.region("mod_block_details").refresh();
-        await runattrCollections();
+        //await runattrCollections();
         logDebug("function : handle_attribute_change", "E");
 
     } catch (err) {
@@ -14547,9 +14604,9 @@ async function context_func(p_action) {
             if (p_action == "add") {
                 context_add();
             } else if (p_action == "delete") {
-                delete_blk_details('BLK_PREGNANCY TEST KIT_1_AFP');
+                delete_blk_details(g_selected_block);
             } else if (p_action == "edit") {
-                open_blk_details('BLK_PREGNANCY TEST KIT_1_AFP', 'Y');
+                open_blk_details(g_selected_block, 'Y');
             }
         }
     }
@@ -15086,6 +15143,7 @@ function doMouseDown(p_x, p_y, p_startX, p_startY, p_event, p_canvas, p_context_
 					    	                var mesh = coloredModule.getObjectByProperty("uuid", uid);
 					    	                if (!mesh) return false;
 					    	                var hits = g_raycaster.intersectObject(mesh, true);
+
 					    	                return hits && hits.length > 0;
 					    	            }
 					    	        }
@@ -15102,6 +15160,8 @@ function doMouseDown(p_x, p_y, p_startX, p_startY, p_event, p_canvas, p_context_
 					    	        if (hitMatchesUuid(colorObj.BlkName)) {
 					    	            var objUuid = colorObj.BlkName;
 					    	            var coloredModule = colorObj.BlockDim.ColorObj;
+                                        g_selected_block = objUuid;
+                                        console.log("block name", g_selected_block);
 					    	            g_dragItem = coloredModule.getObjectByProperty("uuid", objUuid);
 					    	            return true;
 					    	        }
@@ -15291,6 +15351,127 @@ function doMouseDown(p_x, p_y, p_startX, p_startY, p_event, p_canvas, p_context_
             }
             logDebug("function : doMouseDown", "E");
         }
+    } catch (err) {
+        error_handling(err);
+    }
+}
+
+async function context_delete(p_action, p_moduleIndex, p_shelfIndex, p_itemIndex, p_item_edit_flag, p_module_edit_flag, p_shelf_edit_flag, p_objectHitID, p_shelfObjType, p_delete_details_arr, p_camera, p_pog_index, p_productselect) {
+    logDebug("function : context_delete; action : " + p_action + "; moduleIndex : " + p_moduleIndex + "; shelfIndex : " + p_shelfIndex + "; itemIndex : " + p_itemIndex + "; i_item_edit_flag : " + p_item_edit_flag + "; i_module_edit_flag : " + p_module_edit_flag + "; i_shelf_edit_flag : " + p_shelf_edit_flag + "; objectHitID : " + p_objectHitID + "; shelfObjType : " + p_shelfObjType, "S");
+    try {
+        var is_divider = "N";
+        var deleteModule = p_module_edit_flag;
+        //when delete is clicked.
+        if (p_action == "DELETE") {
+            //we get list of objects to be deleted.
+            if (p_delete_details_arr.multi_carpark_ind !== "Y") {
+                await get_delist_item(p_pog_index, g_multiselect, p_shelfIndex, p_moduleIndex, p_itemIndex, p_shelf_edit_flag, p_module_edit_flag, p_item_edit_flag, p_delete_details_arr);
+            }
+            if (typeof p_delete_details_arr !== "undefined" && p_delete_details_arr.length > 0) {
+                deleteModule = "N";
+            }
+            //delete those objects.
+            await deleteObject(p_pog_index, p_delete_details_arr, p_productselect, deleteModule, p_moduleIndex, "U");
+            if (p_module_edit_flag == "Y" && g_manual_zoom_ind == "N") {
+                var details = get_min_max_xy(p_pog_index);
+                var details_arr = details.split("###");
+                set_camera_z(p_camera, parseFloat(details_arr[2]), parseFloat(details_arr[3]), parseFloat(details_arr[0]), parseFloat(details_arr[1]), g_offset_z, parseFloat(details_arr[4]), parseFloat(details_arr[5]), true, p_pog_index);
+                render(p_pog_index);
+            }
+        } else {
+            // Action = "CUT"
+            var isDivider = "N";
+            var shelfdtl = g_pog_json[p_pog_index].ModuleInfo[g_module_index].ShelfInfo[g_shelf_index];
+            if (g_carpark_item_flag == "N" && p_itemIndex !== -1) {
+                isDivider = shelfdtl.ItemInfo[p_itemIndex].Item;
+            }
+            if (p_module_edit_flag == "Y") {
+                delete_module(p_objectHitID, p_moduleIndex, p_camera, p_pog_index);
+            } else if (p_shelf_edit_flag == "Y" || (p_item_edit_flag == "Y" && isDivider == "DIVIDER")) {
+                if (p_item_edit_flag == "Y" && isDivider == "DIVIDER") {
+                    is_divider = "Y";
+                }
+                p_shelfObjType = shelfdtl.ObjType;
+                delete_shelf(p_objectHitID, p_moduleIndex, p_shelfIndex, p_itemIndex, p_shelfObjType, is_divider, "N", p_pog_index);
+            } else if (p_item_edit_flag == "Y" && isDivider !== "DIVIDER") {
+                delete_item(p_objectHitID, p_moduleIndex, p_shelfIndex, p_itemIndex, p_action, "Y", p_pog_index);
+            }
+        }
+        if (g_show_live_image == "Y") {
+            animate_pog(p_pog_index);
+        }
+        //recreate the orientation view if any present
+        var returnval = await recreate_compare_views(g_compare_view, "N");
+        logDebug("function : context_delete", "E");
+    } catch (err) {
+        error_handling(err);
+    }
+}
+
+
+async function deleteObject(p_pog_index, p_deleteDetailsArr, p_productListOpen, p_deleteModule = "N", p_moduleIndex = -1, p_undoType) {
+    logDebug("function : deleteObject; p_pog_index : " + p_pog_index + "; pProductListOpen : " + p_productListOpen + "; pDeleteModule : " + p_deleteModule + "; pModuleIndex : " + p_moduleIndex, "S");
+    try {
+        g_mselect_drag = "N";
+        var deleteShelf = "N";
+        if (p_deleteModule !== "Y") {
+            var deleteItem = "N";
+            var objecttype = "";
+
+            for (const objects of p_deleteDetailsArr) {
+                if (objects.Object !== objecttype && objecttype !== "") {
+                    deleteItem = "Y";
+                }
+                objecttype = objects.Object;
+                if (objects.Object == "SHELF") {
+                    deleteShelf = "Y";
+                }
+            }
+            if (deleteItem == "Y" && deleteShelf == "Y") {
+                //Task_29818 - Start
+                // ax_message.set({
+                //     labels: {
+                //         ok: get_message("SHCT_YES"),
+                //         cancel: get_message("SHCT_NO"),
+                //     },
+                // });
+
+                // ax_message.set({
+                //     buttonReverse: true,
+                // });
+                // ax_message.confirm(get_message("ITEM_FIXEL_DELETE"), async function (e) {
+                //     if (e) {
+                //         await deleteObjectLib(p_pog_index, deleteShelf, p_deleteDetailsArr, p_productListOpen, "N", -1, "");
+                //     } else {
+                //         deleteShelf = "N";
+                //         await deleteObjectLib(p_pog_index, deleteShelf, p_deleteDetailsArr, p_productListOpen, "N", -1, "");
+                //     }
+                // });
+
+                confirm(
+                    get_message("ITEM_FIXEL_DELETE"),
+                    get_message("SHCT_YES"),
+                    get_message("SHCT_NO"),
+                    async function () {
+                        await deleteObjectLib(p_pog_index, deleteShelf, p_deleteDetailsArr, p_productListOpen, "N", -1, "");
+                    },
+                    async function () {
+                        deleteShelf = "N";
+                        await deleteObjectLib(p_pog_index, deleteShelf, p_deleteDetailsArr, p_productListOpen, "N", -1, "");
+                    }
+                );
+                //Task_29818 - End
+            } else {
+                await deleteObjectLib(p_pog_index, deleteShelf, p_deleteDetailsArr, p_productListOpen, "N", -1, "");
+            }
+        } else {
+            await deleteObjectLib(p_pog_index, deleteShelf, p_deleteDetailsArr, p_productListOpen, "Y", p_moduleIndex, p_undoType);
+        }
+
+        g_delete_details = [];
+        g_multi_drag_shelf_arr = [];
+        g_multi_drag_item_arr = [];
+        logDebug("function : deleteObject", "E");
     } catch (err) {
         error_handling(err);
     }

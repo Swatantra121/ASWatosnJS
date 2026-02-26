@@ -10,7 +10,40 @@ var g_page_no = (function () {
 })();
 
 console.log(g_page_no);
+var g_splitter_resize_bound = "N";
 
+function runCanvasReflow() {
+    try {
+        if (typeof window.reset_canvas_region === "function") {
+            window.reset_canvas_region();
+        } else {
+            var l_view = $v(g_page_no + "POGCR_TILE_VIEW");
+            switchCanvasView(l_view == "" ? "V" : l_view, "Y");
+        }
+    } catch (err) {
+        error_handling(err);
+    }
+}
+
+function bindSplitterResizeSync() {
+    try {
+        if (g_splitter_resize_bound == "Y") {
+            return;
+        }
+        g_splitter_resize_bound = "Y";
+        $(document).off("click.aswSplitterResize").on("click.aswSplitterResize", ".a-Splitter-thumb", function () {
+            setTimeout(runCanvasReflow, 80);
+            setTimeout(runCanvasReflow, 260);
+            setTimeout(runCanvasReflow, 520);
+        });
+
+        $(document).off("transitionend.aswSplitterResize").on("transitionend.aswSplitterResize", "#side_bar, #drawing_region, #wpdSplitter_splitter_first", function () {
+            setTimeout(runCanvasReflow, 30);
+        });
+    } catch (err) {
+        error_handling(err);
+    }
+}
 //this function is used under setUpMouseHander in asw_common_main.js. as this function is used only in page 25.
 //this function will be called on mouse down. it will find out on which canvas user clicked and assing g_pog_index and all other indicators for the clicked POG canvas.
 function set_curr_canvas(p_event) {
@@ -112,6 +145,7 @@ function set_select_canvas(p_pog_index) {
 async function appendMultiCanvasRowCol(p_pog_count, p_type =  $v(g_page_no + "POGCR_TILE_VIEW"), p_appendFlag = "N", p_compareWith) {
     debugger;
     console.log("dynamic rows cols");
+     bindSplitterResizeSync();
     if (p_type == "H") {
         $(".viewH").addClass("view_active");
         $(".viewV").removeClass("view_active");
@@ -299,7 +333,14 @@ async function switchCanvasView(p_view, p_product_list_check = "N") {
     // [Task_22091], Start
     var drawRegW = $("#drawing_region").width();
     var sidebarW = $("#side_bar").width();
-    containerW = drawRegW - sidebarW;
+    var holderW = $("#canvas-holder").width();
+    containerW = holderW;
+    if (!containerW || containerW <= 0) {
+        containerW = drawRegW - sidebarW;
+    }
+    if (!containerW || containerW <= 0) {
+        containerW = $("#canvas-holder .container").width();
+    }
     containerH = $("#canvas-holder .container").height();
     $s(g_page_no + "POGCR_TILE_VIEW", p_view);
     // [Task_22091], End
@@ -378,6 +419,40 @@ async function switchCanvasView(p_view, p_product_list_check = "N") {
         } //20240708 Regression issue 5
     }
     g_pog_index = old_pogIndex;
+}
+if (typeof window.reset_canvas_region !== "function") {
+    window.reset_canvas_region = async function () {
+        try {
+            if (typeof g_show_plano_rate === "undefined") g_show_plano_rate = "N";
+            if (typeof g_open_productlist === "undefined") g_open_productlist = "Y";
+
+            if ($("#par_region").length > 0 && $("#draggable_table").length > 0) {
+                if (g_show_plano_rate == "N" || g_open_productlist == "Y") {
+                    $("#par_region").hide();
+                    $("#draggable_table").show();
+                    $("#wpdSplitter_splitter_second").css("overflow", "hidden");
+                    if ($(".a-Splitter-thumb").attr("aria-label") == "Collapse" && apex.region("draggable_table").widget() !== null) {
+                        apex.region("draggable_table").widget().interactiveGrid("getActions").set("edit", false);
+                        apex.region("draggable_table").widget().interactiveGrid("getViews", "grid").model.clearChanges();
+                        apex.region("draggable_table").widget().interactiveGrid("getViews").grid.curInst._refreshGrid();
+                    }
+                } else {
+                    $("#draggable_table").hide();
+                    $("#par_region").show();
+                    $("#wpdSplitter_splitter_second").css("scrollbar-width", "thin").css("overflow", "auto");
+                }
+                if ($(".a-Splitter-thumb").attr("aria-label") !== "Collapse") {
+                    g_show_plano_rate = "N";
+                    g_open_productlist = "Y";
+                }
+            }
+
+            var l_view = $v(g_page_no + "POGCR_TILE_VIEW");
+            switchCanvasView(l_view == "" ? "V" : l_view, "Y");
+        } catch (err) {
+            error_handling(err);
+        }
+    };
 }
 
 function generateCanvasListHolder(p_pog_json) {

@@ -207,6 +207,7 @@ var g_myVar,
     g_scene,
     g_renderer,
     g_camera,
+    g_initial_camera, //ASA-2048 Issue 8
     g_select_color = 0x000000,
     g_orientation_json,
     g_start_pixel_ratio,
@@ -6669,13 +6670,7 @@ function wrapText(p_context, p_text, p_x, p_y, p_maxWidth, p_lineHeight) {
 
 function dcText(p_txt, p_font_size, p_fgcolor, p_bgcolor, p_width, p_height, p_wrap_text, p_reducetofit, p_fontstyle, p_fontbold, p_fontsize, p_mod_index, p_shelf_cnt, p_enlarge_no, p_pog_index, p_pogcr_enhance_textbox_fontsize, p_text_direction) {
     try {
-        logDebug("function : dcText; txt : " + p_txt, "S");
-        // ===== FONT SIZE SYNC FIX (MOST IMPORTANT) =====  ASA-2029
-        // if ((!p_font_size || p_font_size === "") && p_fontsize) {
-        //     p_font_size = p_fontsize;
-        // }
-        // p_font_size = parseInt(p_font_size, 10) || 12;
-        // =============================================
+        logDebug("function : dcText; txt : " + p_txt, "S");       
         if (p_shelf_cnt !== -1) {
             var shelfdtl = g_pog_json[p_pog_index].ModuleInfo[p_mod_index].ShelfInfo[p_shelf_cnt];
             if ((shelfdtl.ObjType !== "TEXTBOX") || (shelfdtl.ObjType == "TEXTBOX" && p_pogcr_enhance_textbox_fontsize == "Y" && p_reducetofit == "Y")) {
@@ -6685,30 +6680,21 @@ function dcText(p_txt, p_font_size, p_fgcolor, p_bgcolor, p_width, p_height, p_w
                 if (shelfdtl.canvasW !== null && p_pogcr_enhance_textbox_fontsize == "N") {
                     var canvasWidth = shelfdtl.canvasW * p_enlarge_no;
                     var canvasHeight = shelfdtl.canvasH * p_enlarge_no;
-                } else {
-                    // ASA-2045 ISSUE 3
-                    var canvasWidth, canvasHeight;
-
-                    if ((g_manual_zoom_ind === "Y" || g_area_zoom_ind === "Y") && shelfdtl.canvasW != null) {
-                        // Zoom mode: reuse object-space canvas size
-                        canvasWidth  = shelfdtl.canvasW * p_enlarge_no;
-                        canvasHeight = shelfdtl.canvasH * p_enlarge_no;
-                    } else {
-                        // Normal mode OR first render
-                        [canvasWidth, canvasHeight] = get_visible_size(0.012, p_width * p_enlarge_no, p_height * p_enlarge_no, g_canvas, g_camera);
-
-                        // Store object-space size only once (normal mode)
+                } else {                                    
+                    if (g_initial_camera) { //ASA-2048 Issue 8
+                        var [canvasWidth, canvasHeight] = get_visible_size(0.012, p_width * p_enlarge_no, p_height * p_enlarge_no, g_canvas, g_initial_camera);
                         if (shelfdtl.canvasW == null) {
                             shelfdtl.canvasW = canvasWidth / p_enlarge_no;
                             shelfdtl.canvasH = canvasHeight / p_enlarge_no;
                         }
                     }
-                    // END-OF-ASA-2045 ISSUE 3
-                    // var [canvasWidth, canvasHeight] = get_visible_size(0.012, p_width * p_enlarge_no, p_height * p_enlarge_no, g_canvas, g_camera);
-                    // if (shelfdtl.canvasW == null) {
-                    //     shelfdtl.canvasW = canvasWidth / p_enlarge_no;
-                    //     shelfdtl.canvasH = canvasHeight / p_enlarge_no;
-                    // }
+                    else{
+                        var [canvasWidth, canvasHeight] = get_visible_size(0.012, p_width * p_enlarge_no, p_height * p_enlarge_no, g_canvas, g_camera);
+                        if (shelfdtl.canvasW == null) {
+                            shelfdtl.canvasW = canvasWidth / p_enlarge_no;
+                            shelfdtl.canvasH = canvasHeight / p_enlarge_no;
+                        } 
+                    }
                 }
             } else {
                 var [canvasWidth, canvasHeight] = get_visible_size(0.012, p_width * p_enlarge_no, p_height * p_enlarge_no, g_canvas, g_camera);
@@ -8016,18 +8002,28 @@ async function add_items_with_image(p_uuid, p_width, p_height, p_depth, p_color,
         var cap_style = item_info.CapStyle;
         //ASA-1970 Start
         var horiz_facing = item_info.BHoriz;
-        if (item_info.CrushHoriz > 0 && horiz_facing > 1 && spread_product == "F") {
+        if (item_info.CrushHoriz > 0 && horiz_facing > 1 && spread_product == "F" && item_info.Orientation == "0") { //ASA-2045 Issue6 & Issue7
             p_width = item_info.RW * (1 - item_info.CrushHoriz / 100) + item_info.SpreadItem * (horiz_facing - 1);
         }
         //ASA-1970 End
         var [org_width, org_height, org_depth, actualHeight, actualWidth, actualDepth] = get_new_orientation_dim(item_info.Orientation, item_info.OW, item_info.OH, item_info.OD, org_width, org_height, org_depth, item_info.Item);
-        if (item_info.CrushHoriz > 0) {
+        if (item_info.CrushHoriz > 0  && item_info.Orientation == "0") { //ASA-2045 Issue6 & Issue7
             org_width = item_info.W / item_info.BHoriz;
         }
-        if (item_info.CrushVert > 0) {
+        if (item_info.CrushVert > 0  && item_info.Orientation == "0") { //ASA-2045 Issue6 & Issue7
             // org_height = item_info.RH / item_info.BVert; //ASA-1410 issue 13
             org_height = item_info.H / item_info.BVert; //ASA-1933 Issue1
         }
+        //ASA-2045 Issue6 & Issue7 Start
+        if (item_info.Orientation !== "0") {
+            if (actualWidth == "H" && item_info.CrushVert > 0) {
+                org_width = item_info.W / item_info.BHoriz;
+            }
+            if (actualHeight == "W" && item_info.CrushHoriz > 0) {
+                org_height = item_info.H / item_info.BVert;
+            }
+        }
+        //ASA-2045 Issue6 & Issue7 End
         var details_arr = details.split("###");
         var pegID = item_info.PegID;
 
@@ -8729,7 +8725,7 @@ async function add_items_prom(p_uuid, p_width, p_height, p_depth, p_color, p_x, 
         var cap_style = items.CapStyle;
 
         //ASA-1970 Start
-        if (items.CrushHoriz > 0 && horiz_facing > 1 && spread_product == "F") {
+        if (items.CrushHoriz > 0 && horiz_facing > 1 && spread_product == "F" && items.Orientation == "0") { //ASA-2045 Issue6 & Issue7
             p_width = items.RW * (1 - items.CrushHoriz / 100) + items.SpreadItem * (horiz_facing - 1);
         }
         //ASA-1970 End
@@ -8740,12 +8736,22 @@ async function add_items_prom(p_uuid, p_width, p_height, p_depth, p_color, p_x, 
             items.Color = p_pogcrDelistItemDftColor;
         }
         var [org_width, org_height, org_depth, actualHeight, actualWidth, actualDepth] = get_new_orientation_dim(items.Orientation, items.OW, items.OH, items.OD);
-        if (items.CrushHoriz > 0) {
+        if (items.CrushHoriz > 0 && items.Orientation == "0") { //ASA-2045 Issue6 & Issue7
             org_width = items.W / items.BHoriz;
         }
-        if (items.CrushVert > 0) {
+        if (items.CrushVert > 0 && items.Orientation == "0") { //ASA-2045 Issue6 & Issue7
             org_height = items.H / items.BVert;
         }
+        //ASA-2045 Issue6 & Issue7 Start
+        if (items.Orientation !== "0") {
+            if (actualWidth == "H" && items.CrushVert > 0) {
+                org_width = items.W / items.BHoriz;
+            }
+            if (actualHeight == "W" && items.CrushHoriz > 0) {
+                org_height = items.H / items.BVert;
+            }
+        }
+        //ASA-2045 Issue6 & Issue7 End
         var verti_values = [],
             horiz_values = [],
             nesting_negetive = "N",
@@ -14325,8 +14331,12 @@ function render(p_pog_index) {
                     var canvas_height = g_canvas_objects[p_pog_index].height;
 
                     g_renderer.setSize(canvas_width, canvas_height);
-                    g_scene_objects[p_pog_index].scene.children[0].aspect = canvas_width / canvas_height;
-                    g_renderer.render(g_scene_objects[p_pog_index].scene, g_scene_objects[p_pog_index].scene.children[0]);
+                    //ASA-1986 start
+                   var renderCamera = g_scene_objects[p_pog_index].scene.children[0];
+                    renderCamera.aspect = canvas_width / canvas_height;
+                    renderCamera.updateProjectionMatrix();
+                    g_renderer.render(g_scene_objects[p_pog_index].scene, renderCamera);
+                    //ASA-1986 end
                     context.drawImage(g_renderer.domElement, 0, 0, canvas_width, canvas_height);
                 }
             }
@@ -15910,6 +15920,12 @@ function get_item_xaxis(p_width, p_height, p_depth, p_shelf_obj_type, p_location
                             shelfdtl.ItemInfo[p_item_index].W = shelfdtl.ItemInfo[p_item_index].RW /*(shelfdtl.ItemInfo[i_item_index].OW * shelfdtl.ItemInfo[i_item_index].BHoriz)*/ + shelfdtl.ItemInfo[p_item_index].SpreadItem * (shelfdtl.ItemInfo[p_item_index].BHoriz - 1);
                         } else if (p_spread_product == "E" && shelfdtl.ItemInfo[p_item_index].BHoriz > 1 && p_horiz_gap > 0 && shelfdtl.ItemInfo[p_item_index].CrushHoriz == 0) {
                             shelfdtl.ItemInfo[p_item_index].W = shelfdtl.ItemInfo[p_item_index].RW /*(shelfdtl.ItemInfo[i_item_index].OW * shelfdtl.ItemInfo[i_item_index].BHoriz)*/ + p_horiz_gap * (shelfdtl.ItemInfo[p_item_index].BHoriz - 1);
+                        } else if (p_spread_product == "F" && shelfdtl.ItemInfo[p_item_index].BHoriz > 1 && shelfdtl.ItemInfo[p_item_index].Orientation !== "0") {
+                            var l_item = shelfdtl.ItemInfo[p_item_index];
+                            var [org_width, org_height, org_depth, actualHeight, actualWidth, actualDepth] = get_new_orientation_dim(l_item.Orientation, l_item.OW, l_item.OH, l_item.OD);
+                            if ((actualWidth == "H" && l_item.CrushVert == 0) || (actualWidth == "D" && l_item.CrushD == 0)) {
+                                shelfdtl.ItemInfo[p_item_index].W = shelfdtl.ItemInfo[p_item_index].RW + shelfdtl.ItemInfo[p_item_index].SpreadItem * (shelfdtl.ItemInfo[p_item_index].BHoriz - 1);
+                            }
                         }
                         if (p_item_index > 0) {
                             if (item_fixed == "N" || item_fixed == "B") {
@@ -15936,8 +15952,28 @@ function get_item_xaxis(p_width, p_height, p_depth, p_shelf_obj_type, p_location
                                         //ASA-1970 Start
                                         var item = shelfdtl.ItemInfo[p_item_index];
                                         var max = shelfdtl.ItemInfo[max_index];
-                                        var crushItem = item.CrushHoriz > 0 ? item.RW * (1 - item.CrushHoriz / 100) + item.SpreadItem * (item.BHoriz - 1) : item.W;
-                                        var crushMax = max.CrushHoriz > 0 ? max.RW * (1 - max.CrushHoriz / 100) + max.SpreadItem * (max.BHoriz - 1) : max.W;
+                                        var [orgWidth, orgHeight, orgDepth, actHeight, actWidth, actDepth] = get_new_orientation_dim(item.Orientation, item.OW, item.OH, item.OD);
+                                        var [orgWidthM, orgHeightM, orgDepthM, actHeightM, actWidthM, actDepthM] = get_new_orientation_dim(max.Orientation, max.OW, max.OH, max.OD);
+
+                                        if (item.CrushHoriz > 0 && item.Orientation == "0") {
+                                            var crushItem = item.RW * (1 - item.CrushHoriz / 100) + item.SpreadItem * (item.BHoriz - 1);
+                                        } else if (item.Orientation !== "0" && (actWidth == "H" && item.CrushVert > 0)) {
+                                            var crushItem = item.RW * (1 - item.CrushVert / 100) + item.SpreadItem * (item.BHoriz - 1);
+                                        } else if (item.Orientation !== "0" && (actWidth == "D" && item.CrushD > 0)) {
+                                            var crushItem = item.RW * (1 - item.CrushD / 100) + item.SpreadItem * (item.BHoriz - 1);
+                                        } else {
+                                            var crushItem = item.W;
+                                        }
+
+                                        if (max.CrushHoriz > 0 && max.Orientation == "0") {
+                                            var crushMax = max.RW * (1 - max.CrushHoriz / 100) + max.SpreadItem * (max.BHoriz - 1);
+                                        } else if (max.Orientation !== "0" && (actWidthM == "H" && max.CrushVert > 0)) {
+                                            var crushMax = max.RW * (1 - max.CrushVert / 100) + max.SpreadItem * (max.BHoriz - 1);
+                                        } else if (max.Orientation !== "0" && (actWidthM == "D" && max.CrushD > 0)) {
+                                            var crushMax = max.RW * (1 - max.CrushD / 100) + max.SpreadItem * (max.BHoriz - 1);
+                                        } else {
+                                            var crushMax = max.W;
+                                        }
                                         
                                         if (p_spread_product == "F") {
                                             finalX = wpdSetFixed(max.X + crushMax / 2 + crushItem / 2 + item.SpreadItem);
@@ -15993,8 +16029,13 @@ function get_item_xaxis(p_width, p_height, p_depth, p_shelf_obj_type, p_location
                                     finalX = shelfdtl.ItemInfo[get_shelf_item_ind(p_module_index, p_shelf_index, bottom_objid, p_pog_index)].X;
                                 } else {
                                     //ASA-1970 Start
-                                    if (shelfdtl.ItemInfo[p_item_index].CrushHoriz > 0 && shelfdtl.ItemInfo[p_item_index].BHoriz > 1 && p_spread_product == "F") {
+                                    if (shelfdtl.ItemInfo[p_item_index].CrushHoriz > 0 && shelfdtl.ItemInfo[p_item_index].BHoriz > 1 && p_spread_product == "F" && shelfdtl.ItemInfo[p_item_index].Orientation == "0") {
                                         var fWidth = shelfdtl.ItemInfo[p_item_index].RW * (1 - shelfdtl.ItemInfo[p_item_index].CrushHoriz / 100) + shelfdtl.ItemInfo[p_item_index].SpreadItem * (shelfdtl.ItemInfo[p_item_index].BHoriz - 1);
+                                    } else if (shelfdtl.ItemInfo[p_item_index].BHoriz > 1 && p_spread_product == "F" && shelfdtl.ItemInfo[p_item_index].Orientation !== "0") {
+                                        var l_item = shelfdtl.ItemInfo[p_item_index];
+                                        var [org_width, org_height, org_depth, actualHeight, actualWidth, actualDepth] = get_new_orientation_dim(l_item.Orientation, l_item.OW, l_item.OH, l_item.OD);
+                                        var l_crush_val = actualWidth == "H" ? l_item.CrushVert : actualWidth == "D" ? l_item.CrushD : l_item.CrushHoriz;
+                                        var fWidth = shelfdtl.ItemInfo[p_item_index].RW * (1 - l_crush_val / 100) + shelfdtl.ItemInfo[p_item_index].SpreadItem * (shelfdtl.ItemInfo[p_item_index].BHoriz - 1);
                                     } else {
                                         var fWidth = shelfdtl.ItemInfo[p_item_index].W
                                     }
@@ -17521,6 +17562,7 @@ function get_sales_info(p_pog_index, p_item) {
             WeeklySales: 0,
             WeeklyQty: 0,
             NetMarginPercent:"0%",
+            WeeklyNetMargin:"0%", //ASA 2049 issue 1
 		};
 		var SalesFound = false;
 		if (typeof g_pog_json[p_pog_index].SalesInfo !== "undefined" && g_pog_json[p_pog_index].SalesInfo.length > 0) {
@@ -17558,7 +17600,9 @@ function get_sales_info(p_pog_index, p_item) {
                         AUR: parseFloat(nvl(ItemSales.AUR).toFixed(1)), 
                         WeeklySales: parseFloat(nvl(ItemSales.weeklysales).toFixed(1)),
                         WeeklyQty: parseFloat(nvl(ItemSales.weeklyqty).toFixed(1)),
-                        NetMarginPercent: parseFloat(nvl(ItemSales.netmarginpercent).toFixed(1)) + "%",
+                        // NetMarginPercent: parseFloat(nvl(ItemSales.netmarginpercent).toFixed(1)) + "%",//ASA 2049 issue 1
+                        NetMarginPercent: parseFloat(nvl(ItemSales.nmper).toFixed(1)) + "%",    //ASA 2049 issue 1
+                        WeeklyNetMargin: parseFloat(nvl(ItemSales.netmarginpercent).toFixed(1)) + "%", //ASA 2049 issue 1
 					};
 					SalesFound = true;
 					break;
@@ -17605,6 +17649,7 @@ function get_sales_info(p_pog_index, p_item) {
                                                 WeeklySales: 0,
                                                 WeeklyQty: 0,
                                                 NetMarginPercent: "0%",
+                                                WeeklyNetMargin:"0%", //ASA 2049 issue 1
 											};
 											SalesFound = true;
 											break;
