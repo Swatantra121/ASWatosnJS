@@ -4545,7 +4545,6 @@ async function update_spread_product_final(p_spread_type, p_module_index, p_shel
 	} else {
 		finalAction = "R";
 	}
-    // debugger
 	try {
          
 		//identify if any change in POG
@@ -9821,6 +9820,7 @@ async function get_existing_pog(pog_code, pog_version, canvasNo, pMultiple, pIma
 	sessionStorage.removeItem("g_color_arr");
 	sessionStorage.removeItem("g_highlightArr");
 	g_color_arr = [];
+    g_initial_camera = null; //ASA-2048 Issue 8
 	g_highlightArr = [];
 	l_new_pog_ind = "N";
 
@@ -9861,7 +9861,9 @@ async function get_existing_pog(pog_code, pog_version, canvasNo, pMultiple, pIma
 			set_indicator_objects(g_scene_objects.length - 1);
 			var returnval = await getJson("N", pog_code, pog_version, "Y", "Y", g_camera, g_scene, canvasNo, pImageLoadInd);
 		}
-
+        if (!g_initial_camera) { //ASA-2048 Issue 8
+            g_initial_camera = g_camera.clone();
+        }
 		logDebug("function : get_existing_pog", "E");
 	} catch (err) {
 		error_handling(err);

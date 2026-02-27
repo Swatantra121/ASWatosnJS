@@ -15920,12 +15920,14 @@ function get_item_xaxis(p_width, p_height, p_depth, p_shelf_obj_type, p_location
                             shelfdtl.ItemInfo[p_item_index].W = shelfdtl.ItemInfo[p_item_index].RW /*(shelfdtl.ItemInfo[i_item_index].OW * shelfdtl.ItemInfo[i_item_index].BHoriz)*/ + shelfdtl.ItemInfo[p_item_index].SpreadItem * (shelfdtl.ItemInfo[p_item_index].BHoriz - 1);
                         } else if (p_spread_product == "E" && shelfdtl.ItemInfo[p_item_index].BHoriz > 1 && p_horiz_gap > 0 && shelfdtl.ItemInfo[p_item_index].CrushHoriz == 0) {
                             shelfdtl.ItemInfo[p_item_index].W = shelfdtl.ItemInfo[p_item_index].RW /*(shelfdtl.ItemInfo[i_item_index].OW * shelfdtl.ItemInfo[i_item_index].BHoriz)*/ + p_horiz_gap * (shelfdtl.ItemInfo[p_item_index].BHoriz - 1);
+                        //ASA-2045 Issue6 & Issue7 Start
                         } else if (p_spread_product == "F" && shelfdtl.ItemInfo[p_item_index].BHoriz > 1 && shelfdtl.ItemInfo[p_item_index].Orientation !== "0") {
                             var l_item = shelfdtl.ItemInfo[p_item_index];
                             var [org_width, org_height, org_depth, actualHeight, actualWidth, actualDepth] = get_new_orientation_dim(l_item.Orientation, l_item.OW, l_item.OH, l_item.OD);
                             if ((actualWidth == "H" && l_item.CrushVert == 0) || (actualWidth == "D" && l_item.CrushD == 0)) {
                                 shelfdtl.ItemInfo[p_item_index].W = shelfdtl.ItemInfo[p_item_index].RW + shelfdtl.ItemInfo[p_item_index].SpreadItem * (shelfdtl.ItemInfo[p_item_index].BHoriz - 1);
                             }
+                        //ASA-2045 Issue6 & Issue7 End
                         }
                         if (p_item_index > 0) {
                             if (item_fixed == "N" || item_fixed == "B") {
@@ -15952,6 +15954,7 @@ function get_item_xaxis(p_width, p_height, p_depth, p_shelf_obj_type, p_location
                                         //ASA-1970 Start
                                         var item = shelfdtl.ItemInfo[p_item_index];
                                         var max = shelfdtl.ItemInfo[max_index];
+                                        //ASA-2045 Issue6 & Issue7 Start
                                         var [orgWidth, orgHeight, orgDepth, actHeight, actWidth, actDepth] = get_new_orientation_dim(item.Orientation, item.OW, item.OH, item.OD);
                                         var [orgWidthM, orgHeightM, orgDepthM, actHeightM, actWidthM, actDepthM] = get_new_orientation_dim(max.Orientation, max.OW, max.OH, max.OD);
 
@@ -15974,7 +15977,7 @@ function get_item_xaxis(p_width, p_height, p_depth, p_shelf_obj_type, p_location
                                         } else {
                                             var crushMax = max.W;
                                         }
-                                        
+                                        //ASA-2045 Issue6 & Issue7 End
                                         if (p_spread_product == "F") {
                                             finalX = wpdSetFixed(max.X + crushMax / 2 + crushItem / 2 + item.SpreadItem);
                                         } else {
@@ -16029,13 +16032,15 @@ function get_item_xaxis(p_width, p_height, p_depth, p_shelf_obj_type, p_location
                                     finalX = shelfdtl.ItemInfo[get_shelf_item_ind(p_module_index, p_shelf_index, bottom_objid, p_pog_index)].X;
                                 } else {
                                     //ASA-1970 Start
-                                    if (shelfdtl.ItemInfo[p_item_index].CrushHoriz > 0 && shelfdtl.ItemInfo[p_item_index].BHoriz > 1 && p_spread_product == "F" && shelfdtl.ItemInfo[p_item_index].Orientation == "0") {
+                                    if (shelfdtl.ItemInfo[p_item_index].CrushHoriz > 0 && shelfdtl.ItemInfo[p_item_index].BHoriz > 1 && p_spread_product == "F" && shelfdtl.ItemInfo[p_item_index].Orientation == "0") { //ASA-2045 Issue6 & Issue7
                                         var fWidth = shelfdtl.ItemInfo[p_item_index].RW * (1 - shelfdtl.ItemInfo[p_item_index].CrushHoriz / 100) + shelfdtl.ItemInfo[p_item_index].SpreadItem * (shelfdtl.ItemInfo[p_item_index].BHoriz - 1);
+                                    //ASA-2045 Issue6 & Issue7 Start
                                     } else if (shelfdtl.ItemInfo[p_item_index].BHoriz > 1 && p_spread_product == "F" && shelfdtl.ItemInfo[p_item_index].Orientation !== "0") {
                                         var l_item = shelfdtl.ItemInfo[p_item_index];
                                         var [org_width, org_height, org_depth, actualHeight, actualWidth, actualDepth] = get_new_orientation_dim(l_item.Orientation, l_item.OW, l_item.OH, l_item.OD);
                                         var l_crush_val = actualWidth == "H" ? l_item.CrushVert : actualWidth == "D" ? l_item.CrushD : l_item.CrushHoriz;
                                         var fWidth = shelfdtl.ItemInfo[p_item_index].RW * (1 - l_crush_val / 100) + shelfdtl.ItemInfo[p_item_index].SpreadItem * (shelfdtl.ItemInfo[p_item_index].BHoriz - 1);
+                                    //ASA-2045 Issue6 & Issue7 End
                                     } else {
                                         var fWidth = shelfdtl.ItemInfo[p_item_index].W
                                     }

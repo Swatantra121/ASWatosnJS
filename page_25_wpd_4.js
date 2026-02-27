@@ -4620,7 +4620,6 @@ async function auto_set_items(p_module_index, p_shelf_index, p_newItemArr, p_fin
 
 async function manage_multi_edit(p_edit_type, p_pog_index) {
     logDebug("function : manage_multi_edit; edit_type : " + p_edit_type, "S");
-    debugger
     try {
         if (p_edit_type == "F") {
             var max_merch = parseFloat(g_shelf_details[0].MaxMerch) / 100;
@@ -10135,6 +10134,7 @@ async function open_draft_pog(p_imageLoadInd = "N", p_draft_pog_list, p_open_att
     sessionStorage.removeItem("g_combinedShelfs");
     sessionStorage.removeItem("combinedShlfDets");
     g_combinedShelfs = [];
+    g_initial_camera = null; //ASA-2048 Issue 8
     //ASA-1129, End
     $s("P25_EXISTING_DRAFT_VER", "");
     $s("P25_DRAFT_VERSION", "");
@@ -10284,6 +10284,9 @@ async function open_draft_pog(p_imageLoadInd = "N", p_draft_pog_list, p_open_att
                 }
             }
         }
+    }
+    if (!g_initial_camera) { //ASA-2048 Issue 8
+        g_initial_camera = g_camera.clone();
     }
 }
 

@@ -2689,7 +2689,7 @@ async function doMouseMove(p_x, p_y, p_event, p_prevX, p_prevY, p_canvas, p_came
                                 //ASA-1688
                                 fieldValue = g_intersects[0].object.OOSPerc + "%";
                                 //asa-1923 added elseif 
-                            } else if ($v("P25_POGCR_REFRESH_SALES_WTCCN") == 'Y' && (obj.Map == 'NetMarginPercent' || obj.Map == 'WeeklySales' || obj.Map == 'WeeklyQty' || obj.Map == 'AUR')) {
+                            } else if ($v("P25_POGCR_REFRESH_SALES_WTCCN") == 'Y' && (obj.Map == 'NetMarginPercent' || obj.Map == 'WeeklySales' || obj.Map == 'WeeklyQty' || obj.Map == 'AUR' || obj.Map == 'WeeklyNetMargin')) {  //ASA 2049 issue 1
                                 if (obj.Map == "NetMarginPercent" && SalesInfo.netmarginpercent !== "undefined" && SalesInfo.netmarginpercent !== "") {  //ASA-1923
                                     fieldValue = SalesInfo.netmarginpercent + "%";
                                 } else if (obj.Map == "WeeklySales" && SalesInfo.weeklysales !== "undefined" && SalesInfo.weeklysales !== "") {
@@ -2698,6 +2698,8 @@ async function doMouseMove(p_x, p_y, p_event, p_prevX, p_prevY, p_canvas, p_came
                                     fieldValue = SalesInfo.weeklyqty;
                                 } else if (obj.Map == "AUR" && SalesInfo.AUR !== "undefined" && SalesInfo.AUR !== "") {
                                     fieldValue = SalesInfo.AUR;
+                                } else if (obj.Map == "WeeklyNetMargin" && SalesInfo.WeeklyNetMargin !== "undefined" && SalesInfo.WeeklyNetMargin !== "") { //ASA 2049 issue 1
+                                    fieldValue = SalesInfo.WeeklyNetMargin;    //ASA 2049 issue 1
                                 }
                             } else {
                                 fieldValue = getFieldValue(g_intersects[0].object, obj.Map, "I"); //ASA-1361 20240501 passing the p_label_type = 'I'
@@ -7597,6 +7599,10 @@ async function open_edit_modal_popup(p_object_ind, p_module_ind, p_shelf_ind, p_
             }
             //ASA-1726 End
             openInlineDialog("add_textbox", 75, 85);
+            if (!g_initial_camera) { //ASA-2048 Issue 8
+                g_initial_camera = g_camera.clone();
+            }
+
         } else {
             if (p_duplicate_fixel == "N") {
                 $s("P25_SHELF_EDIT_IND", "Y");

@@ -1752,7 +1752,7 @@ function init(p_canvasNo) {
 
     //This function will create scene and camera and push inside g_scene_objects array.
     createWorld();
-    console.log("scene", g_scene.uuid, g_scene);
+    console.log("scene", g_scene.uuid, g_scene); 
 
     //This is a feature from three js, through which we can identify which object is been clicked in mouse events.
     g_raycaster = new THREE.Raycaster();
