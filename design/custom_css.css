@@ -1,0 +1,107 @@
+body,
+.t-Body {
+    background: whitesmoke !important;
+}
+.t-Header-logo-link {
+    vertical-align: middle !important;
+}
+#successMessage {
+    position: fixed;
+    top: 12px;
+    right: 12px;
+    max-width: 480px;
+    z-index: 2000;
+    opacity: 0.9;
+    border-radius: 2px;
+    display: none;
+}
+.t-BreadcrumbRegion {
+    padding: 0px !important;
+}
+.t-BreadcrumbRegion-body {
+    padding: 10px !important;
+}
+.t-BreadcrumbRegion--useBreadcrumbTitle .t-Breadcrumb-item {
+    line-height: 1.2rem !important;
+}
+.t-BreadcrumbRegion--useBreadcrumbTitle .t-Breadcrumb-item:last-child {
+    display: inline-block !important;
+    font-size: 1rem !important;
+    text-overflow: ellipsis !important;
+    overflow: hidden !important;
+    position: relative;
+    flex-basis: auto !important;
+}
+.highlight_current {
+    background: yellow !important;
+    color: black !important;
+}
+/* Code if IG needs any column with always uppercase */
+.uppercase {
+    text-transform: uppercase;
+}
+.bold {
+    font-weight: bold;
+}
+.normal {
+    font-weight: normal;
+}
+.numeric_list {
+    text-align: right;
+}
+.numeric_list_with_dot {
+    text-align: right;
+}
+.fullScreenWidth {
+    max-width: 95vw !important;
+}
+/* Code if IG needs any column with always uppercase */
+.uppercase {
+    text-transform: uppercase;
+}
+/* CR4 Start */
+/* Code for removing Actions from all Interactive Grids */
+div.a-IG.action_hidden button[id$="ig_toolbar_actions_button"] {
+    display: none !important;
+}
+div.a-IG.action_hidden button[id$="toolbar_column_filter_button"] {
+    display: none !important;
+}
+div.a-IG.action_hidden input[id$="toolbar_search_field"] {
+    display: none !important;
+}
+div.a-IG.action_hidden button[data-action="search"] {
+    display: none !important;
+}
+/* CR4 End */
+.apex_disabled {
+  background-color: #f0f0f0 !important;
+  opacity: 1.5!important;
+} 
+.apex_disabled.apex-item-group--switch {
+  background-color: #f0f0f0 !important;
+  opacity: .5!important;
+}
+.a-GV-table tr.is-selected .a-GV-cell {
+    background-color: #deedfc !important;
+}
+.a-GV-table tr.is-readonly {
+    background-color: #f0f0f0 !important;
+}
+.display_only {
+    background-color: #f0f0f0 !important;
+}
+.a-GV-table td.is-readonly {
+    background-color: #f0f0f0;
+}
+.apex-rds-hover {
+    display: none !important;
+}
+.nolink {
+    color: #000;
+    cursor: context-menu;
+}
+
+.asw_filter_criteria_font{
+    font-size: 0.825rem;
+}

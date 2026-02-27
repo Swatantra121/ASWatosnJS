@@ -1,0 +1,49 @@
+.t-Header-logo-link {
+    vertical-align: middle !important;
+}
+
+.nolink {
+    color: #000;
+    cursor: context-menu;
+}
+
+.a-Toolbar-button-item input[type=radio]+label,
+.a-Toolbar-item.a-Button,
+.a-Toolbar-item.a-Toolbar-toggleButton {
+    border: .1rem solid !important;
+    border-color: darkgray !important;
+}
+
+.a-Toolbar-button-item input[type=radio]:checked+label,
+.a-Toolbar-toggleButton[aria-pressed="true"] {
+    background-color: lightgrey !important;
+}
+
+.t-Footer {
+    display: none;
+}
+
+/* Wizard region Width */
+.fullScreenWidth {
+    max-width: 95vw !important;
+}
+
+/* IG for highlight readonly columns */
+.a-GV-table td.is-readonly {
+    background-color: #f0f0f0
+}
+
+/* Dispaly Only item text increase opacity */
+.apex_disabled {
+  background-color: #f0f0f0 !important;
+  opacity: 1.5!important;
+}
+ 
+.apex_disabled.apex-item-group--switch {
+  background-color: #f0f0f0 !important;
+  opacity: .5!important;
+}
+
+.display_only {
+    background-color: #f0f0f0 !important;
+}

@@ -1,0 +1,363 @@
+.t-Body-contentInner{
+    padding: 0;
+}
+.top-bar {
+    width: 100%;
+    color: #364153;
+    background-color:#030213;
+    border: 1px solid #030213;
+    box-shadow: rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0.1) 0px 1px 3px 0px;
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    padding: 5px 0;
+}
+.top-bar .menu-inline{
+    display: flex;
+}
+.top-bar .menu-item{
+    font-size: 14px;
+    padding: 12px 16px;
+    display: inline-flex;
+    align-items: center;
+    color:#ffffff;
+    transition: all 0.3s ease-in-out;
+}
+.top-bar .menu-inline a:hover{
+   opacity: 0.75;
+}
+.top-bar .menu-item i{
+    margin-right: 5px;
+}
+.top-bar .dropdown{
+    position: relative;
+}
+.top-bar .dropbtn {
+    border: 0;
+    background-color: transparent;
+}
+.top-bar .dropdown-content {
+    display: none;
+    position: absolute;
+    top: 100%;
+    flex-direction: column;
+    z-index: 1;
+    min-width: 260px;
+    background-color: white;
+    border-radius: 10px;
+    padding: 10px 16px;
+    box-shadow: rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0.1) 0px 1px 3px 0px;
+}
+.top-bar .dropdown:hover .dropdown-content{
+    display: flex;
+}
+.top-bar .dropdown .dropdown-content a{
+    font-size: 14px;
+    padding: 12px 0;
+    display: inline-flex;
+    align-items: center;
+    color:#364153;
+}
+.top-bar .dropdown .dropdown-content a:hover{
+    background-color: none;
+}
+
+.asw-Splitter-region > .col {
+    padding: 0;
+}
+
+.top-bar .menu-button {
+    flex: 1;
+    align-items: center;
+    justify-content: flex-end;
+    display: flex;
+    gap: 10px;
+    padding-right: 16px;
+}
+.top-bar .menu-button a{
+    font-size: 14px;
+    padding: 8px 16px;
+    border-radius: 8px;
+    transition: all 0.3s ease-in-out;
+    min-width: 100px;
+    text-align: center;
+}
+.top-bar .menu-button a:hover{
+    opacity: 0.75;
+}
+.top-bar .menu-button  .pog-save {
+    background: #0084d1;
+    color: white;
+}
+.top-bar .menu-button .pog-reset{
+    border: 1px solid #ffffff; 
+    color: #ffffff;
+}
+.wtbar {
+    background-color: rgb(0 132 209);
+    color: white;
+    display: flex;
+    align-items: center;
+    padding: 8px 12px;
+    font-size: 16px;
+}
+.wt-left {
+    font-size: 16px;
+    gap: 15px;
+    display: flex;
+    align-items: center;
+    margin-right: 40px;
+}
+.wt-center {
+    display: flex;
+    align-items: center;
+}
+.wtbar label {
+    font-size: 12px;
+    opacity: 0.9;
+    margin-right: 10px;
+}
+.wtbar .wt-select {
+    border-radius: 8px;
+    border: 1px solid white;
+    padding: 8px 12px;
+    background: white !important;
+    font-size: 14px;
+    font-weight: 500;
+    min-width: 200px;
+    color: black;
+}
+.wt-right {
+    display: flex;
+    align-items: center;
+    gap:20px;
+    flex: 1;
+    justify-content: flex-end;
+    font-size: 12px;
+}
+.wt-right a {
+    color: white;
+    display: inline-flex;
+    align-items: center;
+}
+.wt-right a i {
+   font-size: 12px;
+   margin-right: 8px;
+}
+/**** Side Bar CSS ***/
+#wpdSplitter_splitter_first{
+    overflow: scroll;
+}
+#wpdSplitter_splitter_first .t-Region--scrollBody.t-Region--noPadding {
+   padding:8px 24px 24px;
+}
+#wpdSplitter_splitter_first .t-Region-header{
+    margin: 16px 0;
+}
+#wpdSplitter_splitter_first  .t-Region-headerItems {
+    padding-top: 0;
+    padding-right: 0;
+    padding-left: 0;
+}
+#wpdSplitter_splitter_first t-Region-orderBy ~ .container{
+    margin-bottom: 16px;
+}
+#wpdSplitter_splitter_first .t-Region-title {
+    color: #0a0a0a;
+    font-weight: 400;
+}
+#wpdSplitter_splitter_first .t-Region-body{
+    box-shadow: none;
+    border: 0;
+    padding: 0;
+}
+#wpdSplitter_splitter_first .row {
+    margin: 0 -8px;
+}
+#wpdSplitter_splitter_first .t-Region--scrollBody{
+    background: transparent;
+    box-shadow: none;
+    border: 0;
+    height: 100%;
+    overflow-y: auto;
+    overflow-x: auto;
+}
+#wpdSplitter_splitter_first .t-MediaList-item{
+    background-color: #fbf9fa;
+    border-radius: 8px;
+    padding: 8px;
+    border: 1px solid #ebe6e7;
+    margin-bottom: 8px;
+}
+#wpdSplitter_splitter_first .t-MediaList-item:last-child{
+    margin-bottom: 0;
+}
+#wpdSplitter_splitter_first  .t-MediaList-itemWrap{
+    padding: 0;
+}
+#wpdSplitter_splitter_first .t-Report-pagination {
+    display: none;
+}
+#wpdSplitter_splitter_first .attr-action-btn .t-Button{
+    background: transparent;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+    color: #0a0a0a;
+    transition:  all 0.3s ease-in-out;
+    margin-bottom: 16px;
+    margin-top: 10px;
+}
+#wpdSplitter_splitter_first .attr-action-btn .t-Button:hover{
+    background-color: #e9ebef;
+}
+#wpdSplitter_splitter_first .apex-item-grid-row {
+    background: #ececf0;
+    border-radius: 14px;
+    font-size: 14px;
+    font-weight: 600;
+    color: rgb(10, 10, 10);
+    padding: 5px;
+    display: flex;
+    margin-bottom: 16px;
+}
+.apex-item-grid-row .apex-item-option{
+    flex: 1;
+}
+#wpdSplitter_splitter_first .apex-item-grid-row label.u-radio {
+    background: transparent ;
+}
+#wpdSplitter_splitter_first .apex-item-radio input:checked+.u-radio{
+    background-color: white;
+    color: #000;
+    border-radius: 10px;
+}
+#wpdSplitter_splitter_first .t-Form-inlineHelp span {
+    display: block;
+    color: #4a5565;
+    font-size: 14px;
+    max-width: 200px;
+    line-height: 1.4;
+}
+#wpdSplitter_splitter_first  .recalculate-btn .t-Button{
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 14px;
+    background-color: #030213;
+    transition: all 0.3s ease-in-out;
+    line-height: 32px;
+    margin-bottom: 16px;
+}
+#wpdSplitter_splitter_first  .recalculate-btn .t-Button:hover{
+    opacity: 0.75;
+}
+#wpdSplitter_splitter_first .select-block-btn {
+   background: transparent;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+    color: #0a0a0a;
+    transition:  all 0.3s ease-in-out;
+    padding: 8px;
+}
+#wpdSplitter_splitter_first .apex-item-wrapper--select-list label {
+    color: #0a0a0a;
+}
+#wpdSplitter_splitter_first select {
+    background: #f3f3f5;
+    border-radius: 8px;
+    border: none;
+}
+#wpdSplitter_splitter_first .t-Region--hideShow .t-Region-header{
+    display: flex;
+    align-items: center;
+    color: #0a0a0a;
+    font-weight: 600;
+}
+#wpdSplitter_splitter_first .t-Region--hideShow .t-Region-headerItems{
+    padding-bottom: 0;
+}
+#wpdSplitter_splitter_first .t-Button--success{
+    background-color: #008236;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 16px;
+    line-height: 2;
+}
+
+#context-menu {
+    position: fixed;
+    z-index: 10000;
+    width: 11vw;
+    background-color: #1b1a1a;
+    transform: scale(0);
+    transform-origin: top left;
+}
+#context-menu, #context-menu.active {
+    transition: transform 200ms ease-in-out;
+}
+#context-menu.active {
+    transform: scale(1);
+}
+#context-menu ul, #renumbering_drop ul {
+    list-style-type: none;
+    margin: 0 !important;
+}
+#context-menu li {
+    font-size: .875rem;
+    line-height: 1.25rem;
+}
+#context-menu .items {
+    font-size: 15px;
+    color: #fff;
+    cursor: pointer;
+    display: block;
+    height: 4vh;
+    padding-left: 7%;
+    padding-top: 4%;
+}
+
+.side-bar{
+    display: none;
+}
+.attr-chip {
+    cursor: grab;
+    user-select: none;
+    margin-bottom: 10px;
+}
+.attr-chip:last-child{
+    margin-bottom: 0;
+}
+.attr-value{
+    display: none;
+}
+.attr-chip.dragging {
+    opacity: 0.5;
+}
+#added_attribute .t-fht-thead.js-stickyTableHeader,
+#added_attribute .js-stickyWidget-placeholder {
+    display: none;
+}
+
+.canvas-buttons {
+    display: block;
+    width: 100%;
+    background-color: #030213;
+    height: fit-content;
+    overflow: hidden;
+    padding: 5px;
+}
+.canvas-buttons span {
+    margin: 1px;
+    padding: 1px;
+    float: right;
+    cursor: pointer;
+    color: white;
+}
+.canvas-close{
+     border: 1px solid white;
+}
+#maincanvas-container .canvas-close{
+    display: none;
+}
+div#drawing_region {
+    margin: 0 -10px;
+}

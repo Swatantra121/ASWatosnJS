@@ -1,0 +1,1 @@
+# f105_static_application_files
