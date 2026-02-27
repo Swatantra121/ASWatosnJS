@@ -2778,9 +2778,12 @@ async function check_module_change(p_module_index, p_pog_code, p_pog_version, p_
 //this will create a shelfinfo and moduleinfo for change textbox.
 async function create_change_textbox(p_module_change, p_module_name, p_shelfy, p_module_index, p_pog_index) {
 	logDebug("function : create_change_textbox; module_change : " + p_module_change + "; module_name : " + p_module_name + "; shelfy : " + p_shelfy + "; p_module_index : " + p_module_index, "S");
-	var ShelfInfo = {};
-
-	ShelfInfo["Shelf"] = $v("P25_POGCR_MODULE_CHANGE_ID") + p_module_name.toUpperCase();
+	var ShelfInfo = {};   
+    if ($v("P25_POG_MODULE_NAME_TYPE") == "A") {  //ASA-2071 	
+        ShelfInfo["Shelf"] = $v("P25_POGCR_MODULE_CHANGE_ID") + p_module_name.toUpperCase();
+    } else {
+        ShelfInfo["Shelf"] = $v("P25_POGCR_MODULE_CHANGE_ID") + p_module_name;
+    }
 	ShelfInfo["ObjType"] = "TEXTBOX";
 	ShelfInfo["Desc"] = "";
 	ShelfInfo["MaxMerch"] = 0;
