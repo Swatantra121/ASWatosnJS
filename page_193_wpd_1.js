@@ -9532,7 +9532,7 @@ async function doMouseUp(p_x, p_y, p_event, p_prevX, p_prevY, p_canvas, p_camera
             //ASA-1697 - Start
             [g_autofillModInfo, g_autofillShelfInfo] = getAutofillModShelf(g_DragMouseStart, g_DragMouseEnd, g_pog_json, g_pog_index);
             // if (g_delete_details.length > 0) {
-            if (g_autofillShelfInfo.length >= 1) { //ASA-1965- issue-1  Additional fix
+            if (g_autofillShelfInfo.length >= 0) { //ASA-1965- issue-1  Additional fix
                 // var multi_mod = false;
                 // var mod_ind = -1;
                 // for (const objects of g_delete_details) {
@@ -11119,8 +11119,10 @@ async function doMouseMove(p_x, p_y, p_event, p_prevX, p_prevY, p_canvas, p_came
                 var top_bar_height    = top_bar.offsetHeight;
                 var btn_cont_width    = button_cont.offsetWidth;
 
-                g_mouse.x = p_event.clientX + scroll_left - (btn_cont_width + padding);
-                g_mouse.y = p_event.clientY + scroll_top  - (breadcrumb_height + padding + header_height + top_bar_height);
+                var canvas_rect_mm = p_canvas.getBoundingClientRect();
+                g_mouse.x = p_event.clientX - canvas_rect_mm.left + scroll_left;
+                // g_mouse.y = p_event.clientY + scroll_top  - (breadcrumb_height + padding + header_height + top_bar_height);
+                g_mouse.y = p_event.clientY - canvas_rect_mm.top + scroll_top;
 
                 var x1 = g_startMouse.x, x2 = g_mouse.x;
                 var y1 = g_startMouse.y, y2 = g_mouse.y;
@@ -14717,8 +14719,10 @@ function doMouseDown(p_x, p_y, p_startX, p_startY, p_event, p_canvas, p_context_
                     }
                     //this vector is used to create a multi select drag box. which will be used when mouse up to find out how many
                     //objects did user select and place all of them in g_delete_details array.
-                    g_startMouse.x = p_event.clientX + scroll_left - (btn_cont_width + padding);
-                    g_startMouse.y = p_event.clientY + scroll_top - (breadcrumb_height + padding + header_height + top_bar_height);
+                   var canvas_rect = p_canvas.getBoundingClientRect();
+                    g_startMouse.x = p_event.clientX - canvas_rect.left + scroll_left;
+                    // g_startMouse.y = p_event.clientY + scroll_top - (breadcrumb_height + padding + header_height + top_bar_height);
+                    g_startMouse.y = p_event.clientY - canvas_rect.top + scroll_top;
                     g_prevMouse.x = a;
                     g_prevMouse.y = p_y;
                     g_nextMouse = g_prevMouse.clone();
@@ -15076,7 +15080,19 @@ function doMouseDown(p_x, p_y, p_startX, p_startY, p_event, p_canvas, p_context_
                                         var coloredModule = colorObj.BlockDim.ColorObj;
                                         g_selected_block = objUuid;
                                         console.log("block name", g_selected_block);
-                                        try { highlightAutofillBlock(objUuid, p_pog_index); } catch (e) { console.warn(e); }
+                                        // try { highlightAutofillBlock(objUuid, p_pog_index); } catch (e) { console.warn(e); }
+                                       var isLeftClick = true;
+                                        try {
+                                            if (typeof p_event !== 'undefined' && typeof p_event.button !== 'undefined') {
+                                                isLeftClick = (p_event.button === 0);
+                                            }
+                                        } catch (e) {}
+                                        var hitIsModule = (typeof g_module_obj_array !== 'undefined' && g_module_obj_array.indexOf(g_objectHit) !== -1);
+                                        if (isLeftClick && hitIsModule) {
+                                            try { highlightAutofillBlock(objUuid, p_pog_index); } catch(e) { console.warn(e); }
+                                        } else {
+                                            try { clearAutofillBlockHighlight(); } catch(e) { /* ignore */ }
+                                        }
                                         g_dragItem = coloredModule.getObjectByProperty("uuid", objUuid);
                                         return true;
                                     }
@@ -15088,8 +15104,11 @@ function doMouseDown(p_x, p_y, p_startX, p_startY, p_event, p_canvas, p_context_
                         g_multiselect is only allow when mousedown happened on module or outside POG.
                          */
                         if (g_context_opened == "N") {
-                            g_startMouse.x = p_event.clientX + scroll_left - (btn_cont_width + padding);
-                            g_startMouse.y = p_event.clientY + scroll_top - (breadcrumb_height + padding + header_height + top_bar_height);
+                          
+                           var canvas_rect = p_canvas.getBoundingClientRect();
+                            g_startMouse.x = p_event.clientX - canvas_rect.left + scroll_left;
+                            // g_startMouse.y = p_event.clientY + scroll_top - (breadcrumb_height + padding + header_height + top_bar_height);
+                            g_startMouse.y = p_event.clientY - canvas_rect.top + scroll_top;
                             g_prevMouse.x = a;
                             g_prevMouse.y = p_y;
                             g_nextMouse = g_prevMouse.clone();
@@ -15157,8 +15176,11 @@ function doMouseDown(p_x, p_y, p_startX, p_startY, p_event, p_canvas, p_context_
                         g_dragItem = g_objectHit;
                         if (g_chest_move == "N" && g_shelf_object_type == "CHEST" && g_shelf_edit_flag == "Y" && g_chest_as_pegboard == "Y") {
                             //ASA-1300
-                            g_startMouse.x = p_event.clientX + scroll_left - (btn_cont_width + padding);
-                            g_startMouse.y = p_event.clientY + scroll_top - (breadcrumb_height + padding + header_height + top_bar_height);
+                           
+                            var canvas_rect = p_canvas.getBoundingClientRect();
+                            g_startMouse.x = p_event.clientX - canvas_rect.left + scroll_left;
+                            // g_startMouse.y = p_event.clientY + scroll_top - (breadcrumb_height + padding + header_height + top_bar_height);
+                            g_startMouse.y = p_event.clientY - canvas_rect.top + scroll_top;
                             g_prevMouse.x = a;
                             g_prevMouse.y = p_y;
                             g_nextMouse = g_prevMouse.clone();
@@ -15270,6 +15292,8 @@ function doMouseDown(p_x, p_y, p_startX, p_startY, p_event, p_canvas, p_context_
         error_handling(err);
     }
 }
+
+
 
 async function context_delete(p_action, p_moduleIndex, p_shelfIndex, p_itemIndex, p_item_edit_flag, p_module_edit_flag, p_shelf_edit_flag, p_objectHitID, p_shelfObjType, p_delete_details_arr, p_camera, p_pog_index, p_productselect) {
     logDebug("function : context_delete; action : " + p_action + "; moduleIndex : " + p_moduleIndex + "; shelfIndex : " + p_shelfIndex + "; itemIndex : " + p_itemIndex + "; i_item_edit_flag : " + p_item_edit_flag + "; i_module_edit_flag : " + p_module_edit_flag + "; i_shelf_edit_flag : " + p_shelf_edit_flag + "; objectHitID : " + p_objectHitID + "; shelfObjType : " + p_shelfObjType, "S");
@@ -15391,3 +15415,78 @@ async function deleteObject(p_pog_index, p_deleteDetailsArr, p_productListOpen, 
         error_handling(err);
     }
 }
+
+
+async function find_highlight_frame() {
+    try {
+        if (!Array.isArray(g_scene_objects) || g_scene_objects.length === 0) return [];
+        const removed = [];
+
+        g_scene_objects.forEach(sceneObj => {
+            const scene = sceneObj.scene;
+            if (!scene) return;
+
+            // collect highlight frames by name or uuid
+            const toRemove = [];
+            scene.traverse(obj => {
+                try {
+                    if (!obj) return;
+                    if (obj.uuid === "highlight_frame" || obj.name === "highlight_frame") {
+                        toRemove.push(obj);
+                    }
+                } catch (e) { }
+            });
+
+            toRemove.forEach(obj => {
+                try {
+                    obj.traverse(child => {
+                        try {
+                            if (child.geometry) child.geometry.dispose();
+
+                        } catch (e) { }
+                        try {
+                            if (child.material) {
+                                const mats = Array.isArray(child.material) ? child.material : [child.material];
+                                mats.forEach(m => {
+                                    try {
+                                        if (m.map) m.map.dispose();
+                                        if (m.lightMap?.dispose) m.lightMap.dispose();
+                                        if (m.envMap?.dispose) m.envMap.dispose();
+                                        m.dispose?.();
+                                    } catch (e) { }
+                                });
+                            }
+                        } catch (e) { }
+                    });
+                } catch (e) { }
+
+                try {
+                    if (obj.parent) obj.parent.remove(obj);
+                    else scene.remove(obj);
+                } catch (e) { }
+
+                removed.push(obj);
+            });
+        });
+
+        render_all_pog();
+        if (g_scene_objects[0].Indicators.LiveImage !== "Y") { //ASA-2017 issue 8 
+            for (let pogIdx = 0; pogIdx < g_pog_json.length; pogIdx++) {
+                clearFrame(pogIdx);
+            }
+        }
+        return removed;
+    } catch (err) {
+        error_handling(err);
+    }
+    
+}
+
+const randomColor = () => {
+    return (
+        "#" +
+        Math.floor(Math.random() * 16777215)
+            .toString(16)
+            .padStart(6, "0")
+            .toUpperCase());
+};

@@ -401,7 +401,7 @@ function setUpMouseHander(p_element, p_mouseDownFunc, p_mouseDragFunc, p_mouseUp
                 //caling doMouseDown function, after mouse down when this function finds a object and recognise it and it is a valid object to be dragged, the g_dragging will be true.
                 // ASA 1850 Start dragging if not in click-only mode
                 if (!isClicking) {
-                    g_dragging = p_mouseDownFunc(x, y, r.left, r.top, evt, p_canvas, "N", g_pog_index);
+                    g_dragging = p_mouseDownFunc(x, y, r.left, r.top, evt, p_canvas, "N", g_pog_index) ;
                 }
             }
         }
@@ -436,7 +436,7 @@ function setUpMouseHander(p_element, p_mouseDownFunc, p_mouseDragFunc, p_mouseUp
             // ASA 1850 Only drag if movement exceeds threshold
             var dx = Math.abs(x - startX);
             var dy = Math.abs(y - startY);
-            if (!g_dragging || dx > moveThreshold || dy > moveThreshold || g_pog_json.length > 1) { //ASA-1914 Issue6
+            if ( !g_dragging || dx > moveThreshold || dy > moveThreshold || g_pog_json.length > 1) { //ASA-1914 Issue6
                 const fromX = g_dragging ? prevX : x;
                 const fromY = g_dragging ? prevY : y;
                 p_mouseDragFunc(x, y, evt, fromX, fromY, l_new_canvas, new_camera, jselector, pPogIndex);
@@ -446,14 +446,15 @@ function setUpMouseHander(p_element, p_mouseDownFunc, p_mouseDragFunc, p_mouseUp
         }
     }
     //when user tries to drop a object in specific location or click on a item and want to perform some action or multi select and drop.
-    function doMouseUp(evt) {
+   function doMouseUp(evt) {
+      
         if (g_dragging) {
+            // ... existing drag-end logic unchanged ...
             set_curr_canvas(evt);
             if (p_mouseUpFunc && g_scene_objects.length > 0) {
                 var r = p_canvas.getBoundingClientRect();
                 var x = evt.clientX - r.left;
                 var y = evt.clientY - r.top;
-                //double click event is used only to find the object on which user did double click and open its details in popup like product details, fixel details popup etc.
                 p_mouseUpFunc(x, y, evt, prevX, prevY, p_canvas, g_camera, g_pog_index);
             }
             g_dragging = false;
