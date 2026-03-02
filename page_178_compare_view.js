@@ -543,6 +543,7 @@ async function ShowColorBackup(p_pog_index) {
 }
 
 async function two_pog_diff_checker(p_pog_index, p_comViewIndex) {
+    debugger;
 	logDebug("function : two_pog_diff_checker", "S");
 	var res = await reset_colors("O", p_pog_index);
 	var res = await ShowColorBackup(p_pog_index);
@@ -964,3 +965,55 @@ function setUpItemBlink(){
     });
 }
 //ASA-1537 #8 End
+
+
+
+//ASA-2073
+function area_zoom() {
+    logDebug("function : area_zoom", "S");
+    if (g_area_zoom_ind == "N") {
+        $(".top_icon").removeClass("active");
+        $(".left_icon").removeClass("active");
+        $(".area_zoom").addClass("active");
+        g_area_zoom_ind = "Y";
+        g_select_zoom_arr = [];
+    } else {
+        $(".area_zoom").removeClass("active");
+        g_area_zoom_ind = "N";
+    }
+    logDebug("function : area_zoom", "E");
+}
+
+function reset_zoom(p_pog_index) {
+    logDebug("function : reset_zoom", "S");
+    try {
+        if ((typeof g_pog_json !== "undefined" && g_pog_json.length > 0) || (typeof g_pog_json_comp !== "undefined" && g_pog_json_comp.length > 0)) {
+            $(".top_icon").removeClass("active");
+            $(".left_icon").removeClass("active");
+            $("#maincanvas").css("cursor", "auto");
+            $("#maincanvas1").css("cursor", "auto");
+            g_manual_zoom_ind = "N";
+            g_area_zoom_ind = "N";
+            g_select_zoom_arr = [];
+            if (g_curr_canvas == 1) {
+                var details = get_min_max_xy(p_pog_index);
+                var details_arr = details.split("###");
+                set_camera_z(g_scene_objects[p_pog_index].scene.children[0], parseFloat(details_arr[2]), parseFloat(details_arr[3]), parseFloat(details_arr[0]), parseFloat(details_arr[1]), g_offset_z, parseFloat(details_arr[4]), parseFloat(details_arr[5]), true, p_pog_index);
+            }
+
+            if (typeof g_pog_json_comp !== "undefined" && g_pog_json_comp.length > 0 && g_curr_canvas == 2 && g_compare_view !== "CUTAWAY") {
+                var details = get_min_max_xy(p_pog_index);
+                var details_arr = details.split("###");
+                set_camera_z(g_camera_comp, parseFloat(details_arr[2]), parseFloat(details_arr[3]), parseFloat(details_arr[0]), parseFloat(details_arr[1]), g_offset_z, parseFloat(details_arr[4]), parseFloat(details_arr[5]), true, p_pog_index);
+            } else if (g_curr_canvas == 2 && g_compare_view !== "CUTAWAY") {
+                set_camera_z(g_camera_comp, g_pog_json[p_pog_index].CompCamX, g_pog_json[p_pog_index].CompCamY, g_pog_json[p_pog_index].CompCamWidth, g_pog_json[p_pog_index].CompCamHeight, g_offset_z, g_pog_json[p_pog_index].CompCamWidth, g_pog_json[p_pog_index].CompCamHeight, true, p_pog_index);
+            }
+
+            render();
+            g_intersected = [];
+        }
+        logDebug("function : reset_zoom", "E");
+    } catch (err) {
+        error_handling(err);
+    }
+}
