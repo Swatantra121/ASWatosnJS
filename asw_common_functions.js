@@ -143,7 +143,6 @@ function set_select_canvas(p_pog_index) {
 }
 
 async function appendMultiCanvasRowCol(p_pog_count, p_type =  $v(g_page_no + "POGCR_TILE_VIEW"), p_appendFlag = "N", p_compareWith) {
-    debugger;
     console.log("dynamic rows cols");
      bindSplitterResizeSync();
     if (p_type == "H") {
@@ -1345,7 +1344,6 @@ async function get_json_data(p_pog_code, p_imageLoadInd = "N", p_pog_desc) {
 // This function will call create_module_from_json_lib from asw_common_main.js. This function will take the complete json of the POG and build json for g_pog_json
 //and create the skeleton on the screen.
 async function create_module_from_json(p_pog_json_arr, p_new_pog_ind, p_pog_type, p_product_open, p_pog_opened, p_stop_loading, p_create_pdf_ind, p_recreate, p_create_json, p_pog_version, p_save_pdf, p_camera, p_scene, p_pog_index, p_orgPogIndex, p_ImageLoadInd = "N", p_UpdateIndex = "N", p_old_POGJSON = []) {
-    debugger;
     try {
         typeof p_save_pdf == "undefined" ? "Y" : p_save_pdf;
          load_orientation_json();
@@ -1873,17 +1871,14 @@ async function show_view_analysis(p_pog_code, p_pog_version) {
         g_canvas_objects = [];
         let l_new_pog = g_pog_json[0];
         g_pog_json.push(l_new_pog);
-        // await appendMultiCanvasRowCol(g_pog_json.length, "H");
         await appendCanvasForGraph();
         init(0);
         var l_objects = {};
         l_objects["scene"] = g_scene;
         l_objects["renderer"] = g_renderer;
         g_scene_objects.push(l_objects);
-        // var l_POG_JSON = JSON.parse(JSON.stringify(g_pog_json));
         g_world = g_scene_objects[0].scene.children[2];
         g_camera = g_scene_objects[0].scene.children[0];
-        // await create_module_from_json(l_POG_JSON, "N", "F", "N", "E", "N", "N", "Y", "Y", g_pog_json[0].Version, "Y", g_scene_objects[0].scene.children[0], g_scene_objects[0].scene, 0, 0);
         await create_module_from_json([selectedPog], "N", "F", "N", "E", "N", "N", "Y", "Y", selectedPog.Version, "Y", g_scene_objects[0].scene.children[0], g_scene_objects[0].scene, 0, 0);
         render(0);
         g_ComViewIndex = -1;
@@ -1978,61 +1973,6 @@ async function appendCanvasForGraph() {
     }
     makeResizableRow();
 }
-
-// async function appendCanvasForGraph() {
-//     $(".viewH").addClass("view_active");
-//     $(".viewV").removeClass("view_active");
-//     g_windowHeight = window.innerHeight - 167;
-//     $("#canvas-holder .container").css("height", g_windowHeight + "px")
-//     var containerH = $("#canvas-holder .container").height();;
-//     var containerW = $("#canvas-holder .container").width();
-//     var rowCount = 1,
-//         pogCount = 0;
-//     var currColCount,
-//         pendingPogCount = 2;
-//     var divs = [];
-//     $("[data-col]").each(function () {
-//         var element = $(this)[0];
-//         divs.push(element);
-//     });
-//     calcFlag = "N";
-//     currColCount = 2;
-//     colCount = 2;
-//     $("#canvas-holder .container").html("");
-//     $("#canvas-holder .container").addClass("h-view").removeClass("v-view");
-//     for (var i = 1; i <= rowCount; i++) {
-//         $("#canvas-holder .container").append('<div class="row" data-row="' + i + '"></div>');
-//         if (calcFlag == "Y") {
-//             var res = pendingPogCount % (rowCount - i + 1);
-//             if (res > 0) {
-//                 currColCount = colCount;
-//             } else {
-//                 currColCount = pendingPogCount / (rowCount - i + 1);
-//                 calcFlag = "N";
-//             }
-//             pendingPogCount = pendingPogCount - currColCount;
-//         }
-//         for (var j = 1; j <= currColCount; j++) {
-//             var pogNo = pogCount == 0 ? "" : pogCount + 1;
-//             var canvasName = "maincanvas" + pogNo;
-//             var buttonHtml = "";
-//             buttonHtml = '<div class="canvas-buttons" id="maincanvas' + pogNo + '-btns" ><span class="fa fa-close canvas-close" onClick="closePog(' + pogCount + ')"></span><span class="fa fa-window-maximize canvas-max" onClick="maximizePog(' + pogCount + ')"></span><span class="fa fa-minus canvas-min" onClick="minimizePog(' + pogCount + ')"></span></div>';
-//             $("[data-row=" + i + "]").append('<div class="canvas-content" id="maincanvas' + pogNo + '-container" data-col="' + j + '" style="height:' + parseFloat((containerH / rowCount).toFixed(2)) + "px;width:" + parseFloat((containerW / currColCount).toFixed(2)) + 'px">' + buttonHtml + '<canvas class="canvasregion" data-canvas=true id="maincanvas' + pogNo + '" ></canvas></div>');
-//             try {
-//                 var el = document.getElementById(canvasName);
-//                 if (el) {
-//                     el.setAttribute('data-indx', pogCount);
-//                     if (g_canvas_objects.indexOf(el) === -1) g_canvas_objects.push(el);
-//                 }
-//             } catch (e) {
-//                 error_handling(e);
-//             }
-//             pogCount++;
-//         }
-//     }
-//     makeResizableRow();
-// }
-
 
 function doMouseDown(p_x, p_y, p_startX, p_startY, p_event, p_canvas, p_context_call, p_pog_index) {
     logDebug("function : doMouseDown; x : " + p_x + "; y : " + p_y + "; startX : " + p_startX + "; startY : " + p_startY + "; context_call : " + p_context_call, "S");

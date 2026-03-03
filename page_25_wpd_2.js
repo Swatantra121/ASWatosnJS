@@ -7487,8 +7487,12 @@ async function open_edit_modal_popup(p_object_ind, p_module_ind, p_shelf_ind, p_
             var mod_names = [];
             var i = 0;
             for (const Module of g_pog_json[p_pog_index].ModuleInfo) {
-                if (g_module_index !== i) {
-                    mod_names.push(Module.Module.toUpperCase());
+                if (g_module_index !== i) {                    
+                    if ($v("P25_POG_MODULE_NAME_TYPE") == "A") { //ASA-2071
+                       mod_names.push(Module.Module.toUpperCase());
+                    } else {
+                        mod_names.push(Module.Module);
+                    }
                 }
                 i++;
             }
@@ -8347,7 +8351,12 @@ function open_modal(p_bar_class, p_icon_class, p_modal_id) {
         if (typeof g_pog_json !== "undefined" && g_pog_json.length > 0) {
             var mod_names = [];
             for (const Module of g_pog_json[g_pog_index].ModuleInfo) {
-                mod_names.push(Module.Module.toUpperCase());
+                if ($v("P25_POG_MODULE_NAME_TYPE") == "A") { //ASA-2071
+                    mod_names.push(Module.Module.toUpperCase());
+                }
+                else{
+                    mod_names.push(Module.Module);
+                }
             }
             var module_list = [];
             var module_detail = {};
@@ -8673,16 +8682,42 @@ async function create_pog_module(p_camera, p_pog_index) {
         if (typeof g_pog_json !== "undefined" && g_pog_json[p_pog_index].ModuleInfo.length > 0) {
             var i = 0;
             for (const Module of g_pog_json[p_pog_index].ModuleInfo) {
-                if (Module.Module.toUpperCase() == POGModule.toUpperCase()) {
-                    ModuleInfo = Module;
-                    if (edited_ind == "Y" && g_module_index !== i) {
-                        duplicate_ind = "Y";
-                        break; //return false; // Loop will stop running after this
-                    } else if (edited_ind == "N") {
-                        duplicate_ind = "Y";
-                        break; //return false; // Loop will stop running after this
+                //ASA-2071  Start    
+                // if (Module.Module.toUpperCase() == POGModule.toUpperCase()) {
+                //     ModuleInfo = Module;
+                //     if (edited_ind == "Y" && g_module_index !== i) {
+                //         duplicate_ind = "Y";
+                //         break; //return false; // Loop will stop running after this
+                //     } else if (edited_ind == "N") {
+                //         duplicate_ind = "Y";
+                //         break; //return false; // Loop will stop running after this
+                //     }
+                // }      
+                if ($v("P25_POG_MODULE_NAME_TYPE") == "A") {      
+                    if (Module.Module.toUpperCase() == POGModule.toUpperCase()) {
+                        ModuleInfo = Module;
+                        if (edited_ind == "Y" && g_module_index !== i) {
+                            duplicate_ind = "Y";
+                            break; //return false; // Loop will stop running after this
+                        } else if (edited_ind == "N") {
+                            duplicate_ind = "Y";
+                            break; //return false; // Loop will stop running after this
+                        }
                     }
                 }
+                else{
+                     if (Module.Module == POGModule) {
+                        ModuleInfo = Module;
+                        if (edited_ind == "Y" && g_module_index !== i) {
+                            duplicate_ind = "Y";
+                            break; //return false; // Loop will stop running after this
+                        } else if (edited_ind == "N") {
+                            duplicate_ind = "Y";
+                            break; //return false; // Loop will stop running after this
+                        }
+                    }
+                }
+                //ASA-2071 End          
                 i++;
             }
         }

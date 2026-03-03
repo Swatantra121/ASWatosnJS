@@ -10,7 +10,7 @@ g_allUndoObjectsInfo = [];
 g_deletedItems = [];
 g_delete_details = [];
 g_ComViewIndex = -1;
-g_show_changes_block_snapshot = [];  //ASA-1986 
+g_show_changes_block_snapshot = [];  //ASA-1986  
 g_show_live_image = "N";
 g_selected_block  = [];
 //ASA-1986 start
@@ -826,9 +826,9 @@ function initiate_values_onload() {
     apex.actions.add({
         name: "view-analysis",
         label: "View Analysis",
-        action: function () {
-            open_view_analysis();
-        },
+               action: async function () {
+                    await open_view_analysis();
+               },
     });
 
     apex.actions.add({
@@ -1622,7 +1622,6 @@ async function onWindowResize(p_event) {
 }
 
 async function create_module_from_json(p_pog_json_arr, p_new_pog_ind, p_pog_type, p_product_open, p_pog_opened, p_stop_loading, p_create_pdf_ind, p_recreate, p_create_json, p_pog_version, p_save_pdf, p_camera, p_scene, p_pog_index, p_orgPogIndex, p_ImageLoadInd = "N", p_UpdateIndex = "N", p_old_POGJSON = []) {
-    debugger;
     try {
         typeof p_save_pdf == "undefined" ? "Y" : p_save_pdf;
         load_orientation_json();
@@ -7634,6 +7633,9 @@ function getAutofillModShelf(p_dragMouseStart, p_dragMouseEnd, p_pog_json, p_pog
                 }
                 // if (prevBlk.dragStart < selectedModule[0].dragEnd && prevBlk.dragEnd > selectedModule[0].dragStart && prevBlk.dragTop > selectedModule[0].dragBottom && prevBlk.dragBottom < selectedModule[0].dragTop) {
                 if (prevBlk.dragStart < selectedModule[0].dragEnd && prevBlk.dragEnd > selectedModule[0].dragStart && blkInfo.BlockDim.FinalTop > selectedModule[0].dragBottom && blkInfo.BlockDim.FinalBtm < selectedModule[0].dragTop) {  //ASA-1878
+                 // normalize block and selection top/bottom so direction (top->bottom or bottom->top)
+                // does not affect the overlap test
+                
 
                     // if(selectedModule[0].dragTop <= blkInfo.BlockDim.FinalBtm && selectedModule[0].dragBottom >= blkInfo.BlockDim.FinalBtm){
                     //     selectedModule[0].dragTop = blkInfo.BlockDim.FinalBtm;
@@ -9419,6 +9421,7 @@ async function doMouseUp(p_x, p_y, p_event, p_prevX, p_prevY, p_canvas, p_camera
     7. edit pallet functionality.
      */
     try {
+
         var locationX, locationY, locationZ;
         var width = p_canvas.width; // / window.devicePixelRatio;
         var height = p_canvas.height; // / window.devicePixelRatio;
@@ -9437,7 +9440,7 @@ async function doMouseUp(p_x, p_y, p_event, p_prevX, p_prevY, p_canvas, p_camera
         var l_final_x = Math.min(19, Math.max(-19, coords.x)); // clamp coords to the range -19 to 19, so object stays on ground
         var l_final_y = Math.min(19, Math.max(-19, coords.y));
         var z = g_drag_z;
-      // In Show Changes (POG compare view), a plain click should not trigger drag-end camera refit.
+        // In Show Changes (POG compare view), a plain click should not trigger drag-end camera refit.
         // Without this guard, click-only selection may execute drag-end paths and unexpectedly change zoom.
         var isClickWithoutDrag = Math.abs(p_x - p_prevX) <= 2 && Math.abs(p_y - p_prevY) <= 2;
         if (g_compare_pog_flag == "Y" && g_compare_view == "POG" && isClickWithoutDrag && g_selecting !== true && g_auto_fill_active == "N") {
@@ -9507,6 +9510,23 @@ async function doMouseUp(p_x, p_y, p_event, p_prevX, p_prevY, p_canvas, p_camera
             } else if (g_shift_mutli_item_select == "Y") {
                 multiSelectItemsWithShift(p_pog_index, g_multi_select_offset_perc);
             }
+
+            // ── FIX: g_selecting can still be true here when the user clicks
+            //    without moving (g_multiselect stays "N" so the block above is
+            //    skipped entirely). g_selecting must ALWAYS be false after mouseup
+            //    otherwise every subsequent mousemove keeps drawing the rubber-band
+            //    from the old click position. ─────────────────────────────────────
+            if (g_selecting) {
+                g_selecting = false;
+                g_startMouse.x = 0;
+                g_startMouse.y = 0;
+                g_DragMouseStart.x = 0;
+                g_DragMouseStart.y = 0;
+                g_DragMouseEnd.x = 0;
+                g_DragMouseEnd.y = 0;
+                g_selection.style.visibility = "hidden";
+            }
+            // ── END FIX ──────────────────────────────────────────────────────────
         }
 
         $("#maincanvas").css("cursor", "auto");
@@ -9532,23 +9552,7 @@ async function doMouseUp(p_x, p_y, p_event, p_prevX, p_prevY, p_canvas, p_camera
             //ASA-1697 - Start
             [g_autofillModInfo, g_autofillShelfInfo] = getAutofillModShelf(g_DragMouseStart, g_DragMouseEnd, g_pog_json, g_pog_index);
             // if (g_delete_details.length > 0) {
-            if (g_autofillShelfInfo.length >= 0) { //ASA-1965- issue-1  Additional fix
-                // var multi_mod = false;
-                // var mod_ind = -1;
-                // for (const objects of g_delete_details) {
-                //     if (objects.ObjType !== "TEXTBOX") {
-                //         if (mod_ind !== objects.MIndex && mod_ind !== -1) {
-                //             multi_mod = true;
-                //             break;
-                //         }
-                //         mod_ind = objects.MIndex;
-                //     }
-                // }
-                // if (multi_mod) {
-                //     g_delete_details = [];
-                //     alert(get_message("POGCR_SINGLE_MOD"));
-                //     return;
-                // } else {
+            if (g_autofillShelfInfo.length >= 1) { //ASA-1965- issue-1  Additional fix
                 apex.region("block_filters").widget().interactiveGrid("getActions").set("edit", false);
                 apex.region("block_filters").widget().interactiveGrid("getViews", "grid").model.clearChanges();
                 apex.region("block_filters").refresh();
@@ -9560,13 +9564,11 @@ async function doMouseUp(p_x, p_y, p_event, p_prevX, p_prevY, p_canvas, p_camera
                 $("#SAVE_BLK").css("display", "inline");
                 $("#UPDATE_BLK").css("display", "none");
                 openInlineDialog("block_details", 40, 65);
-                // }
                 //ASA-1697 - End
                 // } else if (typeof g_dragItem !== "undefined" && g_dragItem.length > 0 && g_drag_inprogress == "Y") {
                 //ASA-1965 task-3 start
             } else if (typeof g_dragItem !== "undefined" && g_dragItem != null && g_drag_inprogress == "Y" && ((g_dragItem.length && g_dragItem.length > 0) || (typeof g_dragItem.uuid !== 'undefined') || typeof g_dragItem === 'object')) {
                 //ASA-1085 added autofill dragging block
-                // try { console.log('AUTO_FILL_DROP: entering branch', {g_dragItem, dragItemType: typeof g_dragItem, hasLength: g_dragItem && g_dragItem.length, hasUuid: g_dragItem && g_dragItem.uuid, g_drag_inprogress}); } catch (e) {} //ASA -1965-task-3
                 var curr_module = getAutoFillCurrModule(l_final_x, l_final_y, g_module_index, p_pog_index);
                 if (typeof curr_module === "undefined" || curr_module === -1) {  // ASA-1965 Additional fix
                     try {
@@ -9577,7 +9579,8 @@ async function doMouseUp(p_x, p_y, p_event, p_prevX, p_prevY, p_canvas, p_camera
                         }
                         if (dragUuid) {
                             var dragBlock = g_mod_block_list.filter(function (f) { return f.BlkName == dragUuid; });
-                            if (dragBlock && dragBlock.length > 0 && dragBlock[0].BlockDim) {
+                            // ── FIX: Guard against dragBlock[0] being undefined on first drag ──
+                            if (dragBlock && dragBlock.length > 0 && dragBlock[0] && dragBlock[0].BlockDim) {
                                 var orgX = dragBlock[0].BlockDim.CalcX,
                                     orgY = dragBlock[0].BlockDim.CalcY,
                                     orgZ = dragBlock[0].BlockDim.CalcZ;
@@ -9587,36 +9590,58 @@ async function doMouseUp(p_x, p_y, p_event, p_prevX, p_prevY, p_canvas, p_camera
                                     render(p_pog_index);
                                     alert(get_message('VALIDATE_SWAP_BLOCK_MSG'));
                                 }
+                            } else {
+                                // dragBlock not found or BlockDim missing — just render and bail gracefully
+                                render(p_pog_index);
                             }
+                            // ── END FIX ───────────────────────────────────────────────────────
                         }
                     } catch (e) { }
                     g_dragItem = undefined;
                     return false;
                 } //ASA_1965 Additional fix END
+
                 if (typeof curr_module !== "undefined" && curr_module !== -1) {
                     var blockStart = {},
                         blockEnd = {},
                         blockFound = false;
-                    // var dragBlock = g_mod_block_list.filter((f) => {
-                    //     if (f.BlkName == g_dragItem.uuid) {
-                    //         return true;
-                    //     }
+
                     var dragUuid = null; //ASA-1965 task-3
                     if (g_dragItem) {
                         if (typeof g_dragItem.uuid !== 'undefined') dragUuid = g_dragItem.uuid;
                         else if (g_dragItem.length && g_dragItem.length > 0 && g_dragItem[0] && typeof g_dragItem[0].uuid !== 'undefined') dragUuid = g_dragItem[0].uuid;
                     }
-                    // try { console.log('AUTO_FILL_DROP: resolved dragUuid', dragUuid); } catch (e) {}
+
                     if (!dragUuid) {
-                        // nothing we can do - revert selection and exit
-                        // try { console.log('AUTO_FILL_DROP: no drag uuid, aborting drop-handling'); } catch (e) {}
                         g_dragItem = undefined;
                         return false;
                     }
+
                     var dragBlock = g_mod_block_list.filter((f) => {
                         return f.BlkName == dragUuid;
-                        //ASA-1965 task-3
                     });
+
+                    // ── FIX: Guard dragBlock[0] and BlockDim before any access ──────────
+                    // On the very first drag, g_mod_block_list may not yet contain an
+                    // entry matching dragUuid (the block was just rendered but the list
+                    // entry hasn't been fully initialised). Without this guard the code
+                    // crashes with "Cannot read properties of undefined (reading 'BlockDim')"
+                    // and rolls back the drag. On the second drag the list is populated so
+                    // it succeeds. We revert the visual position and exit cleanly instead.
+                    if (!dragBlock || dragBlock.length === 0 || !dragBlock[0] || !dragBlock[0].BlockDim) {
+                        try {
+                            // Snap the dragged mesh back to wherever it currently sits
+                            // (we have no CalcX/Y to revert to, so just re-render as-is)
+                            if (g_dragItem && g_dragItem.position && typeof g_dragItem.updateMatrix === 'function') {
+                                g_dragItem.updateMatrix();
+                                render(p_pog_index);
+                            }
+                        } catch (e) { }
+                        g_dragItem = undefined;
+                        return false;
+                    }
+                    // ── END FIX ──────────────────────────────────────────────────────────
+
                     blockStart.x = g_pog_json[p_pog_index].ModuleInfo[curr_module].X - g_pog_json[p_pog_index].ModuleInfo[curr_module].W / 2;
                     blockStart.y = l_final_y + dragBlock[0].BlockDim.BlkHeight / 2;
                     blockEnd.x = g_pog_json[p_pog_index].ModuleInfo[curr_module].X + g_pog_json[p_pog_index].ModuleInfo[curr_module].W / 2;
@@ -9631,10 +9656,8 @@ async function doMouseUp(p_x, p_y, p_event, p_prevX, p_prevY, p_canvas, p_camera
                                 var fnBtmX = g_pog_json[p_pog_index].ModuleInfo[colorObj.mod_index[0]].X + g_pog_json[p_pog_index].ModuleInfo[colorObj.mod_index[0]].W / 2;
                                 if (fnTop > l_final_y && fnBtm < l_final_y && fnTopX < l_final_x && fnBtmX > l_final_x) {
                                     await swapColoredBlocks(colorObj, dragBlock[0], p_pog_index);
-                                    // await save_blk_dtl_coll("Y", "", g_mod_block_list); //ASA-1965 task-3
                                     g_dragItem = undefined;
                                     blockFound = true;
-                                    // open_blk_details(dragBlock[0].BlkName, "N");
                                     render(p_pog_index); //ASA-1965 task-3
                                     return true;
                                 }
@@ -9647,7 +9670,6 @@ async function doMouseUp(p_x, p_y, p_event, p_prevX, p_prevY, p_canvas, p_camera
                                 var rtl = await add_module_autofill_color(blockStart, blockEnd, [curr_module], dragBlock[0].BlkColor, dragBlock[0].BlkName, "Y", dragBlock[0], p_pog_index, "Y");
                                 dragBlock[0].BlockDim = rtl;
                                 await save_blk_dtl_coll("Y", "", g_mod_block_list); //ASA-1965 task-3
-                                // open_blk_details(dragBlock[0].BlkName, "N");
                                 render(p_pog_index); //ASA-1965 task-3
                             } else {
                                 var orgX = dragBlock[0].BlockDim.CalcX,
@@ -9669,7 +9691,6 @@ async function doMouseUp(p_x, p_y, p_event, p_prevX, p_prevY, p_canvas, p_camera
                     }
                 }
             }
-            // } else if (g_shift_mutli_item_select !== "Y" && ((g_mselect_drag == "Y" && g_start_canvas == g_present_canvas && g_duplicating == "N" && g_drag_inprogress == "N" && g_compare_view !== "PREV_VERSION") || (g_canvas_drag == "Y" && g_mselect_drag == "Y" && g_start_canvas !== g_present_canvas && g_duplicating == "N" && g_compare_view !== "PREV_VERSION"))) {   // ASA-1548
         } else if (g_shift_mutli_item_select !== "Y" && ((g_mselect_drag == "Y" && g_start_canvas == g_present_canvas && g_duplicating == "N" && g_drag_inprogress == "N") || (g_canvas_drag == "Y" && g_mselect_drag == "Y" && g_start_canvas !== g_present_canvas && g_duplicating == "N" && g_compare_view !== "PREV_VERSION"))) {
             // ASA-1548
             //ASA-1422
@@ -9696,7 +9717,6 @@ async function doMouseUp(p_x, p_y, p_event, p_prevX, p_prevY, p_canvas, p_camera
             //so we revert back the object to old position.
             if (g_start_canvas !== g_present_canvas && g_drag_inprogress == "Y" && g_compare_view != "PREV_VERSION") {
                 //ASA-1507 #3
-                // if (g_start_canvas !== g_present_canvas && g_drag_inprogress == "Y") {  //ASA-1507 #3
                 var new_shelfdtl = g_pog_json[g_start_canvas].ModuleInfo[g_module_index].ShelfInfo[g_shelf_index];
                 g_world = g_scene_objects[g_start_canvas].scene.children[2];
                 if (g_shelf_edit_flag == "Y") {
@@ -9825,9 +9845,7 @@ async function doMouseUp(p_x, p_y, p_event, p_prevX, p_prevY, p_canvas, p_camera
                         comb_shelf_ind = "Y";
                     }
                     // ASA-1361 20240501
-                    // if ($v("P193_POGCR_COMBINATION_SHELF") == "Y") {
                     cnfrm = await getconfirm_shelfmove(p_pog_index);
-                    // }
                     if (g_pog_json[p_pog_index].ModuleInfo[curr_module].H > 0.1 && g_shelf_object_type !== "ROD" && g_shelf_object_type !== "TEXTBOX" && g_auto_position_ind == "Y") {
                         /*auto position button is on find the module behind the fixel drop position and find the corner of
                         module and place fixel there*/
@@ -9966,13 +9984,9 @@ async function doMouseUp(p_x, p_y, p_event, p_prevX, p_prevY, p_canvas, p_camera
                                 g_dragItem.position.z = 0.005;
                             } else if (g_shelf_object_type == "TEXTBOX") {
                                 g_dragItem.position.z = 0.0005;
-                                //ASA-1544 - Start
-                                // } else if (g_shelf_object_type == "SHELF") {
                             } else {
                                 g_dragItem.position.z = nvl(g_dragItem.position.z) == 0 ? 0.00015 : g_dragItem.position.z;
-                                // g_dragItem.position.z = 0.00015;
                             }
-                            //ASA-1544 - End
                         }
                     }
                 }
@@ -10154,7 +10168,6 @@ async function doMouseUp(p_x, p_y, p_event, p_prevX, p_prevY, p_canvas, p_camera
                             ItemInfo["W"] = ItemInfo["RW"];
                             shelfdtl.ItemInfo[g_item_index].W = ItemInfo["RW"];
                         }
-                        //await reset_auto_crush(g_module_index, g_shelf_index, g_item_index, p_pog_index, g_module_index, g_shelf_index); //ASA-1343 issue 1 //Task_27812
 
                         //set location of items finding the place its been dropped.
                         var [upd_item_index, new_shelf_index, new_module_index, new_object_type, g_edit_ind, ItemInfo, div_index, bottom_item_flag, bottom_item_ind] = await update_item_loc(curr_module, g_module_index, g_shelf_index, div_shelf_index, div_object_type, g_item_index, g_final_x, shelf_found, ItemInfo, shelfY, shelfHeight, l_final_y, g_pog_json, drag_direction, p_pog_index, p_pog_index); //Task_27812 issue 13
@@ -10206,11 +10219,6 @@ async function doMouseUp(p_x, p_y, p_event, p_prevX, p_prevY, p_canvas, p_camera
                         if (bottom_item_flag == "Y") {
                             bottom_item_obj = g_pog_json[p_pog_index].ModuleInfo[curr_module].ShelfInfo[div_shelf_index].ItemInfo[bottom_item_ind].ObjID;
                             shelfdtl.ItemInfo[g_item_index].BottomObjID = g_pog_json[p_pog_index].ModuleInfo[curr_module].ShelfInfo[div_shelf_index].ItemInfo[bottom_item_ind].ObjID;
-                            // for (var item of g_allUndoObjectsInfo[0][0].ItemInfo) {//use for
-                            //     if (item.ObjID == shelfdtl.ItemInfo[g_item_index].ObjID) {
-                            //         item.BottomObjID = g_pog_json[p_pog_index].ModuleInfo[curr_module].ShelfInfo[div_shelf_index].ItemInfo[bottom_item_ind].ObjID;
-                            //     }
-                            // }
                             shelfdtl.ItemInfo[g_item_index].X = g_pog_json[p_pog_index].ModuleInfo[curr_module].ShelfInfo[div_shelf_index].ItemInfo[bottom_item_ind].X;
                             g_pog_json[p_pog_index].ModuleInfo[curr_module].ShelfInfo[div_shelf_index].ItemInfo[bottom_item_ind].TopObjID = shelfdtl.ItemInfo[g_item_index].ObjID;
                             if (new_object_type == "PALLET") {
@@ -10285,30 +10293,6 @@ async function doMouseUp(p_x, p_y, p_event, p_prevX, p_prevY, p_canvas, p_camera
                         //setting item to new location
                         var l_edited_item_index = await set_item_after_drag(new_object_type, spread_product, new_module_index, new_shelf_index, upd_item_index, ItemInfo, p_pog_index);
 
-                        //// start Task_27812 issue 6 20240528
-                        /*if ((new_object_type == "SHELF" || new_object_type == "HANGINGBAR") && g_pog_json[p_pog_index].ModuleInfo[new_module_index].ShelfInfo[new_shelf_index].Combine !== "N") {
-                            var l_detail_arr = []; //ASA 1329
-                            var l_detail_obj = {}; //ASA 1329
-                            l_detail_obj["MIndex"] = new_module_index; //ASA 1329
-                            l_detail_obj["SIndex"] = new_shelf_index; //ASA 1329
-                            l_detail_obj["IIndex"] = l_edited_item_index; //ASA 1329
-                            l_detail_obj["Iobjid"] = g_pog_json[p_pog_index].ModuleInfo[new_module_index].ShelfInfo[new_shelf_index].ItemInfo[l_edited_item_index].ObjID; //ASA 1329
-                            l_detail_arr.push(l_detail_obj); //ASA 1329
-                            [currCombinationIndex, currShelfCombIndx] = getCombinationShelf(p_pog_index, g_pog_json[p_pog_index].ModuleInfo[new_module_index].ShelfInfo[new_shelf_index].Shelf);
-                            if (currCombinationIndex !== -1 && currShelfCombIndx !== -1) {
-                                await setCombinedShelfItems(p_pog_index, currCombinationIndex, currShelfCombIndx, g_final_x, 'Y', 'N', -1, l_edited_item_index, l_detail_arr); //ASA-1329
-                                new_module_index = l_detail_arr[0].MIndex; //ASA 1329
-                                new_shelf_index = l_detail_arr[0].SIndex; //ASA 1329
-                                l_edited_item_index = l_detail_arr[0].IIndex; //ASA 1329
-                            }
-                        }
-                        if ((shelfdtl.ObjType == "SHELF" || shelfdtl.ObjType == "HANGINGBAR") && g_pog_json[p_pog_index].ModuleInfo[g_module_index].ShelfInfo[g_shelf_index].Combine !== "N") {//Task_27812 issue 13 20240528
-                            [currCombinationIndex, currShelfCombIndx] = getCombinationShelf(p_pog_index, g_pog_json[p_pog_index].ModuleInfo[g_module_index].ShelfInfo[g_shelf_index].Shelf);
-                            if (currCombinationIndex !== -1 && currShelfCombIndx !== -1) {
-                                await setCombinedShelfItems(p_pog_index, currCombinationIndex, currShelfCombIndx, g_final_x, 'Y', 'N', -1, g_item_index, []);
-                                await reset_auto_crush(g_module_index, g_shelf_index, g_item_index, p_pog_index, g_module_index, g_shelf_index);
-                            }
-                        }*/
                         var i = 0; //Task_27812 issue 6 20240528 Regression Issue 11 05082024
                         for (const fitems of g_pog_json[p_pog_index].ModuleInfo[new_module_index].ShelfInfo[new_shelf_index].ItemInfo) {
                             if (fitems.ObjID == ItemInfo["ObjID"]) {
@@ -10326,12 +10310,6 @@ async function doMouseUp(p_x, p_y, p_event, p_prevX, p_prevY, p_canvas, p_camera
 
                         var items = g_pog_json[p_pog_index].ModuleInfo[new_module_index].ShelfInfo[new_shelf_index].ItemInfo[l_edited_item_index];
 
-                        //ASA-1476 ISSUE 4
-                        // if (bottom_item_flag == "N" && g_pog_json[p_pog_index].ModuleInfo[new_module_index].ShelfInfo[new_shelf_index].ItemInfo[l_edited_item_index].Item !== "DIVIDER") {
-                        //     //ASA-1085
-                        //     var res = await set_auto_facings(new_module_index, new_shelf_index, l_edited_item_index, items, "B", "I", "D", p_pog_index);
-                        // }
-
                         if (reorder_items(new_module_index, new_shelf_index, p_pog_index)) {
                             const l_invalidPosition = g_invalidPosition;
                             var i = 0;
@@ -10343,21 +10321,13 @@ async function doMouseUp(p_x, p_y, p_event, p_prevX, p_prevY, p_canvas, p_camera
                                 i++;
                             }
                             var itemindex = 0;
-                            //var l_fixed_item_validate = "N";//ASA-1286 issue 2  KUSH//Task-02_25977 should not be fixed here for hanging bar fixed item.need to find other approach
-                            // var shefl_end = parseFloat((g_pog_json[p_pog_index].ModuleInfo[new_module_index].ShelfInfo[new_shelf_index].X + g_pog_json[p_pog_index].ModuleInfo[new_module_index].ShelfInfo[new_shelf_index].W / 2).toFixed(4)); //ASA-1286 issue 2
                             for (const fitems of g_pog_json[p_pog_index].ModuleInfo[new_module_index].ShelfInfo[new_shelf_index].ItemInfo) {
                                 fitems.CType = g_pog_json[p_pog_index].ModuleInfo[new_module_index].ShelfInfo[new_shelf_index].ObjType;
-                                //ASA_1769, added itemInsidePeg param to not validate holes passing to find_pegboard_gap
                                 var new_x = get_item_xaxis(fitems.W, fitems.H, fitems.D, fitems.CType, -1, g_pog_json[p_pog_index].ModuleInfo[new_module_index].ShelfInfo[new_shelf_index].HorizGap, g_pog_json[p_pog_index].ModuleInfo[new_module_index].ShelfInfo[new_shelf_index].SpreadItem, g_pog_json[p_pog_index].ModuleInfo[new_module_index].ShelfInfo[new_shelf_index].HorizGap, new_module_index, new_shelf_index, itemindex, "Y", g_pog_json[p_pog_index].ModuleInfo[new_module_index].ShelfInfo[new_shelf_index].ItemInfo.length, "N", p_pog_index, itemInsidePeg);
                                 fitems.X = new_x;
-                                // var item_end = parseFloat((fitems.X + fitems.W / 2).toFixed(4)); //ASA-1286 issue 2  KUSH
-                                /*if (item_end >shefl_end && g_overhung_shelf_active == 'N'){//ASA-1286 issue 2  KUSH//Task-02_25977
-                                l_fixed_item_validate = "Y";
-                                } */
                                 itemindex++;
                             }
                             var return_val = "N";
-                            //check if there is difference in any dimension in POG data to DB if change validate and update all same items
                             if (check_dim_difference(new_module_index, new_shelf_index, l_edited_item_index, p_pog_index)) {
                                 return_val = await check_item_dim_valid(items, new_module_index, new_shelf_index, l_edited_item_index, p_pog_index); //ASA-1301
                             } else if (new_object_type !== "PEGBOARD") {
@@ -10365,17 +10335,12 @@ async function doMouseUp(p_x, p_y, p_event, p_prevX, p_prevY, p_canvas, p_camera
                                     //ASA-1125
                                     //ASA-1085
                                 } else {
-                                    //getting latest height and width and validate the item height in the present shelf.
                                     var return_val = update_validate_item_height(items, new_module_index, new_shelf_index, l_edited_item_index, g_final_x, new_object_type, -1, p_pog_index);
                                 }
                             }
-                            //ASA-1476 ISSUE 4
                             if (bottom_item_flag == "N" && g_pog_json[p_pog_index].ModuleInfo[new_module_index].ShelfInfo[new_shelf_index].ItemInfo[l_edited_item_index].Item !== "DIVIDER") {
                                 var res = await set_auto_facings(new_module_index, new_shelf_index, l_edited_item_index, items, "B", "I", "D", p_pog_index);
                             }
-                            /*if (l_fixed_item_validate !=="N"){ //ASA-1286 issue 2  KUSH//Task-02_25977
-                            return_val = l_fixed_item_validate;
-                            }*/
                             g_invalidPosition = l_invalidPosition;
                         }
 
@@ -10407,9 +10372,7 @@ async function doMouseUp(p_x, p_y, p_event, p_prevX, p_prevY, p_canvas, p_camera
                         info["OldIIndex"] = l_edited_item_index;
                         info["OldObjID"] = items.ObjID;
                         g_combineItemModf.push(info);
-                        //validate item width and depth and do auto crush if applicable.
                         if ((return_val == "F" || return_val == "N") && (await validate_items(item_width_arr, item_height_arr, item_depth_arr, item_index_arr, new_object_type, new_module_index, new_shelf_index, l_edited_item_index, g_edit_ind, ItemInfo["CrushHoriz"], ItemInfo["CrushVert"], ItemInfo["CrushD"], g_final_x, item_fixed, "N", "Y", bottom_item_flag, "N", drag_item_arr, "Y", "Y", "Y", p_pog_index))) {
-                            //identify if any change in POG
                             g_pog_edited_ind = "Y";
 
                             var obj_id = 0;
@@ -10425,21 +10388,14 @@ async function doMouseUp(p_x, p_y, p_event, p_prevX, p_prevY, p_canvas, p_camera
                             shelfInfoForUndo.push(movedShelfDetail);
                             if (g_shelf_index !== div_shelf_index || curr_module !== g_module_index) {
                                 try {
-                                    /*if (div_object_type == "SHELF" || div_object_type == "PALLET") {
-                                    //ASA-1085
-                                    var returnval = reset_top_bottom_objects(new_module_index, new_shelf_index, "N", p_pog_index);
-                                    }*/
                                     if (reorder_items(new_module_index, new_shelf_index, p_pog_index)) {
-                                        // ASA-1095, Start
                                         if (div_object_type == "SHELF" && (g_pog_json[p_pog_index].ModuleInfo[new_module_index].ShelfInfo[new_shelf_index].SpreadItem == "L" || g_pog_json[p_pog_index].ModuleInfo[new_module_index].ShelfInfo[new_shelf_index].SpreadItem == "R")) {
                                             var new_index = mergeAdjacentItems(p_pog_index, new_module_index, new_shelf_index, l_edited_item_index);
                                             if (new_index > -1) {
                                                 l_edited_item_index = new_index;
                                             }
                                         }
-                                        // ASA-1095, End
                                         var return_val = await recreate_all_items(new_module_index, new_shelf_index, div_object_type, "Y", g_final_x, l_edited_item_index, g_pog_json[p_pog_index].ModuleInfo[new_module_index].ShelfInfo[new_shelf_index].ItemInfo.length, "N", "N", -1, -1, g_start_canvas, "", p_pog_index, $v("P193_POGCR_DELIST_ITEM_DFT_COL"), $v("P193_MERCH_STYLE"), $v("P193_POGCR_LOAD_IMG_FROM"), $v("P193_BU_ID"), $v("P193_POGCR_ITEM_NUM_LBL_COLOR"), $v("P193_POGCR_ITEM_NUM_LABEL_POS"), $v("P193_POGCR_DISPLAY_ITEM_INFO"), "Y", itemInsidePeg); //ASA-1350 issue 6 added parameters, ASA-1769 itemInsidePeg
-                                        //ASA-1129, Start
                                         var modfIndx = -1;
                                         if (g_combineItemModf.length > 0) {
                                             for (var mf = 0; mf < g_combineItemModf.length; mf++) {
@@ -10452,10 +10408,7 @@ async function doMouseUp(p_x, p_y, p_event, p_prevX, p_prevY, p_canvas, p_camera
                                             }
                                         }
                                         var item_details = g_pog_json[p_pog_index].ModuleInfo[new_module_index].ShelfInfo[new_shelf_index].ItemInfo;
-                                        var sorto = {
-                                            X: "asc",
-                                            Y: "asc",
-                                        };
+                                        var sorto = { X: "asc", Y: "asc" };
                                         item_details.keySort(sorto);
                                         if (modfIndx !== -1) {
                                             var itemIndex = 0;
@@ -10466,14 +10419,11 @@ async function doMouseUp(p_x, p_y, p_event, p_prevX, p_prevY, p_canvas, p_camera
                                                 itemIndex++;
                                             }
                                         }
-                                        g_combineItemModf = []; //asa-1327
-                                        //ASA-1129, End
-                                        //ASA-S-1107, Start
+                                        g_combineItemModf = [];
                                         var item_blink = g_pog_json[p_pog_index].ModuleInfo[new_module_index].ShelfInfo[new_shelf_index].ItemInfo[l_edited_item_index];
                                         var selectedObject = g_scene_objects[p_pog_index].scene.children[2].getObjectById(item_blink.ObjID);
                                         g_intersected.push(selectedObject);
                                         render_animate_selected();
-                                        //ASA-S-1107, End
                                     }
                                     update_item_distance(new_module_index, new_shelf_index, p_pog_index);
                                     render(p_pog_index);
@@ -10483,26 +10433,10 @@ async function doMouseUp(p_x, p_y, p_event, p_prevX, p_prevY, p_canvas, p_camera
                                 logFinalUndoObjectsInfo("SHELF_DELETE", "U", g_allUndoObjectsInfo, "", "Y", "N", "N", "N", "N", "Y", g_carpark_item_flag);
                                 g_allUndoObjectsInfo = [];
 
-                                //capture the module is edit or not to create changed text box
                                 g_pog_json[p_pog_index].ModuleInfo[new_module_index].EditFlag = "Y";
                                 if (g_pog_json[p_pog_index].ModuleInfo[new_module_index].ShelfInfo[new_shelf_index].ObjType == "CHEST" && g_chest_as_pegboard == "Y") {
-                                    //Bug-26122 - splitting the chest
                                     g_pog_json[p_pog_index].ModuleInfo[new_module_index].ShelfInfo[new_shelf_index].ChestEdit = "Y";
                                 }
-                                // ASA-1095, Start
-                                //ASA-1327 unused code.
-                                /*if (typeof l_edited_item_index !== "undefined" && l_edited_item_index !== -1) {
-                                ItemInfo = g_pog_json[p_pog_index].ModuleInfo[new_module_index].ShelfInfo[new_shelf_index].ItemInfo[l_edited_item_index];
-                                (item_width_arr = []),
-                                (item_height_arr = []),
-                                (item_depth_arr = []),
-                                (item_index_arr = []);
-                                item_width_arr.push(parseFloat(ItemInfo.W.toFixed(3)));
-                                item_height_arr.push(parseFloat(ItemInfo.H.toFixed(3)));
-                                item_depth_arr.push(parseFloat(ItemInfo.D.toFixed(3)));
-                                item_index_arr.push(l_edited_item_index);
-                                }*/
-                                // ASA-1095, End
                             }
 
                             try {
@@ -10515,14 +10449,12 @@ async function doMouseUp(p_x, p_y, p_event, p_prevX, p_prevY, p_canvas, p_camera
                                         i++;
                                     }
                                 }
-                                // await auto_crush_items(item_width_arr, item_index_arr, shelfdtl.ObjType, g_module_index, g_shelf_index, l_edited_item_index, p_pog_index, "N", "Y"); //ASA-1079
                                 var [currCombinationIndex, currShelfCombIndx] = getCombinationShelf(p_pog_index, g_pog_json[p_pog_index].ModuleInfo[new_module_index].ShelfInfo[new_shelf_index].Shelf);
                                 var [oldcurrCombinationIndex, oldShelfCombIndx] = getCombinationShelf(p_pog_index, g_pog_json[p_pog_index].ModuleInfo[g_module_index].ShelfInfo[g_shelf_index].Shelf);
 
                                 if ((currCombinationIndex !== oldcurrCombinationIndex && currCombinationIndex > -1) || currCombinationIndex == -1 || (g_shelf_index == div_shelf_index && curr_module == g_module_index)) {
                                     if (reorder_items(g_module_index, g_shelf_index, p_pog_index)) {
                                         var return_val = await recreate_all_items(g_module_index, g_shelf_index, shelfdtl.ObjType, "Y", g_final_x, l_edited_item_index, shelfdtl.ItemInfo.length, "N", "N", -1, -1, g_start_canvas, "", p_pog_index, $v("P193_POGCR_DELIST_ITEM_DFT_COL"), $v("P193_MERCH_STYLE"), $v("P193_POGCR_LOAD_IMG_FROM"), $v("P193_BU_ID"), $v("P193_POGCR_ITEM_NUM_LBL_COLOR"), $v("P193_POGCR_ITEM_NUM_LABEL_POS"), $v("P193_POGCR_DISPLAY_ITEM_INFO"), "Y", itemInsidePeg); //ASA-1350 issue 6 added parameters, ASA-1769 itemInsidePeg
-                                        //ASA-1129, Start
                                         var modfIndx = -1;
                                         if (g_combineItemModf.length > 0) {
                                             for (var mf = 0; mf < g_combineItemModf.length; mf++) {
@@ -10535,10 +10467,7 @@ async function doMouseUp(p_x, p_y, p_event, p_prevX, p_prevY, p_canvas, p_camera
                                             }
                                         }
                                         var item_details = g_pog_json[p_pog_index].ModuleInfo[new_module_index].ShelfInfo[new_shelf_index].ItemInfo;
-                                        var sorto = {
-                                            X: "asc",
-                                            Y: "asc",
-                                        };
+                                        var sorto = { X: "asc", Y: "asc" };
                                         item_details.keySort(sorto);
                                         if (modfIndx !== -1) {
                                             var itemIndex = 0;
@@ -10549,14 +10478,11 @@ async function doMouseUp(p_x, p_y, p_event, p_prevX, p_prevY, p_canvas, p_camera
                                                 itemIndex++;
                                             }
                                         }
-                                        //ASA-1129, End
                                     }
                                 }
                                 update_item_distance(g_module_index, g_shelf_index, p_pog_index);
-                                //capture the module is edit or not to create changed text box
                                 g_pog_json[p_pog_index].ModuleInfo[g_module_index].EditFlag = "Y";
                                 if (g_pog_json[p_pog_index].ModuleInfo[g_module_index].ShelfInfo[g_shelf_index].ObjType == "CHEST" && g_chest_as_pegboard == "Y") {
-                                    //Bug-26122 - splitting the chest
                                     g_pog_json[p_pog_index].ModuleInfo[g_module_index].ShelfInfo[g_shelf_index].ChestEdit = "Y";
                                 }
                                 render(p_pog_index);
@@ -10578,7 +10504,6 @@ async function doMouseUp(p_x, p_y, p_event, p_prevX, p_prevY, p_canvas, p_camera
                                     var return_val = await get_images(i, j, items_arr, item_index_arr, parseFloat($v("P193_POGCR_IMG_MAX_WIDTH")), parseFloat($v("P193_POGCR_IMG_MAX_HEIGHT")), parseFloat($v("P193_IMAGE_COMPRESS_RATIO")));
                                 }
 
-                                //delete the carpark shelf if all items are moved.
                                 if (g_pog_json[p_pog_index].ModuleInfo[g_module_index].Carpark[0].ItemInfo.length == 0) {
                                     var selectObjects = g_scene_objects[p_pog_index].scene.children[2].getObjectById(g_pog_json[p_pog_index].ModuleInfo[g_module_index].Carpark[0].SObjID);
                                     g_scene_objects[p_pog_index].scene.children[2].remove(selectObjects);
@@ -10649,7 +10574,7 @@ async function doMouseUp(p_x, p_y, p_event, p_prevX, p_prevY, p_canvas, p_camera
                 //---------------------CAMERA SETTING BASED ON NEW OVERALL HEIGHT AND WIDTH OF ALL MODULES   -----------------------------------------------
 
                 if (g_shelf_edit_flag == "Y") {
-                    if (g_manual_zoom_ind == "N"  && !isClickWithoutDrag) { // here this  check the  isclicking 
+                    if (g_manual_zoom_ind == "N" && !isClickWithoutDrag) {
                         var details = get_min_max_xy(p_pog_index);
                         var details_arr = details.split("###");
                         set_camera_z(p_camera, parseFloat(details_arr[2]), parseFloat(details_arr[3]), parseFloat(details_arr[0]), parseFloat(details_arr[1]), g_offset_z, parseFloat(details_arr[4]), parseFloat(details_arr[5]), false, p_pog_index);
@@ -10687,10 +10612,6 @@ async function doMouseUp(p_x, p_y, p_event, p_prevX, p_prevY, p_canvas, p_camera
                 g_slope = 0;
             }
         }
-
-        // if (g_itemSubLabelInd == "Y") { //ASA-1417   //ASA-1577
-        //     showItemSubLabel(g_itemSubLabel, g_itemSubLabelInd, $v("P193_POGCR_ITEM_NUM_LBL_COLOR"), $v("P193_POGCR_ITEM_NUM_LABEL_POS"), p_pog_index);
-        // }
 
         g_drag_inprogress = "N";
         g_duplicating = "N";
@@ -11077,6 +10998,7 @@ async function doMouseUp(p_x, p_y, p_event, p_prevX, p_prevY, p_canvas, p_camera
 // }
 async function doMouseMove(p_x, p_y, p_event, p_prevX, p_prevY, p_canvas, p_camera, p_jselector, p_pog_index) {
     try {
+        
         g_present_canvas = parseInt(p_pog_index);
         g_taskItemInContext = true;
         if (p_event.target.nodeName == "CANVAS") {
@@ -11105,23 +11027,22 @@ async function doMouseMove(p_x, p_y, p_event, p_prevX, p_prevY, p_canvas, p_came
             //      selection box and never touch g_dragItem / object positions.
             // ─────────────────────────────────────────────────────────────────
             if (g_selecting) {
-                var header        = document.getElementById("t_Header");
-                var breadcrumb    = document.getElementById("t_Body_title");
-                var top_bar       = document.getElementById("top_bar");
-                var button_cont   = document.getElementById("side_bar");
+                var header = document.getElementById("t_Header");
+                var breadcrumb = document.getElementById("t_Body_title");
+                var top_bar = document.getElementById("top_bar");
+                var button_cont = document.getElementById("side_bar");
                 var devicePixelRatio = window.devicePixelRatio;
-                var scroll_top    = $(document).scrollTop();
-                var scroll_left   = $(".t-Region-body").scrollLeft();
-                var padding       = parseFloat($(".t-Body-contentInner").css("padding-left").replace("px", "")) * devicePixelRatio;
+                var scroll_top = $(document).scrollTop();
+                var scroll_left = $(".t-Region-body").scrollLeft();
+                var padding = parseFloat($(".t-Body-contentInner").css("padding-left").replace("px", "")) * devicePixelRatio;
 
-                var header_height     = header.offsetHeight;
+                var header_height = header.offsetHeight;
                 var breadcrumb_height = breadcrumb.offsetHeight;
-                var top_bar_height    = top_bar.offsetHeight;
-                var btn_cont_width    = button_cont.offsetWidth;
+                var top_bar_height = top_bar.offsetHeight;
+                var btn_cont_width = button_cont.offsetWidth;
 
                 var canvas_rect_mm = p_canvas.getBoundingClientRect();
                 g_mouse.x = p_event.clientX - canvas_rect_mm.left + scroll_left;
-                // g_mouse.y = p_event.clientY + scroll_top  - (breadcrumb_height + padding + header_height + top_bar_height);
                 g_mouse.y = p_event.clientY - canvas_rect_mm.top + scroll_top;
 
                 var x1 = g_startMouse.x, x2 = g_mouse.x;
@@ -11130,17 +11051,41 @@ async function doMouseMove(p_x, p_y, p_event, p_prevX, p_prevY, p_canvas, p_came
                 if (x1 > x2) { var tmp = x1; x1 = x2; x2 = tmp; }
                 if (y1 > y2) { var tmp = y1; y1 = y2; y2 = tmp; }
 
-                // Update world-space drag end for hit-test on mouseup
-                g_DragMouseEnd.x = Math.min(19, Math.max(-19, a));
-                g_DragMouseEnd.y = Math.min(19, Math.max(-19, p_y));
-
                 // Update the visible rubber-band rectangle
                 g_multiselect = "Y";
-                g_selection.style.left       = x1 + "px";
-                g_selection.style.top        = y1 + "px";
-                g_selection.style.width      = Math.max(0, x2 - x1 - 20) + "px";
-                g_selection.style.height     = Math.max(0, y2 - y1) + "px";
+                g_selection.style.left = x1 + "px";
+                g_selection.style.top = y1 + "px";
+                g_selection.style.width = Math.max(0, x2 - x1 - 20) + "px";
+                g_selection.style.height = Math.max(0, y2 - y1) + "px";
                 g_selection.style.visibility = "visible";
+
+                // ── FIX: Convert screen position to world-space before storing
+                //    g_DragMouseEnd so it matches the world-space g_DragMouseStart
+                //    that was stored in doMouseDown. Previously p_y (raw pixel) and
+                //    a (NDC -1..1) were stored directly, causing end < start even
+                //    when the mouse moved in a positive direction. ───────────────
+                new_world.add(g_targetForDragging);
+                g_targetForDragging.position.set(0, 0, 0);
+                g_raycaster.setFromCamera(new THREE.Vector2(a, b), p_camera);
+                var selIntersects = g_raycaster.intersectObject(g_targetForDragging);
+                new_world.remove(g_targetForDragging);
+
+                if (selIntersects.length > 0) {
+                    var selCoords = new THREE.Vector3(
+                        selIntersects[0].point.x,
+                        selIntersects[0].point.y,
+                        selIntersects[0].point.z
+                    );
+                    new_world.worldToLocal(selCoords);
+                    g_DragMouseEnd.x = Math.min(19, Math.max(-19, selCoords.x));
+                    g_DragMouseEnd.y = Math.min(19, Math.max(-19, selCoords.y));
+                } else {
+                    // Fallback: use NDC values if target plane not hit
+                    // 'b' is the correct NDC y (not raw p_y pixel)
+                    g_DragMouseEnd.x = Math.min(19, Math.max(-19, a));
+                    g_DragMouseEnd.y = Math.min(19, Math.max(-19, b));
+                }
+                // ── END FIX ──────────────────────────────────────────────────
 
                 // Do NOT fall through to any drag logic
                 return;
@@ -11677,11 +11622,11 @@ function doMouseDoubleclick(p_x, p_y, p_startX, p_startY, p_event, p_canvas, p_c
             g_object_hit_ind = "B";
         }
         g_dblclick_opened = "Y";
-        try {
-            open_edit_modal_popup(g_object_hit_ind, g_module_index, g_shelf_index, "N", p_pog_index);
-        } catch (err) {
-            error_handling(err);
-        }
+        // try {
+        //     open_edit_modal_popup(g_object_hit_ind, g_module_index, g_shelf_index, "N", p_pog_index);
+        // } catch (err) {
+        //     error_handling(err);
+        // }
     }
     logDebug("function : doMouseDoubleclick", "E");
 }
@@ -14228,8 +14173,6 @@ function getAfVersion() {
     return Number(`${YYYY}${MM}${DD}${HH}${MI}${SS}`);
 }
 
-
-
 // Reorder Attributes
 function wpdInitializeAttributeReorder() {
     const containers = document.querySelectorAll(
@@ -14262,6 +14205,7 @@ function wpdInitializeAttributeReorder() {
         });
     });
 }
+
 function wpdGetAttributeInsertPosition(container, mouseY) {
     const chips = [
         ...container.querySelectorAll(".attr-chip:not(.dragging)")
@@ -14281,6 +14225,7 @@ function wpdGetAttributeInsertPosition(container, mouseY) {
         offset: Number.NEGATIVE_INFINITY
     }).element;
 }
+
 function wpdCollectAttributeSequence(container) {
     const chips = container.querySelectorAll(".attr-chip");
     const sequence = [];
@@ -14292,6 +14237,7 @@ function wpdCollectAttributeSequence(container) {
     });
     return sequence;
 }
+
 // Initialize
 wpdInitializeAttributeReorder();
 
@@ -14307,8 +14253,6 @@ async function open_view_analysis() {
         logDebug("function : open_view_analysis", "E");
     }
 }
-
-
 
 function add_pog_versions() {
     logDebug("function : add_pog_versions", "S");
@@ -14580,21 +14524,26 @@ function doMouseDown(p_x, p_y, p_startX, p_startY, p_event, p_canvas, p_context_
     try {
         if (g_scene_objects.length > 0) {
             // ASA-1085, x12
-            var header = document.getElementById("t_Header");
-            var breadcrumb = document.getElementById("t_Body_title");
-            var top_bar = document.getElementById("top_bar");
-            var side_nav = document.getElementById("t_Body_nav");
-            var button_cont = document.getElementById("side_bar");
-            var devicePixelRatio = window.devicePixelRatio;
-            var scroll_top = $(document).scrollTop();
-            var scroll_left = $(".t-Region-body").scrollLeft();
 
-            var header_height = header.offsetHeight; // * devicePixelRatio;
-            var breadcrumb_height = breadcrumb.offsetHeight; // * devicePixelRatio;
-            var top_bar_height = top_bar.offsetHeight; //* devicePixelRatio;
-            var side_nav_width = side_nav.offsetWidth; //* devicePixelRatio;
-            var btn_cont_width = button_cont.offsetWidth; //* devicePixelRatio;
-            var padding = parseFloat($(".t-Body-contentInner").css("padding-left").replace("px", "")) * devicePixelRatio;
+    
+
+              var header = document.getElementById("t_Header");
+                var breadcrumb = document.getElementById("t_Body_title");
+                var top_bar = document.getElementById("top_bar");
+                var side_nav = document.getElementById("t_Body_nav");
+                var button_cont = document.getElementById("side_bar");
+                var wtbar = document.querySelector(".wtbar");
+                var devicePixelRatio = window.devicePixelRatio;
+                var scroll_top = $(document).scrollTop();
+                var scroll_left = $(".t-Region-body").scrollLeft();
+                var padding = parseFloat($(".t-Body-contentInner").css("padding-left").replace("px", "")) * devicePixelRatio;
+
+                var header_height = header.offsetHeight;
+                var breadcrumb_height = breadcrumb.offsetHeight;
+                var top_bar_height = top_bar.offsetHeight;
+                var side_nav_width = side_nav.offsetWidth;
+                var btn_cont_width = button_cont.offsetWidth;
+                var wtbar_height = wtbar.offsetHeight;
 
             g_global_counter = g_global_counter + 1;
             g_start_coorX = p_startX;
@@ -14734,6 +14683,7 @@ function doMouseDown(p_x, p_y, p_startX, p_startY, p_event, p_canvas, p_context_
                         var x2 = g_startMouse.x;
                         var y2 = g_startMouse.y;
                         g_selecting = true;
+                         try { clearAutofillBlockHighlight(); } catch(e) { /* ignore */ }
                         g_selection.style.left = g_startMouse.x + "px";
                         g_selection.style.top = g_startMouse.y + "px";
                         g_selection.style.width = x2 - g_startMouse.x + "px";
@@ -14753,6 +14703,7 @@ function doMouseDown(p_x, p_y, p_startX, p_startY, p_event, p_canvas, p_context_
                 } else {
                     g_intersected = [];
                     g_select_zoom_arr = [];
+                     try { clearAutofillBlockHighlight(); } catch(e) { /* ignore */ }
                     return false;
                 }
             } else {
@@ -15070,7 +15021,8 @@ function doMouseDown(p_x, p_y, p_startX, p_startY, p_event, p_canvas, p_context_
                                 }
                                 return false;
                             };
-
+                          
+                            
                             for (colorObj of g_mod_block_list) {
                                 if (colorObj.mod_index[0] == g_module_index) {
                                     // Consider the raycast intersections and ancestor chain so we detect a block
@@ -15081,12 +15033,28 @@ function doMouseDown(p_x, p_y, p_startX, p_startY, p_event, p_canvas, p_context_
                                         g_selected_block = objUuid;
                                         console.log("block name", g_selected_block);
                                         // try { highlightAutofillBlock(objUuid, p_pog_index); } catch (e) { console.warn(e); }
-                                       var isLeftClick = true;
-                                        try {
-                                            if (typeof p_event !== 'undefined' && typeof p_event.button !== 'undefined') {
-                                                isLeftClick = (p_event.button === 0);
+                                    //    var isLeftClick = true;
+                                    //     try {
+                                    //         if (typeof p_event !== 'undefined' && typeof p_event.button !== 'undefined') {
+                                    //             isLeftClick = (p_event.button === 0);
+                                    //         }
+                                    //     } catch (e) {}
+                                    var isLeftClick = false;
+
+                                        if (p_event) {
+                                            // Standard mouse
+                                            if (p_event.button === 0) {
+                                                isLeftClick = true;
                                             }
-                                        } catch (e) {}
+                                            // Touchpad / drag / hold
+                                            else if (p_event.buttons === 1) {
+                                                isLeftClick = true;
+                                            }
+                                            // Old browser fallback
+                                            else if (p_event.which === 1) {
+                                                isLeftClick = true;
+                                            }
+                                        }
                                         var hitIsModule = (typeof g_module_obj_array !== 'undefined' && g_module_obj_array.indexOf(g_objectHit) !== -1);
                                         if (isLeftClick && hitIsModule) {
                                             try { highlightAutofillBlock(objUuid, p_pog_index); } catch(e) { console.warn(e); }
@@ -15490,3 +15458,163 @@ const randomColor = () => {
             .padStart(6, "0")
             .toUpperCase());
 };
+
+
+async function load_data(pFileIndex) {
+    try {
+        for (const obj of g_mod_block_list) {
+                for (const child of obj.BlockDim.ColorObj.children) {
+                    if (child.uuid == obj.BlkName) {
+                        obj.BlockDim.ColorObj.remove(child);
+                        break;
+                    }
+                }
+            }
+        render(g_pog_index);
+        g_mod_block_list= [];
+        var fileInputElem = document.getElementById("P193_IMPORT_TEMPLATE");
+        var file = fileInputElem.files[pFileIndex];
+        var reader = new FileReader();
+        reader.onload = (function (pFile) {
+            return function (e) {
+                if (pFile) {
+                    var base64 = binaryArray2base64(e.target.result);
+                    var f01Array = [];
+                    f01Array = clob2Array(base64, 30000, f01Array);
+                    apex.server.process(
+                        "IMPORT_BLOCKS", {
+                        x01: file.name,
+                        x02: file.type,
+                        x03: $v('P193_OPEN_POG_CODE'),
+                        x04: $v('P193_OPEN_POG_VERSION'),
+                        x05: $v('P193_OPEN_DRAFT') == 'Y' ? $v('P193_EXISTING_DRAFT_VER') : '',
+                        f01: f01Array,
+                    }, {
+                        dataType: "json",
+                        success: async function (data) {
+                            // Case 1: If server returned an array (module list)
+                            if (Array.isArray(data)) {
+                                closeInlineDialog("FILE_UPLOAD");
+                                for (const row of data) {
+
+                            // Create start/end coords
+                            g_DragMouseStart = {
+                                x: Number(row.x1),
+                                y: Number(row.y1)
+                            };
+
+                            g_DragMouseEnd = {
+                                x: Number(row.x2),
+                                y: Number(row.y2)
+                            };
+
+                            console.log(
+                                "Start:", g_DragMouseStart,
+                                "End:", g_DragMouseEnd
+                            );
+                            [
+                                g_autofillModInfo,
+                                g_autofillShelfInfo
+                            ] = getAutofillModShelf(
+                                g_DragMouseStart,
+                                g_DragMouseEnd,
+                                g_pog_json,
+                                g_pog_index
+                            );
+                            var isBlockCreated = await setAutofillBlock(
+                                'A',
+                                row.block_name,
+                                'N',
+                                'N',
+                                row.color,
+                            );
+                            if (isBlockCreated !== true) { 
+                                console.warn("Skipped block due to invalid block dimensions:", row.block_name);
+                                continue;
+                            }
+                            console.log(
+                                "Created Block:",
+                                row.block_name,
+                                row.color
+                            );
+
+                            // Small delay (render safety)
+                            await new Promise(r => setTimeout(r, 50));
+                        }
+                            var block_details_arr = [];
+                            for (const obj of g_mod_block_list) {
+                                var details = {};
+                                details["BlkColor"] = obj.BlkColor;
+                                details["BlkName"] = obj.BlkName;
+                                details["BlkRule"] = obj.BlkRule;
+                                details["BlkFilters"] = obj.BlockFilters.join(" AND ");
+                                obj["BlkFilters"] = details["BlkFilters"];
+                                block_details_arr.push(details);
+                            }
+                            var retval = await save_blk_dtl_coll('A', 'Blks', block_details_arr);
+                            apex.region("mod_block_details").refresh();
+                            $("#added_attribute").show();
+                            apex.region("added_attribute").refresh();
+                            wpdCaptureShowChangesBlockSnapshot(g_mod_block_list); 
+
+                                return;
+                            }
+
+                            if (data.error_flag === "Y") {
+                                closeInlineDialog("FILE_UPLOAD");
+                                apex.message.clearErrors();
+
+                                apex.message.showErrors([{
+                                    type: "error",
+                                    location: ["page"],
+                                    message: data.error_message || "Unexpected error occurred",
+                                    unsafe: false
+                                }]);
+
+                                return;
+                            }
+                            if (data.result !== "success") {
+                                closeInlineDialog("FILE_UPLOAD");
+                                apex.message.clearErrors();
+
+                                apex.message.showErrors([{
+                                    type: "error",
+                                    location: ["page"],
+                                    message: data.error || "Unknown error",
+                                    unsafe: false
+                                }]);
+                            }
+                        }
+                        //         if (data.result == "success") {
+                        //             g_itemInfoFileIndex = 0;
+                        //                 fileInputElem.value = "";
+                        //                 if (data.error_flag == "Y") {
+                        //                     closeInlineDialog("FILE_UPLOAD");
+                        //                     // apex.navigation.redirect("f?p=&APP_ID.:&APP_PAGE_ID.:&APP_SESSION.:APPLICATION_PROCESS=EXPORT_ITEM_REGMOV_ON_ERROR:&DEBUG.");
+                        //                     // raise_error(get_message("IMPORT_RECORD_FAILURE"));
+                        //                 } else {
+                        //                     alert('tst'); 
+                        //                 }
+                        //         } else {
+                        //             apex.message.clearErrors();
+
+                        //             apex.message.showErrors([{
+                        //                 type: "error",
+                        //                 location: ["page"],
+                        //                 message: data.error,
+                        //                 unsafe: false,
+                        //             },
+                        //             ]);
+                        //         }
+                        //     }
+                        ,
+                        loadingIndicatorPosition: "page",
+                    });
+                }
+            };
+        })(file);
+        reader.readAsArrayBuffer(file);
+    } catch (err) {
+        error_handling(err);
+    }
+}
