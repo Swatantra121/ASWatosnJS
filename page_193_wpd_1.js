@@ -14244,9 +14244,19 @@ wpdInitializeAttributeReorder();
 async function open_view_analysis() {
     logDebug("function : open_view_analysis", "S");
     try {
-        let l_pog_code = g_pog_json[g_pog_index].POGCode;
-        let l_pog_version = g_pog_json[g_pog_index].Version;
-        await show_view_analysis(l_pog_code, l_pog_version);
+        if (!Array.isArray(g_pog_json) || g_pog_json.length === 0 || typeof g_pog_json[g_pog_index] === "undefined") {
+            raise_error("Please open a POG before View Analysis.");
+            return;
+        }
+        if (g_compare_pog_flag == "Y") {
+            raise_error("Close Show Changes/Compare view before opening View Analysis.");
+            return;
+        }
+
+        let l_selected_index = typeof g_pog_index === "number" && g_pog_index > -1 ? g_pog_index : 0;
+        let l_pog_code = g_pog_json[l_selected_index].POGCode;
+        let l_pog_version = g_pog_json[l_selected_index].Version;
+        await show_view_analysis(l_pog_code, l_pog_version, l_selected_index);
     } catch (err) {
         error_handling(err);
     } finally {
