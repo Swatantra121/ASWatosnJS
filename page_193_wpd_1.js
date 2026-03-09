@@ -13,6 +13,22 @@ g_ComViewIndex = -1;
 g_show_changes_block_snapshot = [];  //ASA-1986  
 g_show_live_image = "N";
 g_selected_block  = [];
+var g_block_resize_state = {
+    armed: false,
+    active: false,
+    blkName: null,
+    startX: 0,
+    startWidth: 0,
+    blkRef: null,
+    edge: null,
+    hoverEdge: null,
+    startPointerLocalX: 0,
+    startCalcX: 0,
+    startLeft: 0,
+    startRight: 0
+}
+
+
 //ASA-1986 start
 function wpdBuildShowChangesBlockSnapshot(p_block_list) {
     var snapshot = [];
@@ -96,6 +112,7 @@ function initiate_values_onload() {
     var numpad_key = false;
     //below events keydown and keyup are using to identify any keyboard events and no of short cut keys logic handling.
     $(document).keydown(function (e) {
+
         if (g_delete_details.length > 0) {
             new_details = JSON.parse(JSON.stringify(g_delete_details));
 
@@ -7197,6 +7214,9 @@ function makeResizableRow() {
     }
 }
 
+
+
+
 function openItemSubLabel(p_subLabelType) {
     try {
         var subLabelInd = "N";
@@ -7690,49 +7710,62 @@ function getAutofillModShelf(p_dragMouseStart, p_dragMouseEnd, p_pog_json, p_pog
     }
 }
 
-async function setAutofillBlock(p_action_ind, p_old_blk_name, p_escape_ind = "N", p_new_ind = 'Y', p_color = '#ffffff') {
+async function setAutofillBlock(p_action_ind, p_old_blk_name, p_escape_ind = "N", p_new_ind = 'Y', p_color = '#ffffff',p_filters = '') {
     try {
+         // Multiselect update: EDIT_BLK contains colon-separated block names — delegate and return
+        if (p_action_ind === "U" && g_multiselect === "Y" && p_old_blk_name && p_old_blk_name.indexOf(":") !== -1) {
+            await update_multiselect_blk_filter(p_old_blk_name);
+            return;
+        }
         var block_detail = {};
         var filters_arr = [];
         var attr_arr = [];
         var filter_val = [];
         var blk_name_arr = [];
         var upd_block_dtl = {};
-        var blockName = p_old_blk_name; //$v("P193_BLK_NAME") + "_AFP";
+
+        var blockName = (p_action_ind !== "U" && (p_old_blk_name === "" || p_old_blk_name == null))
+            ? $v("P193_BLK_NAME")?.toUpperCase() + "_AFP"
+            : p_old_blk_name?.toUpperCase();
+
         if (p_escape_ind == "Y") {
             var block_details_arr = [];
             for (const obj of g_mod_block_list) {
                 var details = {};
-                details["BlkColor"] = obj.BlkColor;
-                details["BlkName"] = obj.BlkName;
+                details["BlkColor"] = obj.BlkColor.toUpperCase();
+                details["BlkName"] = obj.BlkName.toUpperCase();
                 details["BlkRule"] = obj.BlkRule;
                 details["BlkFilters"] = obj.BlockFilters.join(" AND ");
-                details["OldBlkName"] = obj.BlkName;
-                obj["BlkFilters"] = details["BlkFilters"];  //ASA-1694;
+                details["OldBlkName"] = obj.BlkName.toUpperCase();
+                obj["BlkFilters"] = details["BlkFilters"];
                 block_details_arr.push(details);
             }
             closeInlineDialog("block_details");
-            var retval = await save_blk_dtl_coll(p_action_ind, p_old_blk_name, block_details_arr);
+            var retval = await save_blk_dtl_coll(p_action_ind, p_old_blk_name?.toUpperCase(), block_details_arr);
         }
-        if (p_old_blk_name == blockName && p_action_ind == "U") {
+
+        if (p_old_blk_name?.toUpperCase() == blockName && p_action_ind == "U") {
             blk_name_arr = [];
         } else {
             blk_name_arr = [blockName];
         }
 
         block_detail["BlkName"] = blockName;
-        if (p_new_ind == 'N') { //garit
-            block_detail["BlkColor"] = p_color;
+        if (p_new_ind == 'N') {
+            block_detail["BlkColor"] = p_color.toUpperCase();
         } else {
-            block_detail["BlkColor"] = $v("P193_BLK_COLOR");
+            block_detail["BlkColor"] = $v("P193_BLK_COLOR").toUpperCase();
         }
         block_detail["BlkRule"] = $v("P193_BLK_RULE");
+
         var shelf_arr = [];
         var mod_index = [];
         var final_shelf_arr = [];
-        if (p_action_ind !== "U" && (!Array.isArray(g_autofillModInfo) || g_autofillModInfo.length == 0 || !Array.isArray(g_autofillShelfInfo) || g_autofillShelfInfo.length == 0)) { //ASA-1986 start
+
+        if (p_action_ind !== "U" && (!Array.isArray(g_autofillModInfo) || g_autofillModInfo.length == 0 || !Array.isArray(g_autofillShelfInfo) || g_autofillShelfInfo.length == 0)) {
             return false;
         }
+
         if (p_action_ind !== "U") {
             block_detail["DragMouseStart"] = g_DragMouseStart;
             block_detail["DragMouseEnd"] = g_DragMouseEnd;
@@ -7746,30 +7779,10 @@ async function setAutofillBlock(p_action_ind, p_old_blk_name, p_escape_ind = "N"
             }
             mod_index.push(g_autofillModInfo[0].modIdx);
             mod_index.sort();
-            // if (g_mod_block_list.length > 0) {
-            //     for (const shelfs of shelf_arr) {
-            //         valid = true;
-            //         for (const obj of g_mod_block_list) {
-            //             if (!valid) {
-            //                 break;
-            //             }
-            //             for (const dtl of obj.g_delete_details) {
-            //                 if (shelfs.MIndex == dtl.MIndex && shelfs.SIndex == dtl.SIndex) {
-            //                     valid = false;
-            //                     break;
-            //                 }
-            //             }
-            //         }
-            //         if (valid) {
-            //             final_shelf_arr.push(shelfs);
-            //         }
-            //     }
-            // } else {
             final_shelf_arr = shelf_arr;
-            // }
         } else {
             for (const obj of g_mod_block_list) {
-                if (obj.BlkName == p_old_blk_name) {
+                if (obj.BlkName.toUpperCase() == p_old_blk_name?.toUpperCase()) {
                     final_shelf_arr = obj.g_delete_details;
                     mod_index = obj.mod_index;
                     block_detail["DragMouseStart"] = obj.DragMouseStart;
@@ -7783,11 +7796,11 @@ async function setAutofillBlock(p_action_ind, p_old_blk_name, p_escape_ind = "N"
             g_DragMouseStart = block_detail["DragMouseStart"];
             g_DragMouseEnd = block_detail["DragMouseEnd"];
         }
-        block_detail["g_delete_details"] = final_shelf_arr;
-        if (p_new_ind != 'N') //garit
-        {
-            var model = apex.region("block_filters").widget().interactiveGrid("getViews", "grid").model;
 
+        block_detail["g_delete_details"] = final_shelf_arr;
+
+        if (p_new_ind != 'N') {
+            var model = apex.region("block_filters").widget().interactiveGrid("getViews", "grid").model;
             model.forEach(function (record) {
                 var filters = typeof model.getValue(record, "FILTER") == "object" ? model.getValue(record, "FILTER").v : model.getValue(record, "FILTER");
                 var value = model.getValue(record, "VALUE");
@@ -7798,9 +7811,27 @@ async function setAutofillBlock(p_action_ind, p_old_blk_name, p_escape_ind = "N"
                     filters_arr.push(filter_list[0] + " = " + (filter_list[1] == "C" ? '"' : "") + value + (filter_list[1] == "C" ? '"' : ""));
                 }
             });
+        } else if (p_new_ind == 'N' && p_filters != ''){
+            p_filters.replace(/[\[\]]/g,"").split(",").forEach(function(f){
+
+            let [col,val] = f.split("=").map(s => s.trim());
+        
+            if(col){
+                col = col.toUpperCase();
+                val = val.replace(/'/g,"");
+        
+                // For SQL style filter
+                filters_arr.push(col + '="' + val + '"');
+        
+                // For internal value storage
+                filter_val.push(col + "#" + val);
+            }
+        
+        });
         }
+
         for (const obj of g_mod_block_list) {
-            blk_name_arr.push(obj.BlkName);
+            blk_name_arr.push(obj.BlkName.toUpperCase());
         }
 
         var blk_dup = findDuplicates(blk_name_arr);
@@ -7815,14 +7846,26 @@ async function setAutofillBlock(p_action_ind, p_old_blk_name, p_escape_ind = "N"
         } else if (attr_arr.includes("CLASS") && !attr_arr.includes("DEPT")) {
             alert(get_message("POGCR_DEPT_MANDATE"));
         } else {
+            if (p_new_ind == 'N' && p_filters != ''){
+                // var formattedFilters = BlkFilters
+                //   .split(" AND ")
+                //   .map(function(f){
+                //       var parts = f.split("#");
+                //       return parts[0].toUpperCase() + ' = "' + parts[1] + '"';
+                //   })
+                //  .join(" AND ");
             block_detail["BlockFilters"] = filters_arr;
+            } else {
+            block_detail["BlockFilters"] = filters_arr;    
+            }
             block_detail["FilterVal"] = filter_val;
             block_detail["mod_index"] = mod_index;
+
             if (p_action_ind == "U") {
                 for (const obj of g_mod_block_list) {
-                    if (obj.BlkName == p_old_blk_name) {
+                    if (obj.BlkName.toUpperCase() == p_old_blk_name?.toUpperCase()) {
                         for (const child of obj.BlockDim.ColorObj.children) {
-                            if (child.uuid == p_old_blk_name) {
+                            if (child.uuid.toUpperCase() == p_old_blk_name?.toUpperCase()) {
                                 obj.BlockDim.ColorObj.remove(child);
                                 break;
                             }
@@ -7831,92 +7874,91 @@ async function setAutofillBlock(p_action_ind, p_old_blk_name, p_escape_ind = "N"
                 }
                 var i = 0;
                 for (const obj of g_mod_block_list) {
-                    if (obj.BlkName == p_old_blk_name) {
+                    if (obj.BlkName.toUpperCase() == p_old_blk_name?.toUpperCase()) {
                         upd_block_dtl = JSON.parse(JSON.stringify(obj));
                         g_mod_block_list.splice(i, 1);
                     }
                     i++;
                 }
             }
-            if (p_new_ind != 'N') //garit
-            {
+
+            if (p_new_ind != 'N') {
                 apex.region("block_filters").widget().interactiveGrid("getActions").set("edit", false);
                 apex.region("block_filters").widget().interactiveGrid("getViews", "grid").model.clearChanges();
                 apex.region("block_filters").refresh();
                 clear_blinking();
             }
-            var sendColor =
-                (p_new_ind == 'N')
-                    ? p_color
-                    : $v("P193_BLK_COLOR");
+
+            var sendColor = (p_new_ind == 'N') ? p_color.toUpperCase() : $v("P193_BLK_COLOR").toUpperCase();
             var ret_dtl = await colorAutofillBlock(g_DragMouseStart, g_DragMouseEnd, mod_index, sendColor, blockName, p_action_ind, upd_block_dtl, g_pog_index);
+
             if (typeof ret_dtl === "undefined" || ret_dtl == null) {
-                return false; // ASA-1986 start
+                return false;
             }
+
             block_detail["BlockDim"] = ret_dtl;
             g_mod_block_list.push(block_detail);
-
             closeInlineDialog("block_details");
 
             if (p_action_ind == "U") {
-                var details = {};
                 var block_details_arr = [];
                 for (const obj of g_mod_block_list) {
-                    if (obj.BlkName !== blockName && obj.BlkName !== p_old_blk_name) {
+                    if (obj.BlkName.toUpperCase() !== blockName && obj.BlkName.toUpperCase() !== p_old_blk_name?.toUpperCase()) {
                         var details = {};
-                        details["BlkColor"] = obj.BlkColor;
-                        details["BlkName"] = obj.BlkName;
+                        details["BlkColor"] = obj.BlkColor.toUpperCase();
+                        details["BlkName"] = obj.BlkName.toUpperCase();
                         details["BlkRule"] = obj.BlkRule;
                         details["BlkFilters"] = obj.BlockFilters.join(" AND ");
-                        details["OldBlkName"] = obj.BlkName;
+                        details["OldBlkName"] = obj.BlkName.toUpperCase();
                         obj["BlkFilters"] = details["BlkFilters"];
                         block_details_arr.push(details);
-                    } else if (obj.BlkName == p_old_blk_name || obj.BlkName == blockName) {
+                    } else if (obj.BlkName.toUpperCase() == p_old_blk_name?.toUpperCase() || obj.BlkName.toUpperCase() == blockName) {
                         var details = {};
-                        details["BlkColor"] = $v("P193_BLK_COLOR");
+                        details["BlkColor"] = $v("P193_BLK_COLOR").toUpperCase();
                         details["BlkName"] = blockName;
                         details["BlkRule"] = $v("P193_BLK_RULE");
                         details["BlkFilters"] = filters_arr.join(" AND ");
-                        details["OldBlkName"] = p_old_blk_name;
+                        details["OldBlkName"] = p_old_blk_name?.toUpperCase();
                         obj["BlkFilters"] = details["BlkFilters"];
                         block_details_arr.push(details);
                     }
                 }
-                var retval = await save_blk_dtl_coll(p_action_ind, p_old_blk_name, block_details_arr);
+                var retval = await save_blk_dtl_coll(p_action_ind, p_old_blk_name?.toUpperCase(), block_details_arr);
+                apex.region("mod_block_details").refresh();
+
             } else if (p_action_ind == "Y") {
                 var block_details_arr = [];
-
                 for (const obj of g_mod_block_list) {
                     var details = {};
-                    details["BlkColor"] = obj.BlkColor;
-                    details["BlkName"] = obj.BlkName;
-                    details["BlkRule"] = obj.BlkRule;
-                    details["BlkFilters"] = obj.BlockFilters.join(" AND ");
-                    obj["BlkFilters"] = details["BlkFilters"];  //ASA-1694;
-                    // obj["BlkModInfo"] = g_autofillModInfo;
-                    // obj["BlkShelfInfo"] =  g_autofillShelfInfo;
-                    block_details_arr.push(details);
-                }
-                var retval = await save_blk_dtl_coll(p_action_ind, p_old_blk_name, block_details_arr);
-            } else if (p_action_ind == "A" && p_new_ind != 'N') { //ASA-1965 Issue 4 
-                var block_details_arr = [];
-
-                for (const obj of g_mod_block_list) {
-                    var details = {};
-                    details["BlkColor"] = obj.BlkColor;
-                    details["BlkName"] = obj.BlkName;
+                    details["BlkColor"] = obj.BlkColor.toUpperCase();
+                    details["BlkName"] = obj.BlkName.toUpperCase();
                     details["BlkRule"] = obj.BlkRule;
                     details["BlkFilters"] = obj.BlockFilters.join(" AND ");
                     obj["BlkFilters"] = details["BlkFilters"];
                     block_details_arr.push(details);
                 }
-                var retval = await save_blk_dtl_coll(p_action_ind, p_old_blk_name, block_details_arr);
-                return true //ASA-1986 start
+                var retval = await save_blk_dtl_coll(p_action_ind, p_old_blk_name?.toUpperCase(), block_details_arr);
+                apex.region("mod_block_details").refresh();
+
+            } else if (p_action_ind == "A" && p_new_ind != 'N') {
+                var block_details_arr = [];
+                for (const obj of g_mod_block_list) {
+                    var details = {};
+                    details["BlkColor"] = obj.BlkColor.toUpperCase();
+                    details["BlkName"] = obj.BlkName.toUpperCase();
+                    details["BlkRule"] = obj.BlkRule;
+                    details["BlkFilters"] = obj.BlockFilters.join(" AND ");
+                    obj["BlkFilters"] = details["BlkFilters"];
+                    block_details_arr.push(details);
+                }
+                var retval = await save_blk_dtl_coll(p_action_ind, p_old_blk_name?.toUpperCase(), block_details_arr);
+                apex.region("mod_block_details").refresh();
+                return true;
             }
         }
     } catch (err) {
         error_handling(err);
-        return false //ASA-1986 start
+        return false;
     }
 }
 
@@ -7930,9 +7972,9 @@ async function colorAutofillBlock(p_dragMouseStart, p_dragMouseEnd, p_mod_index,
             calc_width = 0,
             calc_height = 0;
         var font_size = parseInt($v("P193_POGCR_BLK_TXT_SIZE"));
-        if (!Array.isArray(g_autofillModInfo) || g_autofillModInfo.length == 0) {
-            return null;
-        }
+        // if (!Array.isArray(g_autofillModInfo) || g_autofillModInfo.length == 0) {
+        //     return null;
+        // }
         if (!Array.isArray(p_mod_index) || p_mod_index.length == 0) {
             return null;
         }
@@ -7946,11 +7988,17 @@ async function colorAutofillBlock(p_dragMouseStart, p_dragMouseEnd, p_mod_index,
         }
         // ASA-1986 end
         var font_size = parseInt($v("P193_POGCR_BLK_TXT_SIZE"));
-        var btm_y = g_autofillModInfo[0].dragBottom,
-            top_y = g_autofillModInfo[0].dragTop;
+        // var btm_y = g_autofillModInfo[0].dragBottom,
+        //     top_y = g_autofillModInfo[0].dragTop;
 
-        var mod_top = g_autofillModInfo[0].modTop,
-            mod_bottom = g_autofillModInfo[0].modBottom;
+        var btm_y = 0,
+            top_y = 0;
+
+        // var mod_top = g_autofillModInfo[0].modTop,
+        //     mod_bottom = g_autofillModInfo[0].modBottom;
+
+         var mod_top = 0,
+            mod_bottom = 0;
 
         var l_shelf_details = g_pog_json[p_pog_index].ModuleInfo[p_mod_index[0]].ShelfInfo;
 
@@ -7958,6 +8006,14 @@ async function colorAutofillBlock(p_dragMouseStart, p_dragMouseEnd, p_mod_index,
         var final_top = -1;
 
         if (p_update_flag !== "U") {
+
+            if (!Array.isArray(g_autofillModInfo) || g_autofillModInfo.length == 0) {
+                return null;
+            }
+            btm_y = g_autofillModInfo[0].dragBottom;
+            top_y = g_autofillModInfo[0].dragTop;
+            mod_top = g_autofillModInfo[0].modTop;
+            mod_bottom = g_autofillModInfo[0].modBottom;
             final_btm = get_below_shelf(l_shelf_details, p_mod_index[0], btm_y, p_pog_index);
             final_top = get_above_shelf(l_shelf_details, p_mod_index[0], top_y, mod_top, p_pog_index);
             // ASA-1986 start
@@ -7994,22 +8050,46 @@ async function colorAutofillBlock(p_dragMouseStart, p_dragMouseEnd, p_mod_index,
         if (typeof p_text !== "string") {  // ASA-1986 start
             p_text = "BLK";
         }
-        if (p_text.endsWith("_AFP")) {  // ASA-1986 start
-            p_text = p_text.slice(0, -4);
-        }
-        console.log("val", p_dragMouseStart, p_dragMouseEnd, p_mod_index[0], p_color, p_text);
+        // if (p_text.endsWith("_AFP")) {  // ASA-1986 start
+        //     p_text = p_text.slice(0, -4);
+        // }
+
+         var blockUuid = p_text.endsWith("_AFP") ? p_text : p_text + "_AFP";
+        var blockLabel = p_text.endsWith("_AFP") ? p_text.slice(0, -4) : p_text;
+        console.log("val", p_dragMouseStart, p_dragMouseEnd, p_mod_index[0], p_color, blockLabel);
+        // console.log("val", p_dragMouseStart, p_dragMouseEnd, p_mod_index[0], p_color, p_text);
         console.log("calc_height", calc_width, calc_height, calc_y, final_top, mod_top, final_btm, mod_bottom);
 
-        let mesh = dcText(p_text, font_size, 0x000000, colorValue, calc_width, calc_height, "N", "N", "Arial", "", font_size, 0, -1, 4);
-        if (!mesh) { // ASA-1986 start
-            return null;
-        }
+        // let mesh = dcText(p_text, font_size, 0x000000, colorValue, calc_width, calc_height, "N", "N", "Arial", "", font_size, 0, -1, 4);
+        // if (!mesh) { // ASA-1986 start
+        //     return null;
+        // }
         var mod_object = g_world.getObjectById(g_pog_json[p_pog_index].ModuleInfo[p_mod_index[0]].MObjID);
         if (!mod_object || typeof mod_object.add !== "function") { // ASA-1986 start
             return null;
         }
+
+        var existingBlockMesh = mod_object.getObjectByProperty("uuid", blockUuid);
+        if (existingBlockMesh) {
+            mod_object.remove(existingBlockMesh);
+            try {
+                if (existingBlockMesh.geometry && typeof existingBlockMesh.geometry.dispose === "function") {
+                    existingBlockMesh.geometry.dispose();
+                }
+                if (existingBlockMesh.material && typeof existingBlockMesh.material.dispose === "function") {
+                    existingBlockMesh.material.dispose();
+                }
+            } catch (e) {}
+        }
+
+        let mesh = dcText(blockLabel, font_size, 0x000000, colorValue, calc_width, calc_height, "N", "N", "Arial", "", font_size, 0, -1, 4);
+        if (!mesh) { // ASA-1986 start
+            return null;
+        }
+
         mod_object.add(mesh);
-        mesh.uuid = p_text + "_AFP";
+        // mesh.uuid = p_text + "_AFP";
+        mesh.uuid = blockUuid;
         if (mesh.material) {  // ASA-1986 start
             mesh.material.opacity = 0.5;
         }
@@ -8173,6 +8253,7 @@ function highlightAutofillBlock(p_uuid, p_pog_index) {
     }
 }
 //ASA-1697 - End
+
 
 //ASA-1765 Issue 3
 function validateShelfWithFixedItem(pShelf, pSpreadProduct, pSpreadGap, pItems) {
@@ -9423,7 +9504,7 @@ async function doMouseUp(p_x, p_y, p_event, p_prevX, p_prevY, p_canvas, p_camera
     try {
 
         var locationX, locationY, locationZ;
-        var width = p_canvas.width; // / window.devicePixelRatio;
+       var width = p_canvas.width; // / window.devicePixelRatio;
         var height = p_canvas.height; // / window.devicePixelRatio;
         var a = (2 * p_x) / width - 1;
         var b = 1 - (2 * p_y) / height;
@@ -9486,6 +9567,37 @@ async function doMouseUp(p_x, p_y, p_event, p_prevX, p_prevY, p_canvas, p_camera
             }
         }
 
+        try {
+            if (g_block_resize_state && g_block_resize_state.active && g_block_resize_state.blkRef) {
+                // call colorAutofillBlock one final time to persist and update BlockDim
+                var blkRef = g_block_resize_state.blkRef;
+                await colorAutofillBlock(null, null, blkRef.mod_index, blkRef.BlkColor || '#FFFFFF', blkRef.BlkName, 'U', blkRef, g_pog_index, 'N').then(function (ret) {
+                    if (ret) blkRef.BlockDim = Object.assign(blkRef.BlockDim || {}, ret);
+                });
+                // Sync BlkModInfo[0].dragStart/dragEnd to the new block bounds so that
+                // getAutofillModShelf does not treat the freed space as still occupied.
+                try {
+                    if (blkRef.BlkModInfo && blkRef.BlkModInfo[0] && blkRef.BlockDim) {
+                        var l_mod_index = Array.isArray(blkRef.mod_index) && blkRef.mod_index.length > 0 ? blkRef.mod_index[0] : -1;
+                        if (l_mod_index > -1 && g_pog_json[g_pog_index] && g_pog_json[g_pog_index].ModuleInfo[l_mod_index]) {
+                            var moduleX = Number(g_pog_json[g_pog_index].ModuleInfo[l_mod_index].X || 0);
+                            var newCalcX = Number(blkRef.BlockDim.CalcX || 0);
+                            var newWidth = Number(blkRef.BlockDim.BlkWidth || 0);
+                            blkRef.BlkModInfo[0].dragStart = moduleX + newCalcX - newWidth / 2;
+                            blkRef.BlkModInfo[0].dragEnd   = moduleX + newCalcX + newWidth / 2;
+                        }
+                    }
+                } catch (e) { console.warn('BlkModInfo resize sync err', e); }
+                render(g_pog_index);
+                // cleanup
+                g_block_resize_state.active = false;
+                g_block_resize_state.blkName = null;
+                g_block_resize_state.blkRef = null;
+                try { var el = document.getElementById('blockResizeHint'); if (el) el.remove(); } catch (e) {}
+                try { $('#maincanvas').css('cursor','auto'); } catch (e) {}
+            }
+        } catch (e) { console.warn('Finalize resize err', e); }
+
         if (g_delete_details.length > 0 && g_duplicating == "Y") {
             g_multiItemCopy = "Y";
         } else {
@@ -9497,6 +9609,7 @@ async function doMouseUp(p_x, p_y, p_event, p_prevX, p_prevY, p_canvas, p_camera
             if (g_selecting && g_multiselect == "Y" && g_shift_mutli_item_select == "N") {
                 g_duplicating = "N";
                 await get_multiselect_obj(p_pog_index);
+                get_multiselect_blocks(p_pog_index);
                 if (g_area_zoom_ind == "Y") {
                     select_zoom(p_camera, p_pog_index);
                     g_area_zoom_ind = "N";
@@ -9552,14 +9665,19 @@ async function doMouseUp(p_x, p_y, p_event, p_prevX, p_prevY, p_canvas, p_camera
             //ASA-1697 - Start
             [g_autofillModInfo, g_autofillShelfInfo] = getAutofillModShelf(g_DragMouseStart, g_DragMouseEnd, g_pog_json, g_pog_index);
             // if (g_delete_details.length > 0) {
-            if (g_autofillShelfInfo.length >= 1) { //ASA-1965- issue-1  Additional fix
+           if (g_autofillShelfInfo.length >= 1) { //ASA-1965- issue-1  Additional fix
                 apex.region("block_filters").widget().interactiveGrid("getActions").set("edit", false);
                 apex.region("block_filters").widget().interactiveGrid("getViews", "grid").model.clearChanges();
                 apex.region("block_filters").refresh();
                 apex.event.trigger("#P193_BLK_RULE", "apexrefresh");
+                $s("P193_EDIT_BLK", "");  // clear stale edit-block name so setAutofillBlock reads $v("P193_BLK_NAME") for the new block
                 $s("P193_BLK_NAME", "");
-                $s("P193_BLK_COLOR", randomColor());
+                $s("P193_BLK_COLOR", randomColor()?.toUpperCase());
                 $s("P193_BLK_FILTER", "");
+                // Ensure fields are never stuck disabled from a previous multiselect open
+                apex.item("P193_BLK_NAME").enable();
+                apex.item("P193_BLK_COLOR").enable();
+                apex.item("P193_BLK_RULE").enable();
                 $("#ADD_BLK").css("display", "inline");
                 $("#SAVE_BLK").css("display", "inline");
                 $("#UPDATE_BLK").css("display", "none");
@@ -9569,6 +9687,7 @@ async function doMouseUp(p_x, p_y, p_event, p_prevX, p_prevY, p_canvas, p_camera
                 //ASA-1965 task-3 start
             } else if (typeof g_dragItem !== "undefined" && g_dragItem != null && g_drag_inprogress == "Y" && ((g_dragItem.length && g_dragItem.length > 0) || (typeof g_dragItem.uuid !== 'undefined') || typeof g_dragItem === 'object')) {
                 //ASA-1085 added autofill dragging block
+                try { clearAutofillBlockHighlight(); } catch(e) { /* ignore */ }
                 var curr_module = getAutoFillCurrModule(l_final_x, l_final_y, g_module_index, p_pog_index);
                 if (typeof curr_module === "undefined" || curr_module === -1) {  // ASA-1965 Additional fix
                     try {
@@ -9655,6 +9774,28 @@ async function doMouseUp(p_x, p_y, p_event, p_prevX, p_prevY, p_canvas, p_camera
                                 var fnTopX = g_pog_json[p_pog_index].ModuleInfo[colorObj.mod_index[0]].X - g_pog_json[p_pog_index].ModuleInfo[colorObj.mod_index[0]].W / 2;
                                 var fnBtmX = g_pog_json[p_pog_index].ModuleInfo[colorObj.mod_index[0]].X + g_pog_json[p_pog_index].ModuleInfo[colorObj.mod_index[0]].W / 2;
                                 if (fnTop > l_final_y && fnBtm < l_final_y && fnTopX < l_final_x && fnBtmX > l_final_x) {
+
+                            //validation
+                            // if (colorObj.BlkName !== dragUuid) {
+                            //     var fnTop = Number(colorObj.BlockDim.FinalTop || 0);
+                            //     var fnBtm = Number(colorObj.BlockDim.FinalBtm || 0);
+
+                            //     var dragW = Number(dragBlock[0].BlockDim.BlkWidth || 0);
+                            //     var dragH = Number(dragBlock[0].BlockDim.BlkHeight || 0);
+                            //     var dragLeft = Number(l_final_x) - dragW / 2;
+                            //     var dragRight = Number(l_final_x) + dragW / 2;
+                            //     var dragTop = Number(l_final_y) + dragH / 2;
+                            //     var dragBtm = Number(l_final_y) - dragH / 2;
+
+                            //     var otherModX = Number(g_pog_json[p_pog_index].ModuleInfo[colorObj.mod_index[0]].X || 0);
+                            //     var otherCalcX = Number(colorObj.BlockDim.CalcX || 0);
+                            //     var otherW = Number(colorObj.BlockDim.BlkWidth || 0);
+                            //     var otherCenterX = otherModX + otherCalcX;
+                            //     var otherLeft = otherCenterX - otherW / 2;
+                            //     var otherRight = otherCenterX + otherW / 2;
+
+                            //     var isOverlap = dragLeft < otherRight && dragRight > otherLeft && dragTop > fnBtm && dragBtm < fnTop;
+                            //     if (isOverlap) {
                                     await swapColoredBlocks(colorObj, dragBlock[0], p_pog_index);
                                     g_dragItem = undefined;
                                     blockFound = true;
@@ -11021,6 +11162,611 @@ async function doMouseMove(p_x, p_y, p_event, p_prevX, p_prevY, p_canvas, p_came
             g_raycaster.setFromCamera(new THREE.Vector2(a, b), p_camera);
             g_intersects = g_raycaster.intersectObjects(new_world.children);
 
+            //   if (g_block_resize_state && g_block_resize_state.active && g_block_resize_state.blkRef) {
+            //     try {
+            //         var locationX = (g_intersects && g_intersects.length>0) ? g_intersects[0].point.x : g_block_resize_state.startX;
+            //         var delta = locationX - g_block_resize_state.startX;
+            //         // Heuristic: positive delta increases width, negative decreases
+            //         var newW = Math.max(0.1, g_block_resize_state.startWidth + Math.abs(delta));
+            //         // apply immediately to BlockDim and refresh visuals in update mode
+            //         var blkRef = g_block_resize_state.blkRef;
+            //         blkRef.BlockDim = blkRef.BlockDim || {};
+            //         blkRef.BlockDim.BlkWidth = Number(newW);
+            //         // call colorAutofillBlock to refresh visuals (update-mode)
+            //         colorAutofillBlock(null, null, blkRef.mod_index, blkRef.BlkColor || '#FFFFFF', blkRef.BlkName, 'U', blkRef, g_pog_index, 'N').then(function (ret) {
+            //             if (ret) blkRef.BlockDim = Object.assign(blkRef.BlockDim || {}, ret);
+            //             render(g_pog_index);
+            //         });
+            //         return true;
+            //     } catch (e) { console.warn('Resize move err', e); }
+            // }  resize block fun
+
+
+        //      if (g_block_resize_state && g_block_resize_state.armed && !g_block_resize_state.active && g_block_resize_state.blkRef) {
+        //         try {
+        //             var hoverBlkRef = g_block_resize_state.blkRef;
+        //             var hoverEdge = null;
+        //             if (hoverBlkRef.BlockDim && hoverBlkRef.BlockDim.ColorObj) {
+        //                 var hoverMesh = hoverBlkRef.BlockDim.ColorObj.getObjectByProperty("uuid", hoverBlkRef.BlkName);
+        //                 if (hoverMesh) {
+        //                     var hoverHits = g_raycaster.intersectObject(hoverMesh, true);
+        //                     if (Array.isArray(hoverHits) && hoverHits.length > 0) {
+        //                         var hoverPt = hoverHits[0].point.clone();
+        //                         hoverBlkRef.BlockDim.ColorObj.worldToLocal(hoverPt);
+        //                         var hoverX = Number(hoverPt.x);
+        //                         var hoverW = Number(hoverBlkRef.BlockDim.BlkWidth || 0);
+        //                         var hoverCX = Number(hoverBlkRef.BlockDim.CalcX || 0);
+        //                         var hoverLeft = hoverCX - hoverW / 2;
+        //                         var hoverRight = hoverCX + hoverW / 2;
+        //                         var hoverTol = Math.max(0.06, hoverW * 0.08);
+        //                         if (Math.abs(hoverX - hoverLeft) <= hoverTol) {
+        //                             hoverEdge = "left";
+        //                         } else if (Math.abs(hoverX - hoverRight) <= hoverTol) {
+        //                             hoverEdge = "right";
+        //                         }
+        //                     }
+        //                 }
+        //             }
+        //             g_block_resize_state.hoverEdge = hoverEdge;
+        //             if (hoverEdge) {
+        //                 canvas_drag.style.cursor = "ew-resize";
+        //             } else {
+        //                 canvas_drag.style.cursor = "auto";
+        //             }
+        //         } catch (e) {}
+        //     }
+        //     // If currently performing a block resize drag, update width live
+        //    if (g_block_resize_state && g_block_resize_state.active && g_block_resize_state.blkRef) {
+        //         try {
+        //             var blkRef = g_block_resize_state.blkRef;
+        //             var currPointerLocalX = g_block_resize_state.startPointerLocalX;
+        //             if (blkRef.BlockDim && blkRef.BlockDim.ColorObj) {
+        //                 var activeMesh = blkRef.BlockDim.ColorObj.getObjectByProperty("uuid", blkRef.BlkName);
+        //                 if (activeMesh) {
+        //                     var activeHits = g_raycaster.intersectObject(activeMesh, true);
+        //                     if (Array.isArray(activeHits) && activeHits.length > 0) {
+        //                         var activePt = activeHits[0].point.clone();
+        //                         blkRef.BlockDim.ColorObj.worldToLocal(activePt);
+        //                         currPointerLocalX = Number(activePt.x);
+        //                     }
+        //                 }
+        //             }
+
+        //             var delta = currPointerLocalX - Number(g_block_resize_state.startPointerLocalX || 0);
+        //             var minWidth = 0.1;
+        //             var newLeft = Number(g_block_resize_state.startLeft || 0);
+        //             var newRight = Number(g_block_resize_state.startRight || 0);
+        //             if (g_block_resize_state.edge === "left") {
+        //                 newLeft = newLeft + delta;
+        //             } else {
+        //                 newRight = newRight + delta;
+        //             }
+        //             if (newRight - newLeft < minWidth) {
+        //                 if (g_block_resize_state.edge === "left") {
+        //                     newLeft = newRight - minWidth;
+        //                 } else {
+        //                     newRight = newLeft + minWidth;
+        //                 }
+        //             }
+
+        //             var newW = newRight - newLeft;
+        //             var newCalcX = (newLeft + newRight) / 2;
+        //             // apply immediately to BlockDim and refresh visuals in update mode
+        //             blkRef.BlockDim = blkRef.BlockDim || {};
+        //             blkRef.BlockDim.BlkWidth = Number(newW);
+        //             blkRef.BlockDim.CalcX = Number(newCalcX);
+        //             var l_mod_index = Array.isArray(blkRef.mod_index) && blkRef.mod_index.length > 0 ? blkRef.mod_index[0] : -1;
+        //             if (l_mod_index > -1 && typeof g_pog_json[g_pog_index] !== "undefined" && typeof g_pog_json[g_pog_index].ModuleInfo[l_mod_index] !== "undefined") {
+        //                 var moduleX = Number(g_pog_json[g_pog_index].ModuleInfo[l_mod_index].X || 0);
+        //                 blkRef.DragMouseStart = blkRef.DragMouseStart || {};
+        //                 blkRef.DragMouseEnd = blkRef.DragMouseEnd || {};
+        //                 blkRef.DragMouseStart.x = moduleX + newLeft;
+        //                 blkRef.DragMouseEnd.x = moduleX + newRight;
+        //             }
+
+        //             console.log(" block ref", blkRef);
+        //             // call colorAutofillBlock to refresh visuals (update-mode)
+        //             colorAutofillBlock(null, null, blkRef.mod_index, blkRef.BlkColor || '#FFFFFF', blkRef.BlkName, 'U', blkRef, g_pog_index, 'N').then(function (ret) {
+        //                 if (ret) blkRef.BlockDim = Object.assign(blkRef.BlockDim || {}, ret);
+        //                 render(g_pog_index);
+        //             });
+        //             return true;
+        //         } catch (e) { console.warn('Resize move err', e); }
+        //     }
+           
+
+
+        //    if (g_block_resize_state && g_block_resize_state.armed && !g_block_resize_state.active && g_block_resize_state.blkRef) {
+        //         try {
+        //             var hoverBlkRef = g_block_resize_state.blkRef;
+        //             var hoverEdge = null;
+        //             if (hoverBlkRef.BlockDim && hoverBlkRef.BlockDim.ColorObj) {
+        //                 var hoverMesh = hoverBlkRef.BlockDim.ColorObj.getObjectByProperty("uuid", hoverBlkRef.BlkName);
+        //                 if (hoverMesh) {
+        //                     var hoverHits = g_raycaster.intersectObject(hoverMesh, true);
+        //                     if (Array.isArray(hoverHits) && hoverHits.length > 0) {
+        //                         var hoverPt = hoverHits[0].point.clone();
+        //                         hoverBlkRef.BlockDim.ColorObj.worldToLocal(hoverPt);
+        //                         var hoverX = Number(hoverPt.x);
+        //                         var hoverW = Number(hoverBlkRef.BlockDim.BlkWidth || 0);
+        //                         var hoverCX = Number(hoverBlkRef.BlockDim.CalcX || 0);
+        //                         var hoverLeft = hoverCX - hoverW / 2;
+        //                         var hoverRight = hoverCX + hoverW / 2;
+        //                         var hoverTol = Math.max(0.06, hoverW * 0.08);
+        //                         if (Math.abs(hoverX - hoverLeft) <= hoverTol) {
+        //                             hoverEdge = "left";
+        //                         } else if (Math.abs(hoverX - hoverRight) <= hoverTol) {
+        //                             hoverEdge = "right";
+        //                         }
+        //                     }
+        //                 }
+        //             }
+        //             if (hoverEdge) {
+        //                 canvas_drag.style.cursor = "ew-resize";
+        //             } else {
+        //                 canvas_drag.style.cursor = "auto";
+        //             }
+        //         } catch (e) {}
+        //     }
+        //     // If currently performing a block resize drag, update width live
+        //     if (g_block_resize_state && g_block_resize_state.active && g_block_resize_state.blkRef) {
+        //         try {
+        //             var blkRef = g_block_resize_state.blkRef;
+        //             var currPointerLocalX = g_block_resize_state.startPointerLocalX;
+        //             if (blkRef.BlockDim && blkRef.BlockDim.ColorObj) {
+        //                 var activeMesh = blkRef.BlockDim.ColorObj.getObjectByProperty("uuid", blkRef.BlkName);
+        //                 var hasActiveHit = false;
+        //                 if (activeMesh) {
+        //                     var activeHits = g_raycaster.intersectObject(activeMesh, true);
+        //                     if (Array.isArray(activeHits) && activeHits.length > 0) {
+        //                         var activePt = activeHits[0].point.clone();
+        //                         blkRef.BlockDim.ColorObj.worldToLocal(activePt);
+        //                         currPointerLocalX = Number(activePt.x);
+        //                         hasActiveHit = true;
+        //                     }
+        //                 }
+        //                 // When pointer goes outside block mesh while dragging edge,
+        //                 // continue tracking X on the block plane so width can increase.
+        //                 if (!hasActiveHit) {
+        //                     var planeLocalZ = Number(blkRef.BlockDim.CalcZ || 0.009);
+        //                     var planePointWorld = new THREE.Vector3(0, 0, planeLocalZ);
+        //                     blkRef.BlockDim.ColorObj.localToWorld(planePointWorld);
+        //                     var normalMatrix = new THREE.Matrix3().getNormalMatrix(blkRef.BlockDim.ColorObj.matrixWorld);
+        //                     var planeNormalWorld = new THREE.Vector3(0, 0, 1).applyMatrix3(normalMatrix).normalize();
+        //                     var dragPlane = new THREE.Plane().setFromNormalAndCoplanarPoint(planeNormalWorld, planePointWorld);
+        //                     var worldPt = new THREE.Vector3();
+        //                     if (g_raycaster.ray.intersectPlane(dragPlane, worldPt)) {
+        //                         var planePtLocal = worldPt.clone();
+        //                         blkRef.BlockDim.ColorObj.worldToLocal(planePtLocal);
+        //                         currPointerLocalX = Number(planePtLocal.x);
+        //                     }
+        //                 }
+        //             }
+
+        //             var delta = currPointerLocalX - Number(g_block_resize_state.startPointerLocalX || 0);
+        //             var minWidth = 0.1;
+        //             var newLeft = Number(g_block_resize_state.startLeft || 0);
+        //             var newRight = Number(g_block_resize_state.startRight || 0);
+
+
+        //            // validation 
+        //            var currModIndex = Array.isArray(blkRef.mod_index) && blkRef.mod_index.length > 0 ? blkRef.mod_index[0] : -1;
+        //             var moduleLeftLimit = -Infinity;
+        //             var moduleRightLimit = Infinity;
+        //             if (currModIndex > -1 && typeof g_pog_json[g_pog_index] !== "undefined" && typeof g_pog_json[g_pog_index].ModuleInfo[currModIndex] !== "undefined") {
+        //                 var currModW = Number(g_pog_json[g_pog_index].ModuleInfo[currModIndex].W || 0);
+        //                 moduleLeftLimit = -currModW / 2;
+        //                 moduleRightLimit = currModW / 2;
+        //             }
+
+        //             // Shelf-level hard bounds: use intersection of all shelves captured in block.
+        //             // This ensures width never grows outside shelf space even if module is wider.
+        //             var shelfLeftLimit = moduleLeftLimit;
+        //             var shelfRightLimit = moduleRightLimit;
+        //             var hasShelfLimit = false;
+        //             if (
+        //                 currModIndex > -1 &&
+        //                 typeof g_pog_json[g_pog_index] !== "undefined" &&
+        //                 typeof g_pog_json[g_pog_index].ModuleInfo[currModIndex] !== "undefined" &&
+        //                 Array.isArray(blkRef.g_delete_details) &&
+        //                 blkRef.g_delete_details.length > 0
+        //             ) {
+        //                 var moduleShelves = g_pog_json[g_pog_index].ModuleInfo[currModIndex].ShelfInfo;
+        //                 for (const blkShelf of blkRef.g_delete_details) {
+        //                     if (typeof blkShelf === "undefined" || blkShelf == null) {
+        //                         continue;
+        //                     }
+        //                     var shelfModIndex = typeof blkShelf.MIndex !== "undefined" ? Number(blkShelf.MIndex) : currModIndex;
+        //                     if (shelfModIndex !== currModIndex) {
+        //                         continue;
+        //                     }
+        //                     var shelfIndex = typeof blkShelf.SIndex !== "undefined" ? Number(blkShelf.SIndex) : -1;
+        //                     if (shelfIndex < 0 || typeof moduleShelves[shelfIndex] === "undefined") {
+        //                         continue;
+        //                     }
+        //                     var shelfObj = moduleShelves[shelfIndex];
+        //                     if (!shelfObj || shelfObj.ObjType === "NOTCH" || shelfObj.ObjType === "BASE" || shelfObj.ObjType === "DIVIDER") {
+        //                         continue;
+        //                     }
+        //                     var shLeft = Number(shelfObj.X || 0) - Number(shelfObj.W || 0) / 2;
+        //                     var shRight = Number(shelfObj.X || 0) + Number(shelfObj.W || 0) / 2;
+        //                     if (!hasShelfLimit) {
+        //                         shelfLeftLimit = shLeft;
+        //                         shelfRightLimit = shRight;
+        //                         hasShelfLimit = true;
+        //                     } else {
+        //                         shelfLeftLimit = Math.max(shelfLeftLimit, shLeft);
+        //                         shelfRightLimit = Math.min(shelfRightLimit, shRight);
+        //                     }
+        //                 }
+        //             }
+
+        //             // Final hard bounds for resize.
+        //             var effectiveLeftLimit = Math.max(moduleLeftLimit, shelfLeftLimit);
+        //             var effectiveRightLimit = Math.min(moduleRightLimit, shelfRightLimit);
+        //             if (!(effectiveRightLimit > effectiveLeftLimit)) {
+        //                 effectiveLeftLimit = moduleLeftLimit;
+        //                 effectiveRightLimit = moduleRightLimit;
+        //             }
+
+        //             var blockTop = Number(blkRef.BlockDim && typeof blkRef.BlockDim.FinalTop !== "undefined" ? blkRef.BlockDim.FinalTop : 0);
+        //             var blockBottom = Number(blkRef.BlockDim && typeof blkRef.BlockDim.FinalBtm !== "undefined" ? blkRef.BlockDim.FinalBtm : 0);
+        //             var leftNeighborLimit = effectiveLeftLimit;
+        //             var rightNeighborLimit = effectiveRightLimit;
+
+        //             for (const otherBlk of g_mod_block_list) {
+        //                 if (!otherBlk || otherBlk === blkRef || !otherBlk.BlockDim) {
+        //                     continue;
+        //                 }
+        //                 var otherModIndex = Array.isArray(otherBlk.mod_index) && otherBlk.mod_index.length > 0 ? otherBlk.mod_index[0] : -1;
+        //                 if (otherModIndex !== currModIndex) {
+        //                     continue;
+        //                 }
+
+        //                 var otherTop = Number(otherBlk.BlockDim.FinalTop || 0);
+        //                 var otherBottom = Number(otherBlk.BlockDim.FinalBtm || 0);
+        //                 if (!(otherTop > blockBottom && otherBottom < blockTop)) {
+        //                     continue;
+        //                 }
+
+        //                 var otherW = Number(otherBlk.BlockDim.BlkWidth || 0);
+        //                 var otherCX = Number(otherBlk.BlockDim.CalcX || 0);
+        //                 var otherLeft = otherCX - otherW / 2;
+        //                 var otherRight = otherCX + otherW / 2;
+
+        //                 if (otherRight <= Number(g_block_resize_state.startRight || 0)) {
+        //                     leftNeighborLimit = Math.max(leftNeighborLimit, otherRight);
+        //                 }
+        //                 if (otherLeft >= Number(g_block_resize_state.startLeft || 0)) {
+        //                     rightNeighborLimit = Math.min(rightNeighborLimit, otherLeft);
+        //                 }
+        //             }
+        //             //Validation
+
+        //             if (g_block_resize_state.edge === "left") {
+        //                 newLeft = newLeft + delta;
+        //             } else {
+        //                 newRight = newRight + delta;
+        //             }
+        //             if (newRight - newLeft < minWidth) {
+        //                 if (g_block_resize_state.edge === "left") {
+        //                     newLeft = newRight - minWidth;
+        //                 } else {
+        //                     newRight = newLeft + minWidth;
+        //                 }
+        //             }
+
+        //             var newW = newRight - newLeft;
+        //             var newCalcX = (newLeft + newRight) / 2;
+        //             // apply immediately to BlockDim and refresh visuals in update mode
+        //             blkRef.BlockDim = blkRef.BlockDim || {};
+        //             blkRef.BlockDim.BlkWidth = Number(newW);
+        //             blkRef.BlockDim.CalcX = Number(newCalcX);
+        //             var l_mod_index = Array.isArray(blkRef.mod_index) && blkRef.mod_index.length > 0 ? blkRef.mod_index[0] : -1;
+        //             if (l_mod_index > -1 && typeof g_pog_json[g_pog_index] !== "undefined" && typeof g_pog_json[g_pog_index].ModuleInfo[l_mod_index] !== "undefined") {
+        //                 var moduleX = Number(g_pog_json[g_pog_index].ModuleInfo[l_mod_index].X || 0);
+        //                 blkRef.DragMouseStart = blkRef.DragMouseStart || {};
+        //                 blkRef.DragMouseEnd = blkRef.DragMouseEnd || {};
+        //                 blkRef.DragMouseStart.x = moduleX + newLeft;
+        //                 blkRef.DragMouseEnd.x = moduleX + newRight;
+        //             }
+        //             // call colorAutofillBlock to refresh visuals (update-mode)
+        //             var ret = await colorAutofillBlock(null, null, blkRef.mod_index, blkRef.BlkColor || '#FFFFFF', blkRef.BlkName, 'U', blkRef, g_pog_index, 'N');
+        //             if (ret) blkRef.BlockDim = Object.assign(blkRef.BlockDim || {}, ret);
+        //             render(g_pog_index);
+        //             return true;
+        //         } catch (e) { console.warn('Resize move err', e); }
+        //     }
+
+
+
+        // While resize mode is armed, show resize cursor only when hovering selected block edge.
+            if (g_block_resize_state && g_block_resize_state.armed && !g_block_resize_state.active && g_block_resize_state.blkRef) {
+                try {
+                    var hoverBlkRef = g_block_resize_state.blkRef;
+                    var hoverEdge = null;
+                    if (hoverBlkRef.BlockDim && hoverBlkRef.BlockDim.ColorObj) {
+                        var hoverMesh = hoverBlkRef.BlockDim.ColorObj.getObjectByProperty("uuid", hoverBlkRef.BlkName);
+                        if (hoverMesh) {
+                            var hoverHits = g_raycaster.intersectObject(hoverMesh, true);
+                            if (Array.isArray(hoverHits) && hoverHits.length > 0) {
+                                var hoverPt = hoverHits[0].point.clone();
+                                hoverBlkRef.BlockDim.ColorObj.worldToLocal(hoverPt);
+                                var hoverX = Number(hoverPt.x);
+                                var hoverW = Number(hoverBlkRef.BlockDim.BlkWidth || 0);
+                                var hoverCX = Number(hoverBlkRef.BlockDim.CalcX || 0);
+                                var hoverLeft = hoverCX - hoverW / 2;
+                                var hoverRight = hoverCX + hoverW / 2;
+                                var hoverTol = Math.max(0.06, hoverW * 0.08);
+                                if (Math.abs(hoverX - hoverLeft) <= hoverTol) {
+                                    hoverEdge = "left";
+                                } else if (Math.abs(hoverX - hoverRight) <= hoverTol) {
+                                    hoverEdge = "right";
+                                }
+                            }
+                        }
+                    }
+                    if (hoverEdge) {
+                        canvas_drag.style.cursor = "ew-resize";
+                    } else {
+                        canvas_drag.style.cursor = "auto";
+                    }
+                } catch (e) {}
+            }
+            // If currently performing a block resize drag, update width live
+            if (g_block_resize_state && g_block_resize_state.active && g_block_resize_state.blkRef) {
+                try {
+                    var blkRef = g_block_resize_state.blkRef;
+                    var currPointerLocalX = g_block_resize_state.startPointerLocalX;
+                    if (blkRef.BlockDim && blkRef.BlockDim.ColorObj) {
+                        var activeMesh = blkRef.BlockDim.ColorObj.getObjectByProperty("uuid", blkRef.BlkName);
+                        var hasActiveHit = false;
+                        if (activeMesh) {
+                            var activeHits = g_raycaster.intersectObject(activeMesh, true);
+                            if (Array.isArray(activeHits) && activeHits.length > 0) {
+                                var activePt = activeHits[0].point.clone();
+                                blkRef.BlockDim.ColorObj.worldToLocal(activePt);
+                                currPointerLocalX = Number(activePt.x);
+                                hasActiveHit = true;
+                            }
+                        }
+                        // When pointer goes outside block mesh while dragging edge,
+                        // continue tracking X on the block plane so width can increase.
+                        if (!hasActiveHit) {
+                            var planeLocalZ = Number(blkRef.BlockDim.CalcZ || 0.009);
+                            var planePointWorld = new THREE.Vector3(0, 0, planeLocalZ);
+                            blkRef.BlockDim.ColorObj.localToWorld(planePointWorld);
+                            var normalMatrix = new THREE.Matrix3().getNormalMatrix(blkRef.BlockDim.ColorObj.matrixWorld);
+                            var planeNormalWorld = new THREE.Vector3(0, 0, 1).applyMatrix3(normalMatrix).normalize();
+                            var dragPlane = new THREE.Plane().setFromNormalAndCoplanarPoint(planeNormalWorld, planePointWorld);
+                            var worldPt = new THREE.Vector3();
+                            if (g_raycaster.ray.intersectPlane(dragPlane, worldPt)) {
+                                var planePtLocal = worldPt.clone();
+                                blkRef.BlockDim.ColorObj.worldToLocal(planePtLocal);
+                                currPointerLocalX = Number(planePtLocal.x);
+                            }
+                        }
+                    }
+
+                    var delta = currPointerLocalX - Number(g_block_resize_state.startPointerLocalX || 0);
+                    var minWidth = 0.1;
+                    var newLeft = Number(g_block_resize_state.startLeft || 0);
+                    var newRight = Number(g_block_resize_state.startRight || 0);
+
+                    // Keep resizing inside module bounds and stop at neighboring blocks.
+                    var currModIndex = Array.isArray(blkRef.mod_index) && blkRef.mod_index.length > 0 ? blkRef.mod_index[0] : -1;
+                    var moduleLeftLimit = -Infinity;
+                    var moduleRightLimit = Infinity;
+                    var moduleCenterX = 0;
+                    if (currModIndex > -1 && typeof g_pog_json[g_pog_index] !== "undefined" && typeof g_pog_json[g_pog_index].ModuleInfo[currModIndex] !== "undefined") {
+                        moduleCenterX = Number(g_pog_json[g_pog_index].ModuleInfo[currModIndex].X || 0);
+                        var currModW = Number(g_pog_json[g_pog_index].ModuleInfo[currModIndex].W || 0);
+                        moduleLeftLimit = -currModW / 2;
+                        moduleRightLimit = currModW / 2;
+                    }
+
+                    // Shelf-level hard bounds: use intersection of all shelves captured in block.
+                    // This ensures width never grows outside shelf space even if module is wider.
+                    var shelfLeftLimit = moduleLeftLimit;
+                    var shelfRightLimit = moduleRightLimit;
+                    var hasShelfLimit = false;
+                    // Prefer BlkShelfInfo (stable shelf metadata for block). Fallback to g_delete_details.
+                    if (Array.isArray(blkRef.BlkShelfInfo) && blkRef.BlkShelfInfo.length > 0) {
+                        for (const blkShelfEntry of blkRef.BlkShelfInfo) {
+                            if (!blkShelfEntry || !blkShelfEntry.ShelfInfo) {
+                                continue;
+                            }
+                            var shelfObj = blkShelfEntry.ShelfInfo;
+                            var shelfW = Number(shelfObj.W || 0);
+                            if (!(shelfW > 0)) {
+                                continue;
+                            }
+                            // Convert global shelf X to module-local X for BlockDim calculations.
+                            var shelfLocalX = Number(shelfObj.X || 0) - moduleCenterX;
+                            var shLeft = shelfLocalX - shelfW / 2;
+                            var shRight = shelfLocalX + shelfW / 2;
+                            if (!hasShelfLimit) {
+                                shelfLeftLimit = shLeft;
+                                shelfRightLimit = shRight;
+                                hasShelfLimit = true;
+                            } else {
+                                shelfLeftLimit = Math.max(shelfLeftLimit, shLeft);
+                                shelfRightLimit = Math.min(shelfRightLimit, shRight);
+                            }
+                        }
+                    } else if (
+                        currModIndex > -1 &&
+                        typeof g_pog_json[g_pog_index] !== "undefined" &&
+                        typeof g_pog_json[g_pog_index].ModuleInfo[currModIndex] !== "undefined" &&
+                        Array.isArray(blkRef.g_delete_details) &&
+                        blkRef.g_delete_details.length > 0
+                    ) {
+                        var moduleShelves = g_pog_json[g_pog_index].ModuleInfo[currModIndex].ShelfInfo;
+                        for (const blkShelf of blkRef.g_delete_details) {
+                            if (typeof blkShelf === "undefined" || blkShelf == null) {
+                                continue;
+                            }
+                            var shelfModIndex = typeof blkShelf.MIndex !== "undefined" ? Number(blkShelf.MIndex) : currModIndex;
+                            if (shelfModIndex !== currModIndex) {
+                                continue;
+                            }
+                            var shelfIndex = typeof blkShelf.SIndex !== "undefined" ? Number(blkShelf.SIndex) : -1;
+                            if (shelfIndex < 0 || typeof moduleShelves[shelfIndex] === "undefined") {
+                                continue;
+                            }
+                            var shelfObj = moduleShelves[shelfIndex];
+                            if (!shelfObj || shelfObj.ObjType === "NOTCH" || shelfObj.ObjType === "BASE" || shelfObj.ObjType === "DIVIDER") {
+                                continue;
+                            }
+                            var shelfW2 = Number(shelfObj.W || 0);
+                            if (!(shelfW2 > 0)) {
+                                continue;
+                            }
+                            var shelfLocalX2 = Number(shelfObj.X || 0) - moduleCenterX;
+                            var shLeft = shelfLocalX2 - shelfW2 / 2;
+                            var shRight = shelfLocalX2 + shelfW2 / 2;
+                            if (!hasShelfLimit) {
+                                shelfLeftLimit = shLeft;
+                                shelfRightLimit = shRight;
+                                hasShelfLimit = true;
+                            } else {
+                                shelfLeftLimit = Math.max(shelfLeftLimit, shLeft);
+                                shelfRightLimit = Math.min(shelfRightLimit, shRight);
+                            }
+                        }
+                    }
+
+                    // Final hard bounds for resize.
+                    var effectiveLeftLimit = Math.max(moduleLeftLimit, shelfLeftLimit);
+                    var effectiveRightLimit = Math.min(moduleRightLimit, shelfRightLimit);
+                    if (!(effectiveRightLimit > effectiveLeftLimit)) {
+                        effectiveLeftLimit = moduleLeftLimit;
+                        effectiveRightLimit = moduleRightLimit;
+                    }
+                    console.log("[BLOCK_RESIZE_VALIDATION] limits", {
+                        block: blkRef.BlkName,
+                        modIndex: currModIndex,
+                        moduleLeftLimit: moduleLeftLimit,
+                        moduleRightLimit: moduleRightLimit,
+                        shelfLeftLimit: shelfLeftLimit,
+                        shelfRightLimit: shelfRightLimit,
+                        effectiveLeftLimit: effectiveLeftLimit,
+                        effectiveRightLimit: effectiveRightLimit
+                    });
+
+                    var blockTop = Number(blkRef.BlockDim && typeof blkRef.BlockDim.FinalTop !== "undefined" ? blkRef.BlockDim.FinalTop : 0);
+                    var blockBottom = Number(blkRef.BlockDim && typeof blkRef.BlockDim.FinalBtm !== "undefined" ? blkRef.BlockDim.FinalBtm : 0);
+                    var leftNeighborLimit = effectiveLeftLimit;
+                    var rightNeighborLimit = effectiveRightLimit;
+
+                    for (const otherBlk of g_mod_block_list) {
+                        if (!otherBlk || otherBlk === blkRef || !otherBlk.BlockDim) {
+                            continue;
+                        }
+                        var otherModIndex = Array.isArray(otherBlk.mod_index) && otherBlk.mod_index.length > 0 ? otherBlk.mod_index[0] : -1;
+                        if (otherModIndex !== currModIndex) {
+                            continue;
+                        }
+
+                        var otherTop = Number(otherBlk.BlockDim.FinalTop || 0);
+                        var otherBottom = Number(otherBlk.BlockDim.FinalBtm || 0);
+                        if (!(otherTop > blockBottom && otherBottom < blockTop)) {
+                            continue;
+                        }
+
+                        var otherW = Number(otherBlk.BlockDim.BlkWidth || 0);
+                        var otherCX = Number(otherBlk.BlockDim.CalcX || 0);
+                        var otherLeft = otherCX - otherW / 2;
+                        var otherRight = otherCX + otherW / 2;
+
+                        if (otherRight <= Number(g_block_resize_state.startRight || 0)) {
+                            leftNeighborLimit = Math.max(leftNeighborLimit, otherRight);
+                        }
+                        if (otherLeft >= Number(g_block_resize_state.startLeft || 0)) {
+                            rightNeighborLimit = Math.min(rightNeighborLimit, otherLeft);
+                        }
+                    }
+
+                    if (g_block_resize_state.edge === "left") {
+                        var prevLeftBeforeClamp = newLeft;
+                        newLeft = newLeft + delta;
+                        newLeft = Math.max(newLeft, leftNeighborLimit);
+                        newLeft = Math.max(newLeft, effectiveLeftLimit);
+                        if (newLeft !== prevLeftBeforeClamp + delta) {
+                            console.log("[BLOCK_RESIZE_VALIDATION] left edge clamped", {
+                                block: blkRef.BlkName,
+                                prevLeft: prevLeftBeforeClamp,
+                                requestedLeft: prevLeftBeforeClamp + delta,
+                                finalLeft: newLeft,
+                                leftNeighborLimit: leftNeighborLimit,
+                                effectiveLeftLimit: effectiveLeftLimit
+                            });
+                        }
+                    } else {
+                        var prevRightBeforeClamp = newRight;
+                        newRight = newRight + delta;
+                        newRight = Math.min(newRight, rightNeighborLimit);
+                        newRight = Math.min(newRight, effectiveRightLimit);
+                        if (newRight !== prevRightBeforeClamp + delta) {
+                            console.log("[BLOCK_RESIZE_VALIDATION] right edge clamped", {
+                                block: blkRef.BlkName,
+                                prevRight: prevRightBeforeClamp,
+                                requestedRight: prevRightBeforeClamp + delta,
+                                finalRight: newRight,
+                                rightNeighborLimit: rightNeighborLimit,
+                                effectiveRightLimit: effectiveRightLimit
+                            });
+                        }
+                    }
+                    if (newRight - newLeft < minWidth) {
+                        // Do not force hard min width; keep movement smooth near boundaries.
+                        // But also avoid collapsing block to near-zero width.
+                        var tinyEps = 0.001;
+                        console.log("[BLOCK_RESIZE_VALIDATION] hard min-width skipped", {
+                            block: blkRef.BlkName,
+                            edge: g_block_resize_state.edge,
+                            newLeft: newLeft,
+                            newRight: newRight,
+                            tinyEps: tinyEps
+                        });
+                        if (g_block_resize_state.edge === "left") {
+                            newLeft = newRight - tinyEps;
+                        } else {
+                            newRight = newLeft + tinyEps;
+                        }
+                    }
+
+                    var newW = newRight - newLeft;
+                    var newCalcX = (newLeft + newRight) / 2;
+                    if (!Number.isFinite(newW) || newW <= 0.01) {
+                        console.log("[BLOCK_RESIZE_VALIDATION] resize skipped (too small)", {
+                            block: blkRef.BlkName,
+                            edge: g_block_resize_state.edge,
+                            newLeft: newLeft,
+                            newRight: newRight,
+                            newW: newW
+                        });
+                        return true;
+                    }
+                    // apply immediately to BlockDim and refresh visuals in update mode
+                    blkRef.BlockDim = blkRef.BlockDim || {};
+                    blkRef.BlockDim.BlkWidth = Number(newW);
+                    blkRef.BlockDim.CalcX = Number(newCalcX);
+                    var l_mod_index = Array.isArray(blkRef.mod_index) && blkRef.mod_index.length > 0 ? blkRef.mod_index[0] : -1;
+                    if (l_mod_index > -1 && typeof g_pog_json[g_pog_index] !== "undefined" && typeof g_pog_json[g_pog_index].ModuleInfo[l_mod_index] !== "undefined") {
+                        var moduleX = Number(g_pog_json[g_pog_index].ModuleInfo[l_mod_index].X || 0);
+                        blkRef.DragMouseStart = blkRef.DragMouseStart || {};
+                        blkRef.DragMouseEnd = blkRef.DragMouseEnd || {};
+                        blkRef.DragMouseStart.x = moduleX + newLeft;
+                        blkRef.DragMouseEnd.x = moduleX + newRight;
+                    }
+                    // call colorAutofillBlock to refresh visuals (update-mode)
+                    var ret = await colorAutofillBlock(null, null, blkRef.mod_index, blkRef.BlkColor || '#FFFFFF', blkRef.BlkName, 'U', blkRef, g_pog_index, 'N');
+                    if (ret) blkRef.BlockDim = Object.assign(blkRef.BlockDim || {}, ret);
+                    render(g_pog_index);
+                    return true;
+                } catch (e) { console.warn('Resize move err', e); }
+            }
             // ─────────────────────────────────────────────────────────────────
             // FIX: Check g_selecting FIRST, before anything else.
             //      If a rubber-band selection is in progress, ONLY update the
@@ -11095,6 +11841,10 @@ async function doMouseMove(p_x, p_y, p_event, p_prevX, p_prevY, p_canvas, p_came
             // ─────────────────────────────────────────────────────────────────
 
             console.log("MouseMove", g_dragging);
+              if (p_event.button === 2) {
+                console.log("it working")
+                 g_dragging = false;
+                }
             if (g_dragging && g_duplicating == "N") {
                 g_pog_index = p_pog_index;
                 p_canvas = canvas_drag;
@@ -11622,11 +12372,11 @@ function doMouseDoubleclick(p_x, p_y, p_startX, p_startY, p_event, p_canvas, p_c
             g_object_hit_ind = "B";
         }
         g_dblclick_opened = "Y";
-        // try {
-        //     open_edit_modal_popup(g_object_hit_ind, g_module_index, g_shelf_index, "N", p_pog_index);
-        // } catch (err) {
-        //     error_handling(err);
-        // }
+        try {
+            open_blk_details(g_selected_block, 'Y');
+        } catch (err) {
+            error_handling(err);
+        }
     }
     logDebug("function : doMouseDoubleclick", "E");
 }
@@ -13911,6 +14661,7 @@ async function modifyWindowAfterMinMax(p_scene_objects) {
         render(i);
     }
     g_pog_index = old_pogIndex;
+
 }
 
 async function createDynamicBlocks(
@@ -13920,6 +14671,7 @@ async function createDynamicBlocks(
     p_pog_draft_version = "",
     p_saveColl = "Y",
     p_attr_val = "",
+    p_margin_param = ""
 ) {
 
     return new Promise((resolve, reject) => {
@@ -13931,6 +14683,7 @@ async function createDynamicBlocks(
                 x02: p_pog_version,
                 x03: p_attr_val,
                 x04: p_draft_pog == "Y" ? p_pog_draft_version : "",
+                x05: p_margin_param,
                 //p_clob_01: JSON.stringify(g_pog_json[g_pog_index])
             },
             {
@@ -13980,6 +14733,7 @@ async function createDynamicBlocks(
                                 'N',
                                 'N',
                                 row.color,
+                                row.values
                             );
                             if (isBlockCreated !== true) {  // ASA-1986 start
                                 console.warn("Skipped block due to invalid block dimensions:", row.block_name);
@@ -14264,6 +15018,7 @@ async function open_view_analysis() {
     }
 }
 
+
 function add_pog_versions() {
     logDebug("function : add_pog_versions", "S");
     try {
@@ -14409,6 +15164,7 @@ function onContextMenu(p_event) {
         prevY = startY = y;
         //Pass that to doMouseDown function to find out which object was hit.
         g_dragging = doMouseDown(x, y, start_x, start_y, p_event, g_canvas, "Y", g_pog_index);
+        g_dragging = false;
         console.log("return from MouseDown", g_dragging);
         console.log("constext ", g_start_canvas, g_ComViewIndex, g_compare_view, g_compare_pog_flag);
         if (g_carpark_item_flag == "N" && g_carpark_edit_flag == "N" && ((g_start_canvas == g_ComViewIndex && g_compare_view == "POG" && g_compare_pog_flag == "Y") || (g_start_canvas !== g_ComViewIndex && g_compare_pog_flag == "Y") || g_compare_pog_flag == "N")) {
@@ -14467,6 +15223,7 @@ function onContextMenu(p_event) {
 
 async function context_func(p_action) {
     logDebug("function : context_func; action : " + p_action, "S");
+    g_dragging = false;
     if (typeof g_pog_json !== "undefined" && g_pog_json.length > 0) {
         if (p_action != "copy_pogc_image" && p_action != "zoom_selected_pogc" && g_module_edit_flag == "N" && g_shelf_edit_flag == "N" && g_item_edit_flag == "N" && p_action !== "edit" && g_multiselect !== "Y" && p_action !== "muledit") {
             alert(get_message("NO_OBJECT_ERROR"));
@@ -14476,13 +15233,486 @@ async function context_func(p_action) {
             } else if (p_action == "delete") {
                 delete_blk_details(g_selected_block);
             } else if (p_action == "edit") {
-                open_blk_details(g_selected_block, 'Y');
+                if (g_multiselect === "Y" && g_intersected.length > 0) {
+                    open_multiselect_blk_details();
+                } else {
+                    open_blk_details(g_selected_block, 'Y');
+                }
+            }else if (p_action == "modify") {
+                enableBlockResizeOnModify(); 
             }
         }
+        
     }
     g_taskItemInContext = "";
     g_context_opened = "N";
     logDebug("function : context_func", "E");
+}
+
+async function update_multiselect_blk_filter(p_blk_name_list) {
+    try {
+        logDebug("function : update_multiselect_blk_filter", "S");
+
+        // 1. Read filter grid
+        var model = apex.region("block_filters").widget().interactiveGrid("getViews", "grid").model;
+        var filters_arr = [];
+        var filter_val = [];
+        var attr_arr = [];
+
+        model.forEach(function (record) {
+            var filters = typeof model.getValue(record, "FILTER") == "object"
+                ? model.getValue(record, "FILTER").v
+                : model.getValue(record, "FILTER");
+            var value = model.getValue(record, "VALUE");
+            filter_val.push(filters + "#" + value);
+            if (filters !== "") {
+                var filter_list = filters.split("-");
+                attr_arr.push(filter_list[0]);
+                filters_arr.push(filter_list[0] + " = " + (filter_list[1] == "C" ? '"' : "") + value + (filter_list[1] == "C" ? '"' : ""));
+            }
+        });
+
+        // 2. Validate filters (same rules as single-block update)
+        var dup_arr = findDuplicates(attr_arr);
+        if (dup_arr.length > 0) {
+            alert(get_message("POGCR_DUP_REC_FOUND"));
+            return;
+        }
+        if (attr_arr.includes("SUBCLASS") && (!attr_arr.includes("CLASS") || !attr_arr.includes("DEPT"))) {
+            alert(get_message("POGCR_DEPT_CLASS_MANDATE"));
+            return;
+        }
+        if (attr_arr.includes("CLASS") && !attr_arr.includes("DEPT")) {
+            alert(get_message("POGCR_DEPT_MANDATE"));
+            return;
+        }
+
+        // 3. Identify selected block names from the colon-separated list
+        var selectedBlkNames = p_blk_name_list.split(":").map(function (n) { return n.toUpperCase(); });
+
+        // 4. Update only BlockFilters / FilterVal on each selected block — nothing else changes
+        for (var i = 0; i < g_mod_block_list.length; i++) {
+            if (selectedBlkNames.indexOf(g_mod_block_list[i].BlkName.toUpperCase()) !== -1) {
+                g_mod_block_list[i].BlockFilters = filters_arr.slice();
+                g_mod_block_list[i].FilterVal = filter_val.slice();
+                g_mod_block_list[i].BlkFilters = filters_arr.join(" AND ");
+                logDebug("update_multiselect_blk_filter: updated filters for " + g_mod_block_list[i].BlkName, "I");
+            }
+        }
+
+        // 5. Build full block_details_arr (all blocks) for the server save
+        var block_details_arr = [];
+        for (const obj of g_mod_block_list) {
+            var details = {};
+            details["BlkColor"] = obj.BlkColor.toUpperCase();
+            details["BlkName"] = obj.BlkName.toUpperCase();
+            details["BlkRule"] = obj.BlkRule;
+            details["BlkFilters"] = obj.BlkFilters || (Array.isArray(obj.BlockFilters) ? obj.BlockFilters.join(" AND ") : "");
+            details["OldBlkName"] = obj.BlkName.toUpperCase();
+            obj["BlkFilters"] = details["BlkFilters"];
+            block_details_arr.push(details);
+        }
+
+         // 6. Save
+        await save_blk_dtl_coll("U", null, block_details_arr);
+        apex.region("mod_block_details").refresh();
+
+        // 7. Stop blink FIRST (needs WireframeObj intact), then remove border meshes,
+        //    then render so the canvas redraws without the borders.
+        clear_blinking();                          // clears g_intersected, stops interval, uses WireframeObj
+        cleanupBlockBorders(g_pog_index);          // nulls WireframeObj — must come after clear_blinking
+        render(g_pog_index);                       // redraw scene so borders disappear visually
+
+        // 8. Reset state
+        g_delete_details = [];
+        apex.region("block_filters").widget().interactiveGrid("getActions").set("edit", false);
+        apex.region("block_filters").widget().interactiveGrid("getViews", "grid").model.clearChanges();
+        apex.region("block_filters").refresh();
+
+        // 9. Re-enable form fields and close
+        $("#" + g_page_no + "BLK_NAME").prop("disabled", false);
+        apex.item(g_page_no + "BLK_COLOR").enable();
+        $("#" + g_page_no + "BLK_RULE").prop("disabled", false);
+        closeInlineDialog("block_details");
+
+        logDebug("function : update_multiselect_blk_filter", "E");
+    } catch (err) {
+        error_handling(err);
+    }
+}
+
+function open_multiselect_blk_details() {
+    try {
+        logDebug("function : open_multiselect_blk_details", "S");
+
+        // Collect all selected BLOCK entries from g_delete_details
+        var selectedBlocks = g_delete_details.filter(function (d) {
+            return d.Object === "BLOCK";
+        });
+
+        if (selectedBlocks.length === 0) {
+            logDebug("open_multiselect_blk_details: no BLOCK entries in g_delete_details", "W");
+            return;
+        }
+
+        // Build colon-separated list of BlkNames (same format update_module_block_list reads)
+        var blkNameList = selectedBlocks.map(function (d) { return d.BlkName; }).join(":");
+
+        $s(g_page_no + "EDIT_BLK", blkNameList);
+        g_autofill_edit = "Y";
+
+        // BLK_NAME / BLK_COLOR / BLK_RULE are disabled (readonly) fields — $s() won't update them.
+        // Use jQuery .val() directly to bypass the disabled-item guard.
+        // BLK_NAME shows "Mixed" to indicate multiple blocks are selected.
+        // BLK_COLOR and BLK_RULE are taken from the first selected block.
+        var firstBlk = selectedBlocks[0];
+        var firstColor = firstBlk.BlkColor || "";
+        var firstRule = "";
+        for (var i = 0; i < g_mod_block_list.length; i++) {
+            if (g_mod_block_list[i].BlkName === firstBlk.BlkName) {
+                firstRule = g_mod_block_list[i].BlkRule || "";
+                break;
+            }
+        }
+        // BLK_NAME: plain text input — jQuery .val() + prop("disabled") is enough
+        $("#" + g_page_no + "BLK_NAME").val("Mixed").prop("disabled", true);
+
+        // BLK_COLOR: APEX color-picker widget (input + swatch + trigger button).
+        // $s sets the value across all widget elements; apex.item().disable() disables the whole widget.
+        $s(g_page_no + "BLK_COLOR", firstColor);
+        apex.item(g_page_no + "BLK_COLOR").disable();
+
+        // BLK_RULE: try $s() directly (options already in DOM from a prior open).
+        // Fallback: if the option isn't found (fresh page load, LOV not yet populated),
+        // trigger apexrefresh and set the value once options arrive.
+        var blkRuleId = "#" + g_page_no + "BLK_RULE";
+        $s(g_page_no + "BLK_RULE", firstRule);
+        if (firstRule && $(blkRuleId).val() !== firstRule) {
+            // Option not in DOM yet — load LOV then select and disable
+            apex.item(g_page_no + "BLK_RULE").enable();
+            $(blkRuleId).one("apexafterrefresh", function () {
+                $s(g_page_no + "BLK_RULE", firstRule);
+                apex.item(g_page_no + "BLK_RULE").disable();
+            });
+            apex.event.trigger(blkRuleId, "apexrefresh");
+        } else {
+            apex.item(g_page_no + "BLK_RULE").disable();
+        }
+
+        // On Cancel / X close: remove blinking borders and restore all fields.
+        // closeInlineDialog uses apex.theme.closeRegion which fires "apexafterclosedialog"
+        // on the region element — NOT jQuery UI's "dialogclose".
+        var _pog_index = g_pog_index;
+        $("#block_details").one("apexafterclosedialog", function () {
+            clear_blinking();
+            cleanupBlockBorders(_pog_index);
+            render(_pog_index);
+            g_delete_details = [];
+            // Use apex.item().enable() for all three — jQuery .prop("disabled",false) only
+            // updates the DOM but APEX still treats the item as disabled, so $s() and $v()
+            // continue to use the stale cached value on the next open.
+            apex.item(g_page_no + "BLK_NAME").enable();
+            apex.item(g_page_no + "BLK_COLOR").enable();
+            apex.item(g_page_no + "BLK_RULE").enable();
+        });
+
+        var model = apex.region("block_filters").widget().interactiveGrid("getViews", "grid").model;
+        model.clearChanges();
+        apex.region("block_filters").refresh();
+
+        $("#ADD_BLK").css("display", "none");
+        $("#SAVE_BLK").css("display", "none");
+        $("#UPDATE_BLK").css("display", "inline");
+        g_auto_fill_reg_open = "N";
+        openInlineDialog("block_details", 40, 65);
+
+        logDebug("open_multiselect_blk_details: opened modal for " + selectedBlocks.length + " blocks: " + blkNameList, "I");
+        logDebug("function : open_multiselect_blk_details", "E");
+    } catch (err) {
+        error_handling(err);
+    }
+}
+
+
+
+// async function enableBlockResizeOnModify() {
+//     try {
+//         if (!g_selected_block || g_selected_block.length === 0) {
+//             alert(get_message ? get_message('POGCR_BLK_SELECT') : 'Please select a block to modify');
+//             return;
+//         }
+//         var blk = null;
+//         for (const b of g_mod_block_list) {
+//             if (b.BlkName == g_selected_block) {
+//                 blk = b;
+//                 break;
+//             }
+//         }
+//         if (!blk) {
+//             alert('Block details not found');
+//             return;
+//         }
+
+//         // Remove existing control if present
+//         var existing = document.getElementById('blockResizeCtrl');
+//         if (existing) existing.remove();
+
+//         // Current width (in scene units)
+//         var currW = (blk.BlockDim && Number(blk.BlockDim.BlkWidth)) ? Number(blk.BlockDim.BlkWidth) : 0;
+//         // Determine module width to allow percent-based edits
+//         var modIdx = Array.isArray(blk.mod_index) && blk.mod_index.length > 0 ? blk.mod_index[0] : null;
+//         var modW = (typeof g_pog_json !== 'undefined' && g_pog_json.length > 0 && modIdx !== null && typeof g_pog_json[g_pog_index].ModuleInfo[modIdx] !== 'undefined') ? Number(g_pog_json[g_pog_index].ModuleInfo[modIdx].W) : 0;
+
+//         var ctrl = document.createElement('div');
+//         ctrl.id = 'blockResizeCtrl';
+//         ctrl.style.position = 'fixed';
+//         ctrl.style.right = '20px';
+//         ctrl.style.bottom = '20px';
+//         ctrl.style.zIndex = 99999;
+//         ctrl.style.background = 'rgba(255,255,255,0.98)';
+//         ctrl.style.border = '1px solid #888';
+//         ctrl.style.padding = '8px';
+//         ctrl.style.borderRadius = '6px';
+//         ctrl.style.boxShadow = '0 2px 8px rgba(0,0,0,0.2)';
+//         ctrl.innerHTML = '<div style="display:flex;align-items:center;gap:6px;">'
+//             + '<button id="blkDec" title="Decrease">-</button>'
+//             + '<input id="blkWidthInput" type="number" style="width:90px;padding:4px" step="0.5" />'
+//             + '<button id="blkInc" title="Increase">+</button>'
+//             + '<button id="blkApply">Apply</button>'
+//             + '<button id="blkClose">Close</button>'
+//             + '</div>';
+//         document.body.appendChild(ctrl);
+
+//         var input = document.getElementById('blkWidthInput');
+//         // default to percent if module width available else raw units
+//         if (modW > 0) {
+//             input.value = ((currW / modW) * 100).toFixed(2);
+//             input.dataset.mode = 'percent';
+//         } else {
+//             input.value = currW.toFixed(2);
+//             input.dataset.mode = 'units';
+//         }
+
+//         document.getElementById('blkInc').onclick = function () {
+//             var v = Number(input.value) || 0;
+//             input.value = (v + 1).toFixed(2);
+//         };
+//         document.getElementById('blkDec').onclick = function () {
+//             var v = Number(input.value) || 0;
+//             input.value = (v - 1).toFixed(2);
+//         };
+
+//         document.getElementById('blkClose').onclick = function () {
+//             var el = document.getElementById('blockResizeCtrl');
+//             if (el) el.remove();
+//         };
+
+//         document.getElementById('blkApply').onclick = async function () {
+//             try {
+//                 var v = Number(input.value);
+//                 if (isNaN(v)) {
+//                     alert('Invalid value');
+//                     return;
+//                 }
+//                 var newW = currW;
+//                 if (input.dataset.mode === 'percent' && modW > 0) {
+//                     newW = (v / 100) * modW;
+//                 } else {
+//                     newW = v;
+//                 }
+
+//                 // remove old visual mesh if any
+//                 try {
+//                     if (blk.BlockDim && blk.BlockDim.ColorObj) {
+//                         for (const child of blk.BlockDim.ColorObj.children.slice()) {
+//                             if (child && child.uuid && child.uuid == blk.BlkName) {
+//                                 blk.BlockDim.ColorObj.remove(child);
+//                             }
+//                         }
+//                     }
+//                 } catch (e) {
+//                     console.warn('Failed to remove existing block mesh', e);
+//                 }
+
+//                 // update BlockDim values and call colorAutofillBlock in update mode to recreate visuals
+//                 if (!blk.BlockDim) blk.BlockDim = {};
+//                 blk.BlockDim.BlkWidth = Number(newW);
+//                 // keep height as-is (or compute from FinalTop/FinalBtm)
+//                 if (!blk.BlockDim.BlkHeight && typeof blk.BlockDim.FinalTop !== 'undefined' && typeof blk.BlockDim.FinalBtm !== 'undefined') {
+//                     blk.BlockDim.BlkHeight = Number(blk.BlockDim.FinalTop) - Number(blk.BlockDim.FinalBtm);
+//                 }
+
+//                 var ret = await colorAutofillBlock(null, null, blk.mod_index, blk.BlkColor || '#FFFFFF', blk.BlkName, 'U', blk, g_pog_index, 'N');
+//                 if (ret) {
+//                     // store updated BlockDim returned by colorAutofillBlock
+//                     blk.BlockDim = Object.assign(blk.BlockDim || {}, ret);
+//                 }
+//                 render(g_pog_index);
+//                 // close ctrl
+//                 var el = document.getElementById('blockResizeCtrl');
+//                 if (el) el.remove();
+//             } catch (err) {
+//                 console.error(err);
+//                 alert('Error applying resize');
+//             }
+//         };
+//     } catch (err) {
+//         error_handling(err);
+//     }
+// }
+
+// async function enableBlockResizeOnModify() {
+//     try {
+//         if (!g_selected_block || g_selected_block.length === 0) {
+//             alert(get_message ? get_message('POGCR_BLK_SELECT') : 'Please select a block to modify');
+//             return;
+//         }
+//         // find block reference
+//         var blk = null;
+//         for (const b of g_mod_block_list) {
+//             if (b.BlkName == g_selected_block) {
+//                 blk = b;
+//                 break;
+//             }
+//         }
+//         if (!blk) {
+//             alert('Block details not found');
+//             return;
+//         }
+
+//         // set resize mode to armed; user should click the selected block edge and drag
+//         g_block_resize_state.armed = true;
+//         g_block_resize_state.active = false;
+//         g_block_resize_state.blkName = g_selected_block;
+//         g_block_resize_state.blkRef = blk;
+
+//         // visual hint
+//         var existingHint = document.getElementById('blockResizeHint');
+//         if (existingHint) existingHint.remove();
+//         var hint = document.createElement('div');
+//         hint.id = 'blockResizeHint';
+//         hint.style.position = 'fixed';
+//         hint.style.right = '20px';
+//         hint.style.bottom = '20px';
+//         hint.style.zIndex = 99999;
+//         hint.style.background = 'rgba(0,0,0,0.75)';
+//         hint.style.color = '#fff';
+//         hint.style.padding = '8px 10px';
+//         hint.style.borderRadius = '6px';
+//         hint.style.fontSize = '13px';
+//         hint.innerText = 'Resize mode: click + drag left/right on the selected block to change width. Press Esc to cancel.';
+//         document.body.appendChild(hint);
+
+//         // change cursor on canvas to indicate resize-ready
+//         try { $('#maincanvas').css('cursor', 'ew-resize'); } catch (e) {}
+
+//         // add a key handler to cancel/arrow nudge while armed/active
+//         function _blkResizeKeyHandler(e) {
+//             if (!g_block_resize_state.armed && !g_block_resize_state.active) return;
+//             if (e.key === 'Escape') {
+//                 // cancel
+//                 g_block_resize_state.armed = false;
+//                 g_block_resize_state.active = false;
+//                 g_block_resize_state.blkName = null;
+//                 g_block_resize_state.blkRef = null;
+//                 var el = document.getElementById('blockResizeHint'); if (el) el.remove();
+//                 try { $('#maincanvas').css('cursor','auto'); } catch (e) {}
+//                 window.removeEventListener('keydown', _blkResizeKeyHandler);
+//                 render(g_pog_index);
+//             } else if ((e.key === 'ArrowLeft' || e.key === 'ArrowRight') && g_block_resize_state.blkRef) {
+//                 // nudge while active/armed
+//                 var delta = e.key === 'ArrowRight' ? 0.5 : -0.5;
+//                 var blkRef = g_block_resize_state.blkRef;
+//                 var currW = Number(blkRef.BlockDim && blkRef.BlockDim.BlkWidth ? blkRef.BlockDim.BlkWidth : 0);
+//                 var newW = Math.max(0.1, currW + delta);
+//                 blkRef.BlockDim.BlkWidth = newW;
+//                 // update visuals using update-mode
+//                 colorAutofillBlock(null, null, blkRef.mod_index, blkRef.BlkColor || '#FFFFFF', blkRef.BlkName, 'U', blkRef, g_pog_index, 'N').then((ret) => { if (ret) blkRef.BlockDim = Object.assign(blkRef.BlockDim||{}, ret); render(g_pog_index); });
+//             }
+//         }
+//         window.addEventListener('keydown', _blkResizeKeyHandler);
+//     } catch (err) {
+//         error_handling(err);
+//     }
+// }
+
+
+
+async function enableBlockResizeOnModify() {
+    try {
+        if (!g_selected_block || g_selected_block.length === 0) {
+            alert(get_message ? get_message('POGCR_BLK_SELECT') : 'Please select a block to modify');
+            return;
+        }
+        // find block reference
+        var blk = null;
+        for (const b of g_mod_block_list) {
+            if (b.BlkName == g_selected_block) {
+                blk = b;
+                break;
+            }
+        }
+        if (!blk) {
+            alert('Block details not found');
+            return;
+        }
+
+        // set resize mode to armed; user should click the selected block edge and drag
+        g_block_resize_state.armed = true;
+        g_block_resize_state.active = false;
+        g_block_resize_state.blkName = g_selected_block;
+        g_block_resize_state.blkRef = blk;
+
+        // visual hint
+        var existingHint = document.getElementById('blockResizeHint');
+        if (existingHint) existingHint.remove();
+        var hint = document.createElement('div');
+        hint.id = 'blockResizeHint';
+        hint.style.position = 'fixed';
+        hint.style.right = '20px';
+        hint.style.bottom = '20px';
+        hint.style.zIndex = 99999;
+        hint.style.background = 'rgba(0,0,0,0.75)';
+        hint.style.color = '#fff';
+        hint.style.padding = '8px 10px';
+        hint.style.borderRadius = '6px';
+        hint.style.fontSize = '13px';
+        hint.innerText = 'Resize mode';
+        document.body.appendChild(hint);
+
+        // Keep default cursor; ew-resize will be shown only when pointer is on block edge.
+        try { $('#maincanvas').css('cursor', 'auto'); } catch (e) {}
+
+        // add a key handler to cancel/arrow nudge while armed/active
+        function _blkResizeKeyHandler(e) {
+            if (!g_block_resize_state.armed && !g_block_resize_state.active) return;
+            if (e.key === 'Escape') {
+                // cancel
+                g_block_resize_state.armed = false;
+                g_block_resize_state.active = false;
+                g_block_resize_state.blkName = null;
+                g_block_resize_state.blkRef = null;
+                g_block_resize_state.edge = null;
+                g_block_resize_state.hoverEdge = null;
+                var el = document.getElementById('blockResizeHint'); if (el) el.remove();
+                try { $('#maincanvas').css('cursor','auto'); } catch (e) {}
+                window.removeEventListener('keydown', _blkResizeKeyHandler);
+                render(g_pog_index);
+            } else if ((e.key === 'ArrowLeft' || e.key === 'ArrowRight') && g_block_resize_state.blkRef) {
+                // nudge while active/armed
+                var delta = e.key === 'ArrowRight' ? 0.5 : -0.5;
+                var blkRef = g_block_resize_state.blkRef;
+                var currW = Number(blkRef.BlockDim && blkRef.BlockDim.BlkWidth ? blkRef.BlockDim.BlkWidth : 0);
+                var newW = Math.max(0.1, currW + delta);
+                blkRef.BlockDim.BlkWidth = newW;
+                // update visuals using update-mode
+                colorAutofillBlock(null, null, blkRef.mod_index, blkRef.BlkColor || '#FFFFFF', blkRef.BlkName, 'U', blkRef, g_pog_index, 'N').then((ret) => { if (ret) blkRef.BlockDim = Object.assign(blkRef.BlockDim||{}, ret); render(g_pog_index); });
+            }
+        }
+        window.addEventListener('keydown', _blkResizeKeyHandler);
+    } catch (err) {
+        error_handling(err);
+    }
 }
 
 function createAttributeCollection() {
@@ -14537,12 +15767,12 @@ function doMouseDown(p_x, p_y, p_startX, p_startY, p_event, p_canvas, p_context_
 
     
 
-              var header = document.getElementById("t_Header");
-                var breadcrumb = document.getElementById("t_Body_title");
-                var top_bar = document.getElementById("top_bar");
-                var side_nav = document.getElementById("t_Body_nav");
-                var button_cont = document.getElementById("side_bar");
-                var wtbar = document.querySelector(".wtbar");
+                 var header = document.getElementById("t_Header");
+                    var breadcrumb = document.getElementById("t_Body_title");
+                    var top_bar = document.getElementById("top_bar");
+                    var side_nav = document.getElementById("t_Body_nav");
+                    var button_cont = document.getElementById("wpdSplitter_splitter_first");
+                    var wtbar = document.querySelector(".wtbar");
                 var devicePixelRatio = window.devicePixelRatio;
                 var scroll_top = $(document).scrollTop();
                 var scroll_left = $(".t-Region-body").scrollLeft();
@@ -14686,6 +15916,7 @@ function doMouseDown(p_x, p_y, p_startX, p_startY, p_event, p_canvas, p_context_
                     g_prevMouse.y = p_y;
                     g_nextMouse = g_prevMouse.clone();
                     new_world.remove(g_targetForDragging);
+                    cleanupBlockBorders(p_pog_index);
                     g_intersected = [];
                     g_select_zoom_arr = [];
                     //if ctrl is holded that means duplicate of fixel is in progress.
@@ -14711,6 +15942,7 @@ function doMouseDown(p_x, p_y, p_startX, p_startY, p_event, p_canvas, p_context_
                         return false;
                     }
                 } else {
+                    cleanupBlockBorders(p_pog_index);
                     g_intersected = [];
                     g_select_zoom_arr = [];
                      try { clearAutofillBlockHighlight(); } catch(e) { /* ignore */ }
@@ -14738,6 +15970,124 @@ function doMouseDown(p_x, p_y, p_startX, p_startY, p_event, p_canvas, p_context_
                         var locationZ = g_intersects[0].point.z;
                         g_drag_z = g_objectHit.position.z;
                     }
+
+
+                    //   try {
+                    //         if (g_block_resize_state && g_block_resize_state.armed && g_selected_block) {
+                    //             var clickedUuid = g_objectHit.uuid || '';
+                    //             // also allow parent uuid if mesh nested
+                    //             var parentUuid = (g_objectHit.parent && g_objectHit.parent.uuid) ? g_objectHit.parent.uuid : '';
+                    //             if (clickedUuid == g_selected_block || parentUuid == g_selected_block) {
+                    //                 // initiate drag-resize
+                    //                 g_block_resize_state.active = true;
+                    //                 g_block_resize_state.armed = false;
+                    //                 g_block_resize_state.startX = g_mousedown_locx;
+                    //                 var blkRef = null;
+                    //                 for (const b of g_mod_block_list) { if (b.BlkName == g_selected_block) { blkRef = b; break; } }
+                    //                 if (blkRef) {
+                    //                     g_block_resize_state.blkRef = blkRef;
+                    //                     g_block_resize_state.startWidth = Number(blkRef.BlockDim && blkRef.BlockDim.BlkWidth ? blkRef.BlockDim.BlkWidth : 0);
+                    //                 }
+                    //                 // ensure cursor indicates resizing
+                    //                 try { $('#maincanvas').css('cursor','ew-resize'); } catch (e) {}
+                    //                 return true;
+                    //             }
+                    //         }
+                    //     } catch (e) {}
+
+                    //  try {
+                    //         if (g_block_resize_state && g_block_resize_state.armed && g_selected_block) {
+                    //             var blkRef = null;
+                    //             for (const b of g_mod_block_list) {
+                    //                 if (b.BlkName == g_selected_block) {
+                    //                     blkRef = b;
+                    //                     break;
+                    //                 }
+                    //             }
+
+                    //             var hitSelectedBlock = false;
+                    //             if (blkRef && blkRef.BlockDim && blkRef.BlockDim.ColorObj) {
+                    //                 var selectedBlockMesh = blkRef.BlockDim.ColorObj.getObjectByProperty("uuid", g_selected_block);
+                    //                 if (selectedBlockMesh) {
+                    //                     var selectedBlockHits = g_raycaster.intersectObject(selectedBlockMesh, true);
+                    //                     hitSelectedBlock = Array.isArray(selectedBlockHits) && selectedBlockHits.length > 0;
+                    //                 }
+                    //             }
+
+                    //             if (hitSelectedBlock) {
+                    //                 // initiate drag-resize
+                    //                 g_block_resize_state.active = true;
+                    //                 g_block_resize_state.armed = false;
+                    //                 g_block_resize_state.startX = g_mousedown_locx;
+                    //                 if (blkRef) {
+                    //                     g_block_resize_state.blkRef = blkRef;
+                    //                     g_block_resize_state.startWidth = Number(blkRef.BlockDim && blkRef.BlockDim.BlkWidth ? blkRef.BlockDim.BlkWidth : 0);
+                    //                 }
+                    //                 // ensure cursor indicates resizing
+                    //                 try { $('#maincanvas').css('cursor','ew-resize'); } catch (e) {}
+                    //                 return true;
+                    //             }
+                    //         }
+                    //     } catch (e) {}
+
+
+                    try {
+                            if (g_block_resize_state && g_block_resize_state.armed && g_selected_block) {
+                                var blkRef = null;
+                                for (const b of g_mod_block_list) {
+                                    if (b.BlkName == g_selected_block) {
+                                        blkRef = b;
+                                        break;
+                                    }
+                                }
+
+                                var hitSelectedBlock = false;
+                                var hitEdge = null;
+                                var startPointerLocalX = 0;
+                                if (blkRef && blkRef.BlockDim && blkRef.BlockDim.ColorObj) {
+                                    var selectedBlockMesh = blkRef.BlockDim.ColorObj.getObjectByProperty("uuid", g_selected_block);
+                                    if (selectedBlockMesh) {
+                                        var selectedBlockHits = g_raycaster.intersectObject(selectedBlockMesh, true);
+                                        hitSelectedBlock = Array.isArray(selectedBlockHits) && selectedBlockHits.length > 0;
+                                        if (hitSelectedBlock) {
+                                            var hitPt = selectedBlockHits[0].point.clone();
+                                            blkRef.BlockDim.ColorObj.worldToLocal(hitPt);
+                                            startPointerLocalX = Number(hitPt.x);
+                                            var blkWidth = Number(blkRef.BlockDim.BlkWidth || 0);
+                                            var blkCalcX = Number(blkRef.BlockDim.CalcX || 0);
+                                            var leftX = blkCalcX - blkWidth / 2;
+                                            var rightX = blkCalcX + blkWidth / 2;
+                                            var edgeTolerance = Math.max(0.06, blkWidth * 0.08);
+                                            if (Math.abs(startPointerLocalX - leftX) <= edgeTolerance) {
+                                                hitEdge = "left";
+                                            } else if (Math.abs(startPointerLocalX - rightX) <= edgeTolerance) {
+                                                hitEdge = "right";
+                                            }
+                                        }
+                                    }
+                                }
+
+                                if (hitSelectedBlock && hitEdge) {
+                                    // initiate drag-resize
+                                    g_block_resize_state.active = true;
+                                    g_block_resize_state.armed = false;
+                                    g_block_resize_state.startX = g_mousedown_locx;
+                                    g_block_resize_state.edge = hitEdge;
+                                    g_block_resize_state.hoverEdge = hitEdge;
+                                    g_block_resize_state.startPointerLocalX = startPointerLocalX;
+                                    if (blkRef) {
+                                        g_block_resize_state.blkRef = blkRef;
+                                        g_block_resize_state.startWidth = Number(blkRef.BlockDim && blkRef.BlockDim.BlkWidth ? blkRef.BlockDim.BlkWidth : 0);
+                                        g_block_resize_state.startCalcX = Number(blkRef.BlockDim && blkRef.BlockDim.CalcX ? blkRef.BlockDim.CalcX : 0);
+                                        g_block_resize_state.startLeft = g_block_resize_state.startCalcX - g_block_resize_state.startWidth / 2;
+                                        g_block_resize_state.startRight = g_block_resize_state.startCalcX + g_block_resize_state.startWidth / 2;
+                                    }
+                                    // ensure cursor indicates resizing
+                                    try { $('#maincanvas').css('cursor','ew-resize'); } catch (e) {}
+                                    return true;
+                                }
+                            }
+                        } catch (e) {}
 
                     var coords = new THREE.Vector3(locationX, locationY, locationZ);
                     new_world.worldToLocal(coords);
@@ -14849,9 +16199,15 @@ function doMouseDown(p_x, p_y, p_startX, p_startY, p_event, p_canvas, p_context_
                                     }
                                 }
                             }
+                            cleanupBlockBorders(p_pog_index);
                             g_intersected = [];
                             g_select_zoom_arr = [];
                             g_intersected.push(g_objectHit);
+                             try {
+                                if (typeof g_modify_resize_enabled !== "undefined" && g_modify_resize_enabled) {
+                                    positionResizerFor(g_objectHit);
+                                }
+                            } catch (e) {}
                         } else if (p_event.altKey == true) {
                             g_select_zoom_arr.push(g_objectHit);
                             g_intersected.push(g_objectHit);
@@ -15022,8 +16378,8 @@ function doMouseDown(p_x, p_y, p_startX, p_startY, p_event, p_canvas, p_context_
                                             var mesh = coloredModule.getObjectByProperty("uuid", uid);
                                             if (!mesh) return false;
                                             var hits = g_raycaster.intersectObject(mesh, true);
-
-                                            return hits && hits.length > 0;
+                                             g_drag_inprogress = "N"
+                                            return hits && hits.length === 1 || hits.length === 2;
                                         }
                                     }
                                 } catch (e) {
@@ -15052,15 +16408,15 @@ function doMouseDown(p_x, p_y, p_startX, p_startY, p_event, p_canvas, p_context_
                                     var isLeftClick = false;
 
                                         if (p_event) {
-                                            // Standard mouse
+                                          
                                             if (p_event.button === 0) {
                                                 isLeftClick = true;
                                             }
-                                            // Touchpad / drag / hold
+                                    
                                             else if (p_event.buttons === 1) {
                                                 isLeftClick = true;
                                             }
-                                            // Old browser fallback
+                                           
                                             else if (p_event.which === 1) {
                                                 isLeftClick = true;
                                             }
@@ -15119,11 +16475,15 @@ function doMouseDown(p_x, p_y, p_startX, p_startY, p_event, p_canvas, p_context_
                                 clearInterval(g_myVar);
                                 g_select_color = 0x000000;
                                 render(g_pog_index);
+                                cleanupBlockBorders(p_pog_index);
                                 g_intersected = [];
                                 g_select_zoom_arr = [];
                             }
                             g_select_zoom_arr.push(g_objectHit);
-                            g_intersected.push(g_objectHit);
+                            // g_intersected.push(g_objectHit);
+                             if (typeof g_module_obj_array === 'undefined' || g_module_obj_array.indexOf(g_objectHit) === -1) {
+                                g_intersected.push(g_objectHit);
+                            }
                             if (g_pog_index == g_ComViewIndex && g_module_edit_flag == "Y" && typeof comp_obj_id !== "undefined") {
                                 var selectedObject = g_scene_objects[g_ComViewIndex].scene.children[2].getObjectById(comp_obj_id);
                                 if (typeof selectedObject !== "undefined") {
@@ -15259,6 +16619,7 @@ function doMouseDown(p_x, p_y, p_startX, p_startY, p_event, p_canvas, p_context_
                         clearInterval(g_myVar);
                         g_select_color = 0x000000;
                         render(g_pog_index);
+                        cleanupBlockBorders(p_pog_index);
                         g_intersected = [];
                         g_select_zoom_arr = [];
                     }
@@ -15624,6 +16985,378 @@ async function load_data(pFileIndex) {
             };
         })(file);
         reader.readAsArrayBuffer(file);
+    } catch (err) {
+        error_handling(err);
+    }
+}
+
+//ASA-1422
+//this function is used when click shelf and select any 2 product and we find out the area between and multi select objects in between them
+//after this it will work similarly like drag multi select.
+function multiSelectItemsWithShift(p_pog_index, p_offset_perc) {
+    try {
+        logDebug("function : multiSelectItemsWithShift; p_pog_index : " + p_pog_index + "; p_offset_perc : " + p_offset_perc, "S");
+        var startX,
+            startY,
+            endX,
+            endY,
+            carpark_object = "CARPARK_ITEM",
+            carparkIntersect = "N",
+            fLeft,
+            fRight,
+            fBottom,
+            fTop,
+            lLeft,
+            lRight,
+            lBottom,
+            lTop;
+        if (!$.isEmptyObject(g_shift_multi_item_last)) {
+            g_delete_details = [];
+            g_multi_drag_shelf_arr = [];
+            g_multi_drag_item_arr = [];
+            carparkIntersect = g_shift_multi_item_first.isCarpark == "Y" || g_shift_multi_item_last.isCarpark == "Y" ? "Y" : "N";
+
+            fTop = g_shift_multi_item_first.Y + g_shift_multi_item_first.H / 2;
+            fRight = g_shift_multi_item_first.X + g_shift_multi_item_first.W / 2;
+            fBottom = g_shift_multi_item_first.Y - g_shift_multi_item_first.H / 2;
+            fLeft = g_shift_multi_item_first.X - g_shift_multi_item_first.W / 2;
+
+            lTop = g_shift_multi_item_last.Y + g_shift_multi_item_last.H / 2;
+            lRight = g_shift_multi_item_last.X + g_shift_multi_item_last.W / 2;
+            lBottom = g_shift_multi_item_last.Y - g_shift_multi_item_last.H / 2;
+            lLeft = g_shift_multi_item_last.X - g_shift_multi_item_last.W / 2;
+
+            startX = Math.min(fLeft, lLeft);
+            startY = Math.max(fTop, lTop);
+            endX = Math.max(fRight, lRight);
+            endY = Math.min(fBottom, lBottom);
+
+            var j = 0;
+            for (const module of g_pog_json[p_pog_index].ModuleInfo) {
+                if (module.ParentModule == null || module.ParentModule == "undefined") {
+                    var k = 0;
+                    for (const shelf of module.ShelfInfo) {
+                        if (typeof shelf !== "undefined") {
+                            if (shelf.ObjType !== "NOTCH" && shelf.ObjType !== "BASE" && shelf.ObjType !== "DIVIDER" && shelf.ObjType !== "TEXTBOX") {
+                                var l = 0;
+                                for (const item of shelf.ItemInfo) {
+                                    var itemTop = item.Y + item.H / 2,
+                                        itemLeft = item.X - item.W / 2,
+                                        itemBottom = item.Y - item.H / 2,
+                                        itemRight = item.X + item.W / 2;
+                                    if (
+                                        (itemTop <= startY && itemRight <= endX && itemBottom >= endY && itemLeft >= startX) ||
+                                        (p_offset_perc > 0 && ((itemTop > startY && itemRight <= endX && itemBottom >= endY && itemLeft >= startX && startY > itemBottom && (startY - itemBottom) / item.H >= p_offset_perc / 100) || (itemTop <= startY && itemRight > endX && itemBottom >= endY && itemLeft >= startX && endX > itemLeft && (endX - itemLeft) / item.W >= p_offset_perc / 100) || (itemTop <= startY && itemRight <= endX && itemBottom < endY && itemLeft >= startX && endY < itemTop && (itemTop - endY) / item.H >= p_offset_perc / 100) || (itemTop <= startY && itemRight <= endX && itemBottom >= endY && itemLeft < startX && startX < itemRight && (itemRight - startX) / item.W >= p_offset_perc / 100) || (itemTop > startY && itemRight <= endX && itemBottom < endY && itemLeft >= startX && (startY - endY) / item.H >= p_offset_perc / 100) || (itemTop <= startY && itemRight > endX && itemBottom >= endY && itemLeft < startX && (endX - startX) / item.W >= p_offset_perc / 100) || (itemTop > startY && startY > itemBottom && itemRight > endX && endX > itemLeft && itemBottom >= endY && itemLeft >= startX && (endX - itemLeft) / item.W >= p_offset_perc / 100 && (startY - itemBottom) / item.H >= p_offset_perc / 100) || (itemTop <= startY && itemRight <= endX && itemLeft < startX && startX < itemRight && itemBottom < endY && endY < itemTop && (itemTop - endY) / item.H >= p_offset_perc / 100 && (itemRight - startX) / item.W >= p_offset_perc / 100) || (itemTop <= startY && itemBottom < endY && endY < itemTop && itemRight > endX && endX > itemLeft && itemLeft >= startX && (itemTop - endY) / item.H >= p_offset_perc / 100 && (endX - itemLeft) / item.W >= p_offset_perc / 100) || (itemTop > startY && startY > itemBottom && itemBottom >= endY && itemRight <= endX && startX < itemRight && itemLeft < startX && (itemRight - startX) / item.W >= p_offset_perc / 100 && (startY - itemBottom) / item.H >= p_offset_perc / 100)))
+                                    ) {
+                                        //ASA-1422 issue 2
+                                        var is_divider = "N";
+                                        var object = "ITEM";
+                                        if (item.Item == "DIVIDER") {
+                                            is_divider = "Y";
+                                            object = "SHELF";
+                                        }
+                                        var details = setDetailsArray(item.ObjID, j, k, item.W, item.H, item.X, item.Y, item.Z, l, shelf.ObjType, is_divider, object, module.MObjID, shelf.SObjID, item.ItemID, item.Item, "N", 0, 0, item.Distance, item.TopObjID, item.BottomObjID, g_start_canvas, g_present_canvas, p_pog_index);
+                                        details["W"] = item.W;
+                                        details["RW"] = item.RW;
+                                        details["H"] = item.H;
+                                        details["X"] = item.X;
+                                        details["Y"] = item.Y;
+                                        g_delete_details.multi_delete_shelf_ind = "";
+                                        g_delete_details.push(details);
+                                    }
+                                    l++;
+                                }
+                            }
+                        }
+                        k++;
+                    }
+                    if (carparkIntersect == "Y") {
+                        var Carpark = module.Carpark;
+                        if (typeof Carpark !== "undefined" && Carpark.length > 0) {
+                            var l = 0;
+                            for (const item of module.Carpark[0].ItemInfo) {
+                                var itemTop = item.Y + item.H / 2,
+                                    itemLeft = item.X + item.W / 2,
+                                    itemBottom = item.Y - item.H / 2,
+                                    itemRight = item.X - item.W / 2;
+                                if (
+                                    (itemTop <= startY && itemRight <= endX && itemBottom >= endY && itemLeft >= startX) ||
+                                    (p_offset_perc > 0 && ((itemTop > startY && itemRight <= endX && itemBottom >= endY && itemLeft >= startX && startY > itemBottom && (startY - itemBottom) / item.H >= p_offset_perc / 100) || (itemTop <= startY && itemRight > endX && itemBottom >= endY && itemLeft >= startX && endX > itemLeft && (endX - itemLeft) / item.W >= p_offset_perc / 100) || (itemTop <= startY && itemRight <= endX && itemBottom < endY && itemLeft >= startX && endY < itemTop && (itemTop - endY) / item.H >= p_offset_perc / 100) || (itemTop <= startY && itemRight <= endX && itemBottom >= endY && itemLeft < startX && startX < itemRight && (itemRight - startX) / item.W >= p_offset_perc / 100) || (itemTop > startY && itemRight <= endX && itemBottom < endY && itemLeft >= startX && (startY - endY) / item.H >= p_offset_perc / 100) || (itemTop <= startY && itemRight > endX && itemBottom >= endY && itemLeft < startX && (endX - startX) / item.W >= p_offset_perc / 100) || (itemTop > startY && startY > itemBottom && itemRight > endX && endX > itemLeft && itemBottom >= endY && itemLeft >= startX && (endX - itemLeft) / item.W >= p_offset_perc / 100 && (startY - itemBottom) / item.H >= p_offset_perc / 100) || (itemTop <= startY && itemRight <= endX && itemLeft < startX && startX < itemRight && itemBottom < endY && endY < itemTop && (itemTop - endY) / item.H >= p_offset_perc / 100 && (itemRight - startX) / item.W >= p_offset_perc / 100) || (itemTop <= startY && itemBottom < endY && endY < itemTop && itemRight > endX && endX > itemLeft && itemLeft >= startX && (itemTop - endY) / item.H >= p_offset_perc / 100 && (endX - itemLeft) / item.W >= p_offset_perc / 100) || (itemTop > startY && startY > itemBottom && itemBottom >= endY && itemRight <= endX && startX < itemRight && itemLeft < startX && (itemRight - startX) / item.W >= p_offset_perc / 100 && (startY - itemBottom) / item.H >= p_offset_perc / 100)))
+                                ) {
+                                    //ASA-1422 issue 2
+                                    var details = setDetailsArray(item.ObjID, j, 0, item.W, item.H, item.X, item.Y, item.Z, l, Carpark.ObjType, "N", carpark_object, module.MObjID, Carpark.SObjID, item.ItemID, item.Item, "N", 0, 0, item.Distance, item.TopObjID, item.BottomObjID, g_start_canvas, g_present_canvas, p_pog_index);
+                                    details["W"] = items.W;
+                                    details["RW"] = items.RW;
+                                    details["H"] = items.H;
+                                    details["X"] = items.X;
+                                    details["Y"] = items.Y;
+                                    details["IsCarpark"] = "Y";
+                                    g_delete_details.multi_delete_shelf_ind = "";
+                                    g_delete_details.multi_carpark_ind = "Y";
+                                    g_delete_details.push(details);
+                                }
+                                l++;
+                            }
+                        }
+                    }
+                }
+                j++;
+            }
+            g_delete_details.StartCanvas = g_start_canvas;
+            g_delete_details.g_present_canvas = g_present_canvas;
+            if (g_delete_details.multi_carpark_ind == "Y") {
+                if (g_delete_details.some((e) => e.Object !== carpark_object)) {
+                    //Task_29818 - Start
+                    // ax_message.set({
+                    //     labels: {
+                    //         ok: get_message("SHCT_YES"),
+                    //         cancel: get_message("SHCT_NO"),
+                    //     },
+                    // });
+
+                    // ax_message.set({
+                    //     buttonReverse: true,
+                    // });
+
+                    // ax_message.confirm(get_message("CARPARK_MULTI_SEL_CONF"), function (e) {
+                    //     if (e) {
+                    //         for (var i = g_delete_details.length - 1; i >= 0; --i) {
+                    //             if (g_delete_details[i].Object !== carpark_object) {
+                    //                 g_delete_details.splice(i, 1);
+                    //             }
+                    //         }
+                    //         set_multi_blink(g_pog_json, p_pog_index);
+                    //     } else {
+                    //         g_delete_details = [];
+                    //         set_multi_blink(g_pog_json, p_pog_index);
+                    //     }
+                    // });
+
+                    confirm(
+                        get_message("CARPARK_MULTI_SEL_CONF"),
+                        get_message("SHCT_YES"),
+                        get_message("SHCT_NO"),
+                        function () {
+                            for (var i = g_delete_details.length - 1; i >= 0; --i) {
+                                if (g_delete_details[i].Object !== carpark_object) {
+                                    g_delete_details.splice(i, 1);
+                                }
+                            }
+                            set_multi_blink(g_pog_json, p_pog_index);
+                        },
+                        function () {
+                            g_delete_details = [];
+                            set_multi_blink(g_pog_json, p_pog_index);
+                        }
+                    );
+                    //Task_29818 - End
+                }
+            }
+            if (g_delete_details.length > 0) {
+                g_multiselect = "Y";
+                g_mselect_drag = "Y";
+                g_intersected = [];
+                if (typeof g_delete_details !== "undefined") {
+                    $.each(g_delete_details, function (j, details) {
+                        var selectedObject = g_scene_objects[p_pog_index].scene.children[2].getObjectById(details.ObjID);
+                        g_intersected.push(selectedObject);
+                    });
+                    render_animate_selected();
+                }
+            }
+        }
+        logDebug("function : multiSelectItemsWithShift", "E");
+    } catch (err) {
+        error_handling(err);
+    }
+}
+
+/**
+ * Creates a border-only LineSegments mesh around a block mesh
+ * and attaches it as blkMesh.WireframeObj so blink_effect()
+ * can toggle its colour without touching the fill material.
+ *
+ * @param {THREE.Mesh}  blkMesh   - the autofill block mesh
+ * @param {number}      p_pog_index
+ */
+function attachBlockBorderMesh(blkMesh, p_pog_index) {
+    // If already attached from a previous selection, reuse it
+    if (blkMesh._borderMesh) {
+        blkMesh.WireframeObj = blkMesh._borderMesh;
+        return;
+    }
+
+    // EdgesGeometry traces only the outer edges — looks like a border
+    var edgesGeo = new THREE.EdgesGeometry(blkMesh.geometry);
+    var edgesMat = new THREE.LineBasicMaterial({
+        color      : 0xffffff,   // starts white; blink_effect toggles this
+        linewidth  : 2,          // note: only >1 on WebGL2 / some drivers
+        depthTest  : false       // always visible, not occluded by other meshes
+    });
+    var borderMesh = new THREE.LineSegments(edgesGeo, edgesMat);
+
+    // Match block position/scale exactly
+    borderMesh.position.copy(blkMesh.position);
+    borderMesh.rotation.copy(blkMesh.rotation);
+    borderMesh.scale.copy(blkMesh.scale);
+    borderMesh.renderOrder = 999;
+
+    // Add to same parent as the block mesh
+    if (blkMesh.parent) {
+        blkMesh.parent.add(borderMesh);
+    } else {
+        g_scene_objects[p_pog_index].scene.children[2].add(borderMesh);
+    }
+
+    // Cache so we can remove it on deselect
+    blkMesh._borderMesh  = borderMesh;
+
+    // Wrap in the {material} shape blink_effect() expects:
+    //   g_intersected[i].WireframeObj.material.color.setHex(...)
+    blkMesh.WireframeObj = borderMesh;
+}
+
+
+function get_multiselect_blocks(p_pog_index) {
+    try {
+        logDebug("function : get_multiselect_blocks", "S");
+
+        if (typeof g_mod_block_list === "undefined" || g_mod_block_list.length === 0) return;
+
+        // Normalise drag rect for all 4 drag directions
+        var selLeft   = Math.min(g_DragMouseStart.x, g_DragMouseEnd.x);
+        var selRight  = Math.max(g_DragMouseStart.x, g_DragMouseEnd.x);
+        var selBottom = Math.min(g_DragMouseStart.y, g_DragMouseEnd.y);
+        var selTop    = Math.max(g_DragMouseStart.y, g_DragMouseEnd.y);
+
+        for (var bi = 0; bi < g_mod_block_list.length; bi++) {
+            var blk = g_mod_block_list[bi];
+            if (!blk || !blk.BlockDim) continue;
+
+            var bd = blk.BlockDim;
+
+            // ── Step 1: Resolve the mesh ──────────────────────
+            // Do this FIRST — we need the mesh to get real bounds
+            var blkMesh = null;
+            if (bd.ColorObj) {
+                if (blk.BlkName) {
+                    bd.ColorObj.traverse(function(child) {
+                        if (!blkMesh && child.uuid === blk.BlkName) blkMesh = child;
+                    });
+                }
+                if (!blkMesh) blkMesh = bd.ColorObj;
+            }
+            if (!blkMesh && blk.BlkName) {
+                blkMesh = g_scene_objects[p_pog_index].scene
+                              .getObjectByProperty("uuid", blk.BlkName);
+            }
+            if (!blkMesh) continue;
+
+            // ── Step 2: Get real world-space bounds from mesh ─
+            // THREE.Box3 computes the exact axis-aligned bounding
+            // box of the mesh in world space — this is the only
+            // accurate source, regardless of mod_index or BlockDim.
+            var box = new THREE.Box3().setFromObject(blkMesh);
+
+            var blkLeft   = box.min.x;
+            var blkRight  = box.max.x;
+            var blkBottom = box.min.y;
+            var blkTop    = box.max.y;
+
+            // Sanity check
+            if (blkLeft >= blkRight || blkBottom >= blkTop) continue;
+
+            // ── Step 3: Compute intersection area ─────────────
+            var interLeft   = Math.max(blkLeft,   selLeft);
+            var interRight  = Math.min(blkRight,  selRight);
+            var interBottom = Math.max(blkBottom, selBottom);
+            var interTop    = Math.min(blkTop,    selTop);
+
+            // No overlap at all
+            if (interRight <= interLeft || interTop <= interBottom) continue;
+
+            var interArea = (interRight - interLeft)  * (interTop    - interBottom);
+            var blkArea   = (blkRight   - blkLeft)    * (blkTop      - blkBottom);
+
+            if (blkArea <= 0) continue;
+
+            var coveragePct = interArea / blkArea;
+
+            logDebug("get_multiselect_blocks: " + blk.BlkName +
+                     " bounds=[" + blkLeft.toFixed(2) + "," + blkRight.toFixed(2) +
+                     "," + blkBottom.toFixed(2) + "," + blkTop.toFixed(2) + "]" +
+                     " coverage=" + Math.round(coveragePct * 100) + "%", "I");
+
+            // ── Step 4: 50% threshold ─────────────────────────
+            if (coveragePct < 1) continue;
+
+            // ── Step 5: Skip if already selected ─────────────
+            var alreadyIn = g_intersected.some(function(o) {
+                return o && o.uuid === blkMesh.uuid;
+            });
+            if (alreadyIn) continue;
+
+            // ── Step 6: Attach border + blink properties ──────
+            attachBlockBorderMesh(blkMesh, p_pog_index);
+
+            blkMesh.blink_color  = 0x000000;
+            blkMesh.BorderColour = 0xffffff;
+            blkMesh.ImageExists  = "N";
+            blkMesh.DimUpdate    = "N";
+            blkMesh.Status       = "Y";
+
+            g_intersected.push(blkMesh);
+
+            g_delete_details.push({
+                ObjID    : blkMesh.id,
+                BlkName  : blk.BlkName,
+                BlkColor : blk.BlkColor,
+                Object   : "BLOCK",
+                PogIndex : p_pog_index,
+                _blkRef  : blk
+            });
+
+            logDebug("get_multiselect_blocks: SELECTED " + blk.BlkName, "I");
+        }
+
+        logDebug("function : get_multiselect_blocks", "E");
+    } catch (err) {
+        error_handling(err);
+    }
+}
+
+function cleanupBlockBorders(p_pog_index) {
+    try {
+        if (typeof g_mod_block_list === "undefined" || g_mod_block_list.length === 0) return;
+
+        for (var bi = 0; bi < g_mod_block_list.length; bi++) {
+            var blk = g_mod_block_list[bi];
+            if (!blk || !blk.BlockDim || !blk.BlockDim.ColorObj) continue;
+
+            // Find the mesh
+            var blkMesh = null;
+            if (blk.BlkName) {
+                blk.BlockDim.ColorObj.traverse(function(child) {
+                    if (!blkMesh && child.uuid === blk.BlkName) blkMesh = child;
+                });
+            }
+            if (!blkMesh) blkMesh = blk.BlockDim.ColorObj;
+            if (!blkMesh) continue;
+
+            // Only act if a border mesh was previously attached
+            if (!blkMesh._borderMesh) continue;
+
+            // Remove from scene
+            if (blkMesh._borderMesh.parent) {
+                blkMesh._borderMesh.parent.remove(blkMesh._borderMesh);
+            }
+            // Dispose GPU resources
+            if (blkMesh._borderMesh.geometry) blkMesh._borderMesh.geometry.dispose();
+            if (blkMesh._borderMesh.material)  blkMesh._borderMesh.material.dispose();
+
+            blkMesh._borderMesh  = null;
+            blkMesh.WireframeObj = null;
+        }
     } catch (err) {
         error_handling(err);
     }

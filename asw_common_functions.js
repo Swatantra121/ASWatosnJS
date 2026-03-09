@@ -6,7 +6,7 @@ var g_page_no = (function () {
     var htmlClass = document.documentElement.className || "";
     var match = htmlClass.match(/page-(\d+)/);
     var page = match ? match[1] : "0";
-    return "P" + page + "_";  
+    return "P" + page + "_";
 })();
 
 console.log(g_page_no);
@@ -43,6 +43,17 @@ function bindSplitterResizeSync() {
         $(document).off("transitionend.aswSplitterResize").on("transitionend.aswSplitterResize", "#side_bar, #drawing_region, #wpdSplitter_splitter_first", function () {
             setTimeout(runCanvasReflow, 30);
         });
+        // Hide the splitter container immediately so the open→collapse flash is invisible
+        var splitterContainer = document.getElementById("wpdSplitter");
+        // Safety: stop polling after 5 seconds
+        setTimeout(function () {
+
+            // Always restore visibility even if thumb was never found
+            if (splitterContainer) {
+                splitterContainer.style.transition = "opacity 0.2s ease";
+                splitterContainer.style.opacity = "1";
+            }
+        }, 10);
     } catch (err) {
         error_handling(err);
     }
@@ -145,9 +156,9 @@ function set_select_canvas(p_pog_index) {
     }
 }
 
-async function appendMultiCanvasRowCol(p_pog_count, p_type =  $v(g_page_no + "POGCR_TILE_VIEW"), p_appendFlag = "N", p_compareWith) {
+async function appendMultiCanvasRowCol(p_pog_count, p_type = $v(g_page_no + "POGCR_TILE_VIEW"), p_appendFlag = "N", p_compareWith) {
     console.log("dynamic rows cols");
-     bindSplitterResizeSync();
+    bindSplitterResizeSync();
     if (p_type == "H") {
         $(".viewH").addClass("view_active");
         $(".viewV").removeClass("view_active");
@@ -162,7 +173,7 @@ async function appendMultiCanvasRowCol(p_pog_count, p_type =  $v(g_page_no + "PO
     $("#canvas-holder .container").css("height", g_windowHeight + "px")
     var containerH = $("#canvas-holder .container").height();;
     var containerW = $("#canvas-holder .container").width();
-     console.log('appendMultiCanvasRowCol: p_pog_count=', p_pog_count, 'p_type=', p_type, 'containerH=', containerH, 'containerW=', containerW);
+    console.log('appendMultiCanvasRowCol: p_pog_count=', p_pog_count, 'p_type=', p_type, 'containerH=', containerH, 'containerW=', containerW);
     var rowCount = 1,
         colCount = 1,
         calcFlag = "Y",
@@ -237,8 +248,8 @@ async function appendMultiCanvasRowCol(p_pog_count, p_type =  $v(g_page_no + "PO
                             el.setAttribute('data-indx', pogCount);
                             if (g_canvas_objects.indexOf(el) === -1) g_canvas_objects.push(el);
                         }
-                    } catch (e) {}
-                     //ASA-1986  end
+                    } catch (e) { }
+                    //ASA-1986  end
                 } else {
                     var currElmPos = pogCount - compareApended;
                     var currElm = divs[currElmPos];
@@ -255,15 +266,15 @@ async function appendMultiCanvasRowCol(p_pog_count, p_type =  $v(g_page_no + "PO
 
                     $("[data-row=" + i + "] #" + currElmId + " .canvas-buttons").attr("id", canvasName + "-btns");
                     $("[data-row=" + i + "] #" + currElmId + " .canvasregion").attr("id", canvasName);
-                      //ASA-1986  START
+                    //ASA-1986  START
                     try {
                         var el = document.getElementById(canvasName);
                         if (el) {
                             el.setAttribute('data-indx', pogCount);
                             if (g_canvas_objects.indexOf(el) === -1) g_canvas_objects.push(el);
                         }
-                    } catch (e) {}
-                       //ASA-1986  end
+                    } catch (e) { }
+                    //ASA-1986  end
                 }
             } else {
                 var buttonHtml = "";
@@ -271,15 +282,15 @@ async function appendMultiCanvasRowCol(p_pog_count, p_type =  $v(g_page_no + "PO
                     buttonHtml = '<div class="canvas-buttons" id="maincanvas' + pogNo + '-btns" ><span class="fa fa-close canvas-close" onClick="closePog(' + pogCount + ')"></span><span class="fa fa-window-maximize canvas-max" onClick="maximizePog(' + pogCount + ')"></span><span class="fa fa-minus canvas-min" onClick="minimizePog(' + pogCount + ')"></span></div>';
                 }
                 $("[data-row=" + i + "]").append('<div class="canvas-content" id="maincanvas' + pogNo + '-container" data-col="' + j + '" style="height:' + parseFloat((containerH / rowCount).toFixed(2)) + "px;width:" + parseFloat((containerW / currColCount).toFixed(2)) + 'px">' + buttonHtml + '<canvas class="canvasregion" data-canvas=true id="maincanvas' + pogNo + '" ></canvas></div>');
-                         //ASA-1986  START
-                 try {
+                //ASA-1986  START
+                try {
                     var el = document.getElementById(canvasName);
                     if (el) {
                         el.setAttribute('data-indx', pogCount);
                         if (g_canvas_objects.indexOf(el) === -1) g_canvas_objects.push(el);
                     }
-                } catch (e) {}
-                  //ASA-1986  end
+                } catch (e) { }
+                //ASA-1986  end
             }
             pogCount++;
         }
@@ -458,27 +469,27 @@ if (typeof window.reset_canvas_region !== "function") {
 }
 
 function generateCanvasListHolder(p_pog_json) {
-	$("#canvas-list-holder").html("");
-	if (p_pog_json.length > 0) {
-		$("#canvas-list-holder").css({
-			display: "flex",
-			width: "auto",
-		});
-		$("#canvas-list-holder").append('<div class="canvas-holder-div"><span class="canvas-holder-code expand-tab" onclick="expandAllPog()">' + g_expand_all_pog + "</span></div>");
+    $("#canvas-list-holder").html("");
+    if (p_pog_json.length > 0) {
+        $("#canvas-list-holder").css({
+            display: "flex",
+            width: "auto",
+        });
+        $("#canvas-list-holder").append('<div class="canvas-holder-div"><span class="canvas-holder-code expand-tab" onclick="expandAllPog()">' + g_expand_all_pog + "</span></div>");
 
-		for (i = 0; i < p_pog_json.length; i++) {
-			console.log("generage", i);
-			$("#canvas-list-holder").append('<div class="canvas-holder-div"><span class="canvas-holder-code">' + p_pog_json[i].POGCode + '</span><span class="fa fa-window-arrow-up canvas-expand" onClick=expandPog(' + i + ')></span><span class="fa fa-window-maximize canvas-max" onclick="maximizePog(' + i + ', 0)"></span><span class="fa fa-close canvas-close" onclick="closePog(' + i + ', 0)"></span></div>');
-		}
-		if ($("#canvas-list-holder").width() >= window.innerWidth) {
-			$("#canvas-list-holder").css("width", "100%");
-		}
-	} else {
-		$("#canvas-list-holder").css({
-			display: "none",
-			width: "auto",
-		});
-	}
+        for (i = 0; i < p_pog_json.length; i++) {
+            console.log("generage", i);
+            $("#canvas-list-holder").append('<div class="canvas-holder-div"><span class="canvas-holder-code">' + p_pog_json[i].POGCode + '</span><span class="fa fa-window-arrow-up canvas-expand" onClick=expandPog(' + i + ')></span><span class="fa fa-window-maximize canvas-max" onclick="maximizePog(' + i + ', 0)"></span><span class="fa fa-close canvas-close" onclick="closePog(' + i + ', 0)"></span></div>');
+        }
+        if ($("#canvas-list-holder").width() >= window.innerWidth) {
+            $("#canvas-list-holder").css("width", "100%");
+        }
+    } else {
+        $("#canvas-list-holder").css({
+            display: "none",
+            width: "auto",
+        });
+    }
 }
 
 //This function is assigned to event mousewheel.  this is majorly used to zoom in and out when ctrl key is pressed and do mouse scroll.
@@ -656,7 +667,7 @@ function get_object_identity(p_pog_index, p_multiSelect, p_multiCopydone, p_a, p
                         comp_obj_id = modules.CompMObjID;
                         g_wireframe_id = modules.WFrameID;
                         // apex.item("P193_MODULE_DISP").setValue(modules.Module);
-                        apex.item(g_page_no + "MODULE_DISP").setValue(modules.Module);                        
+                        apex.item(g_page_no + "MODULE_DISP").setValue(modules.Module);
                         break; //return false;
                     } else {
                         g_module_edit_flag = "N";
@@ -671,7 +682,7 @@ function get_object_identity(p_pog_index, p_multiSelect, p_multiCopydone, p_a, p
                         comp_obj_id = modules.MObjID;
                         g_wireframe_id = modules.WFrameID;
                         // apex.item("P193_MODULE_DISP").setValue(modules.Module);
-                        apex.item(g_page_no + "MODULE_DISP").setValue(modules.Module);        
+                        apex.item(g_page_no + "MODULE_DISP").setValue(modules.Module);
                         break; //return false;
                     } else {
                         g_module_edit_flag = "N";
@@ -1024,13 +1035,13 @@ async function getJson(p_new_pog_ind, p_pog_code, p_pog_version, p_recreate, p_c
                 process_name = "GET_POG_JSON";
                 pog_opened = "N";
                 //$s("P193_OPEN_POG_CODE", "");
-				$s(g_page_no + "OPEN_POG_CODE", "");
+                $s(g_page_no + "OPEN_POG_CODE", "");
             } else if (p_new_pog_ind == "T") {
                 //getting template from sm_pog_design
                 process_name = "OPEN_TEMPLATE";
                 pog_opened = "N";
                 //$s("P193_OPEN_POG_CODE", "");
-				$s(g_page_no + "OPEN_POG_CODE", "");
+                $s(g_page_no + "OPEN_POG_CODE", "");
             } else {
                 //getting existing pog(here it can be a pog already opened and saved in WPD so a copy of json will be saved in sm_pog_design else
                 //if opening first time any pog when it will come from sm_pog, sm_pog_module,sm_pog_fixel, sm_pog_item_position)
@@ -1133,7 +1144,7 @@ async function getJson(p_new_pog_ind, p_pog_code, p_pog_version, p_recreate, p_c
     } catch (err) {
         error_handling(err);
     }
-  //Loading block after POG load
+    //Loading block after POG load
     try {
         if (Array.isArray(g_mod_block_list) && g_mod_block_list.length > 0) {
             for (const blkDet of g_mod_block_list) {
@@ -1153,195 +1164,195 @@ async function getJson(p_new_pog_ind, p_pog_code, p_pog_version, p_recreate, p_c
     } catch (err2) {
         error_handling(err2);
     }
-   
+
 }
 
 //this function is used to open draft POG.
 async function get_json_data(p_pog_code, p_imageLoadInd = "N", p_pog_desc) {
-	//ASA-1765 added parameter p_pog_desc  #issue 5
-	logDebug("function : get_json_data; pog_code : " + p_pog_code, "S");
-	g_ComBaseIndex = -1;
-	g_ComViewIndex = -1;
-	g_compare_pog_flag = "N";
-	g_compare_view = "NONE";
-	g_colorBackup = "N";
-	l_new_pog_ind = "N";
-	var items_arr = [];
-	g_pog_json_data = [];
+    //ASA-1765 added parameter p_pog_desc  #issue 5
+    logDebug("function : get_json_data; pog_code : " + p_pog_code, "S");
+    g_ComBaseIndex = -1;
+    g_ComViewIndex = -1;
+    g_compare_pog_flag = "N";
+    g_compare_view = "NONE";
+    g_colorBackup = "N";
+    l_new_pog_ind = "N";
+    var items_arr = [];
+    g_pog_json_data = [];
 
-	try {
-		//if validate = 'Y' then we create only the json and then try to call item height, width, depth validation also validate shelf.
-		//if found errors we suggest methods to correct them.
-		if ($v(g_page_no + "POGCR_VALIDATE_POG") == "Y" && p_pog_code.length == 1) {
-			init(0);
-			objects = {};
-			objects["scene"] = g_scene;
-			objects["renderer"] = g_renderer;
-			g_scene_objects.push(objects);
-			set_indicator_objects(g_scene_objects.length - 1);
-			g_pog_index = 0;
-			// addLoadingIndicator(); //ASA-1500
-			var returnval = await getJson("Y", "", p_pog_code[0], "N", "Y", g_camera, g_scene, 0, p_imageLoadInd, p_pog_desc); //ASA-1765 Added p_pog_desc  #issue 5
-			var failed = "N";
-			//this logic is wrong we need to call this save_validate_items_coll. but current failed variable is hardcoded to N.
-			if (failed == "Y") {
-				var returnval = await save_validate_items_coll(g_errored_items);
-				removeLoadingIndicator(regionloadWait);
-				apex.region("ig_errored_item").refresh();
-				// apex.event.trigger("#P193_ERROR_METHOD", "apexrefresh");
-				apex.event.trigger("#" + g_page_no + "ERROR_METHOD", "apexrefresh");
-				g_dblclick_opened = "Y";
-				openInlineDialog("errored_items", 60, 65);
-			} else {
-				g_dblclick_opened = "N";
-				var return_val = await create_module_from_json(g_pog_json, sessionStorage.getItem("new_pog_ind"), "F", "N",
-					sessionStorage.getItem("pog_opened"), "Y", "N", "Y", "N", "", "Y", g_camera, g_scene, g_pog_index, g_pog_index);
-				animate_all_pog();
-				generateMultiPogDropdown();
-				if ($(".t-Body-actionsToggle").hasClass("is-active")) {
-					apex.region("draggable_table").widget().interactiveGrid("getActions").set("edit", false);
-					apex.region("draggable_table").widget().interactiveGrid("getViews", "grid").model.clearChanges();
-					apex.region("draggable_table").refresh();
-				}
-			}
-		} else {
-			g_scene_objects = [];
-			g_canvas_objects = [];
-			//this will create canvas can be multiple or single.
-			appendMultiCanvasRowCol(p_pog_code.length, $v(g_page_no + "POGCR_TILE_VIEW"));
-			//this will set the view. can be horizontal or vertical.
-			switchCanvasView($v(g_page_no + "POGCR_TILE_VIEW")); // Task-22510
+    try {
+        //if validate = 'Y' then we create only the json and then try to call item height, width, depth validation also validate shelf.
+        //if found errors we suggest methods to correct them.
+        if ($v(g_page_no + "POGCR_VALIDATE_POG") == "Y" && p_pog_code.length == 1) {
+            init(0);
+            objects = {};
+            objects["scene"] = g_scene;
+            objects["renderer"] = g_renderer;
+            g_scene_objects.push(objects);
+            set_indicator_objects(g_scene_objects.length - 1);
+            g_pog_index = 0;
+            // addLoadingIndicator(); //ASA-1500
+            var returnval = await getJson("Y", "", p_pog_code[0], "N", "Y", g_camera, g_scene, 0, p_imageLoadInd, p_pog_desc); //ASA-1765 Added p_pog_desc  #issue 5
+            var failed = "N";
+            //this logic is wrong we need to call this save_validate_items_coll. but current failed variable is hardcoded to N.
+            if (failed == "Y") {
+                var returnval = await save_validate_items_coll(g_errored_items);
+                removeLoadingIndicator(regionloadWait);
+                apex.region("ig_errored_item").refresh();
+                // apex.event.trigger("#P193_ERROR_METHOD", "apexrefresh");
+                apex.event.trigger("#" + g_page_no + "ERROR_METHOD", "apexrefresh");
+                g_dblclick_opened = "Y";
+                openInlineDialog("errored_items", 60, 65);
+            } else {
+                g_dblclick_opened = "N";
+                var return_val = await create_module_from_json(g_pog_json, sessionStorage.getItem("new_pog_ind"), "F", "N",
+                    sessionStorage.getItem("pog_opened"), "Y", "N", "Y", "N", "", "Y", g_camera, g_scene, g_pog_index, g_pog_index);
+                animate_all_pog();
+                generateMultiPogDropdown();
+                if ($(".t-Body-actionsToggle").hasClass("is-active")) {
+                    apex.region("draggable_table").widget().interactiveGrid("getActions").set("edit", false);
+                    apex.region("draggable_table").widget().interactiveGrid("getViews", "grid").model.clearChanges();
+                    apex.region("draggable_table").refresh();
+                }
+            }
+        } else {
+            g_scene_objects = [];
+            g_canvas_objects = [];
+            //this will create canvas can be multiple or single.
+            appendMultiCanvasRowCol(p_pog_code.length, $v(g_page_no + "POGCR_TILE_VIEW"));
+            //this will set the view. can be horizontal or vertical.
+            switchCanvasView($v(g_page_no + "POGCR_TILE_VIEW")); // Task-22510
 
-			// addLoadingIndicator();//ASA-1500
-			g_multi_pog_json = [];
-			//this function is used to set labels indicators by default BU Param.
-			await setDefaultState("Y");
-			for (var i = 0; i <= p_pog_code.length - 1; i++) {
-				init(i);
-				objects = {};
-				objects["scene"] = g_scene;
-				objects["renderer"] = g_renderer;
-				g_scene_objects.push(objects);
-				g_seqArrDtl = {};
-				g_seqArrDtl["seqId"] = p_pog_code[i];
-				g_seqArrDtl["index"] = i;
-				g_seqArrDtl["pogCode"] = "";
-				g_seqArrDtl["pogVersion"] = "";
-				g_seqArrDtl["pogType"] = "D";
-				g_seqArr.push(g_seqArrDtl);
-				g_pog_index = i;
-				set_indicator_objects(g_scene_objects.length - 1);
-				var returnval = await getJson("Y", "", p_pog_code[i], "Y", "Y", g_camera, g_scene, i, p_imageLoadInd, "Y", p_pog_desc); //ASA-1765 Added p_pog_desc  #issue 5
-				render(i);
-				var canvas_id = g_canvas_objects[i].getAttribute("id");
-				$("#" + canvas_id + "-btns").append('<span id="block_title" style="float:left">' + g_pog_json[i].POGCode /*POGJSON[0].POGCode*/ + "</span>"); //HOTFIX
-				//ASA-1500
-				// if (i == p_pog_code.length - 1) {
-				//     removeLoadingIndicator(regionloadWait);
-				// }
-			}
+            // addLoadingIndicator();//ASA-1500
+            g_multi_pog_json = [];
+            //this function is used to set labels indicators by default BU Param.
+            await setDefaultState("Y");
+            for (var i = 0; i <= p_pog_code.length - 1; i++) {
+                init(i);
+                objects = {};
+                objects["scene"] = g_scene;
+                objects["renderer"] = g_renderer;
+                g_scene_objects.push(objects);
+                g_seqArrDtl = {};
+                g_seqArrDtl["seqId"] = p_pog_code[i];
+                g_seqArrDtl["index"] = i;
+                g_seqArrDtl["pogCode"] = "";
+                g_seqArrDtl["pogVersion"] = "";
+                g_seqArrDtl["pogType"] = "D";
+                g_seqArr.push(g_seqArrDtl);
+                g_pog_index = i;
+                set_indicator_objects(g_scene_objects.length - 1);
+                var returnval = await getJson("Y", "", p_pog_code[i], "Y", "Y", g_camera, g_scene, i, p_imageLoadInd, "Y", p_pog_desc); //ASA-1765 Added p_pog_desc  #issue 5
+                render(i);
+                var canvas_id = g_canvas_objects[i].getAttribute("id");
+                $("#" + canvas_id + "-btns").append('<span id="block_title" style="float:left">' + g_pog_json[i].POGCode /*POGJSON[0].POGCode*/ + "</span>"); //HOTFIX
+                //ASA-1500
+                // if (i == p_pog_code.length - 1) {
+                //     removeLoadingIndicator(regionloadWait);
+                // }
+            }
 
-			g_pog_json = g_multi_pog_json;
-			generateMultiPogDropdown();
-			var retval = await animate_all_pog();
-			if ($(".t-Body-actionsToggle").hasClass("is-active")) {
-				apex.region("draggable_table").widget().interactiveGrid("getActions").set("edit", false);
-				apex.region("draggable_table").widget().interactiveGrid("getViews", "grid").model.clearChanges();
-				apex.region("draggable_table").refresh();
-			}
+            g_pog_json = g_multi_pog_json;
+            generateMultiPogDropdown();
+            var retval = await animate_all_pog();
+            if ($(".t-Body-actionsToggle").hasClass("is-active")) {
+                apex.region("draggable_table").widget().interactiveGrid("getActions").set("edit", false);
+                apex.region("draggable_table").widget().interactiveGrid("getViews", "grid").model.clearChanges();
+                apex.region("draggable_table").refresh();
+            }
 
-			if (p_imageLoadInd == "Y") {
-				// addLoadingIndicator();
-				var retval = await get_all_images(0, g_get_orient_images, "Y", $v(g_page_no + "POGCR_IMG_MAX_WIDTH"), $v(g_page_no + "POGCR_IMG_MAX_HEIGHT"), $v(g_page_no + "IMAGE_COMPRESS_RATIO"));
-			}
-			if (g_ItemImages.length > 0 && g_show_live_image == "Y" && p_imageLoadInd == "Y") {
-				var pogIndx = 0;
-				$(".live_image").addClass("live_image_active");
-				for (const pogs of g_pog_json) {
-					try {
-						g_renderer = g_scene_objects[pogIndx].renderer;
-						g_scene = g_scene_objects[pogIndx].scene;
-						g_camera = g_scene_objects[pogIndx].scene.children[0];
-						g_world = g_scene_objects[pogIndx].scene.children[2];
-						// var return_val = await recreate_image_items("Y", $v("P193_MERCH_STYLE"), $v("P193_POGCR_LOAD_IMG_FROM"), $v("P193_BU_ID"), $v("P193_POGCR_ITEM_NUM_LBL_COLOR"), $v("P193_POGCR_ITEM_NUM_LABEL_POS"), $v("P193_POGCR_DISPLAY_ITEM_INFO"), $v("P193_POGCR_DELIST_ITEM_DFT_COL"), $v("P193_NOTCH_HEAD"), pogIndx, g_show_days_of_supply, $v("P193_POGCR_FONTSIZE_DAYSOFSUPP"), g_hide_show_dos_label); //ASA-1427 $v('P193_POGCR_ITEM_DETAIL_LIST')
-						var return_val = await recreate_image_items("Y", $v(g_page_no + "MERCH_STYLE"), $v(g_page_no + "POGCR_LOAD_IMG_FROM"), $v(g_page_no + "BU_ID"), $v(g_page_no + "POGCR_ITEM_NUM_LBL_COLOR"), $v(g_page_no + "POGCR_ITEM_NUM_LABEL_POS"), $v(g_page_no + "POGCR_DISPLAY_ITEM_INFO"), $v(g_page_no + "POGCR_DELIST_ITEM_DFT_COL"), $v(g_page_no + "NOTCH_HEAD"), pogIndx, g_show_days_of_supply, $v(g_page_no + "POGCR_FONTSIZE_DAYSOFSUPP"), g_hide_show_dos_label);
-					} catch (err) {
-						error_handling(err);
-						// removeLoadingIndicator(regionloadWait); //ASA-1500
-					}
-					//ASA-1500
-					// if (pogIndx == g_pog_json.length - 1) {
-					//     removeLoadingIndicator(regionloadWait);
-					// }
-					pogIndx++;
-				}
-				g_imagesShown = "Y";
-				animate_all_pog();
-			}
-			//ASA-1500
-			// else if (p_imageLoadInd == "Y") {
-			//     removeLoadingIndicator(regionloadWait);
-			// }
+            if (p_imageLoadInd == "Y") {
+                // addLoadingIndicator();
+                var retval = await get_all_images(0, g_get_orient_images, "Y", $v(g_page_no + "POGCR_IMG_MAX_WIDTH"), $v(g_page_no + "POGCR_IMG_MAX_HEIGHT"), $v(g_page_no + "IMAGE_COMPRESS_RATIO"));
+            }
+            if (g_ItemImages.length > 0 && g_show_live_image == "Y" && p_imageLoadInd == "Y") {
+                var pogIndx = 0;
+                $(".live_image").addClass("live_image_active");
+                for (const pogs of g_pog_json) {
+                    try {
+                        g_renderer = g_scene_objects[pogIndx].renderer;
+                        g_scene = g_scene_objects[pogIndx].scene;
+                        g_camera = g_scene_objects[pogIndx].scene.children[0];
+                        g_world = g_scene_objects[pogIndx].scene.children[2];
+                        // var return_val = await recreate_image_items("Y", $v("P193_MERCH_STYLE"), $v("P193_POGCR_LOAD_IMG_FROM"), $v("P193_BU_ID"), $v("P193_POGCR_ITEM_NUM_LBL_COLOR"), $v("P193_POGCR_ITEM_NUM_LABEL_POS"), $v("P193_POGCR_DISPLAY_ITEM_INFO"), $v("P193_POGCR_DELIST_ITEM_DFT_COL"), $v("P193_NOTCH_HEAD"), pogIndx, g_show_days_of_supply, $v("P193_POGCR_FONTSIZE_DAYSOFSUPP"), g_hide_show_dos_label); //ASA-1427 $v('P193_POGCR_ITEM_DETAIL_LIST')
+                        var return_val = await recreate_image_items("Y", $v(g_page_no + "MERCH_STYLE"), $v(g_page_no + "POGCR_LOAD_IMG_FROM"), $v(g_page_no + "BU_ID"), $v(g_page_no + "POGCR_ITEM_NUM_LBL_COLOR"), $v(g_page_no + "POGCR_ITEM_NUM_LABEL_POS"), $v(g_page_no + "POGCR_DISPLAY_ITEM_INFO"), $v(g_page_no + "POGCR_DELIST_ITEM_DFT_COL"), $v(g_page_no + "NOTCH_HEAD"), pogIndx, g_show_days_of_supply, $v(g_page_no + "POGCR_FONTSIZE_DAYSOFSUPP"), g_hide_show_dos_label);
+                    } catch (err) {
+                        error_handling(err);
+                        // removeLoadingIndicator(regionloadWait); //ASA-1500
+                    }
+                    //ASA-1500
+                    // if (pogIndx == g_pog_json.length - 1) {
+                    //     removeLoadingIndicator(regionloadWait);
+                    // }
+                    pogIndx++;
+                }
+                g_imagesShown = "Y";
+                animate_all_pog();
+            }
+            //ASA-1500
+            // else if (p_imageLoadInd == "Y") {
+            //     removeLoadingIndicator(regionloadWait);
+            // }
 
-			var j = 0;
-			for (const r of g_pog_json) {
-				if (j > 0) {
-					await enableDisableFlags(j);
-				}
-				j++;
-			}
-			// await save_update_json_items(g_multi_pog_json);
+            var j = 0;
+            for (const r of g_pog_json) {
+                if (j > 0) {
+                    await enableDisableFlags(j);
+                }
+                j++;
+            }
+            // await save_update_json_items(g_multi_pog_json);
 
-			g_pog_index = 0;
-			if (g_scene_objects.length > 0) {
-				if (typeof g_scene_objects[g_pog_index] !== "undefined") {
-					if (typeof g_scene_objects[g_pog_index].Indicators !== "undefined") {
-						g_show_fixel_label = g_scene_objects[g_pog_index].Indicators.FixelLabel;
-						g_show_item_label = g_scene_objects[g_pog_index].Indicators.ItemLabel;
-						g_show_notch_label = g_scene_objects[g_pog_index].Indicators.NotchLabel;
-						g_show_max_merch = g_scene_objects[g_pog_index].Indicators.MaxMerch;
-						g_show_item_color = g_scene_objects[g_pog_index].Indicators.ItemColor;
-						g_show_item_desc = g_scene_objects[g_pog_index].Indicators.ItemDesc;
-						g_show_live_image = g_scene_objects[g_pog_index].Indicators.LiveImage;
-						g_show_days_of_supply = g_scene_objects[g_pog_index].Indicators.DaysOfSupply;
-						g_overhung_shelf_active = g_scene_objects[g_pog_index].Indicators.OverhungShelf; //ASA-1138
-						g_itemSubLabelInd = g_scene_objects[g_pog_index].Indicators.ItemSubLabelInd; //ASA-1182
-						g_itemSubLabel = g_scene_objects[g_pog_index].Indicators.ItemSubLabel; //ASA-1182
-					}
-					var canvas_id = g_canvas_objects[g_pog_index].getAttribute("id");
+            g_pog_index = 0;
+            if (g_scene_objects.length > 0) {
+                if (typeof g_scene_objects[g_pog_index] !== "undefined") {
+                    if (typeof g_scene_objects[g_pog_index].Indicators !== "undefined") {
+                        g_show_fixel_label = g_scene_objects[g_pog_index].Indicators.FixelLabel;
+                        g_show_item_label = g_scene_objects[g_pog_index].Indicators.ItemLabel;
+                        g_show_notch_label = g_scene_objects[g_pog_index].Indicators.NotchLabel;
+                        g_show_max_merch = g_scene_objects[g_pog_index].Indicators.MaxMerch;
+                        g_show_item_color = g_scene_objects[g_pog_index].Indicators.ItemColor;
+                        g_show_item_desc = g_scene_objects[g_pog_index].Indicators.ItemDesc;
+                        g_show_live_image = g_scene_objects[g_pog_index].Indicators.LiveImage;
+                        g_show_days_of_supply = g_scene_objects[g_pog_index].Indicators.DaysOfSupply;
+                        g_overhung_shelf_active = g_scene_objects[g_pog_index].Indicators.OverhungShelf; //ASA-1138
+                        g_itemSubLabelInd = g_scene_objects[g_pog_index].Indicators.ItemSubLabelInd; //ASA-1182
+                        g_itemSubLabel = g_scene_objects[g_pog_index].Indicators.ItemSubLabel; //ASA-1182
+                    }
+                    var canvas_id = g_canvas_objects[g_pog_index].getAttribute("id");
 
-					$("[data-pog]").removeClass("multiPogList_active");
-					$(".canvas_highlight").removeClass("canvas_highlight");
-					$("#" + canvas_id + "-btns").addClass("canvas_highlight");
-					$("[data-indx=" + g_pog_index + "]").addClass("multiPogList_active");
-					g_all_pog_flag = "N";
-				}
-			}
-		}
-		var pindex = 0;
-		for (const pog of g_pog_json) {
-			items_arr = [];
-			if (typeof g_pog_json[pindex].DeleteItems !== "undefined") {
-				//ASA- S-1108
-				if (g_pog_json[pindex].DeleteItems.length > 0) {
-					var i = 0;
-					for (var items of g_pog_json[pindex].DeleteItems) {
-						items_arr.push(items.Item);
-						i++;
-					}
-				}
-			}
-			if (typeof items_arr !== "undefined") {
-				g_open_productlist = "D";
-				// await deleted_items_log(items_arr, "D", pindex);
-			} //ASA- E-1108
-			pindex++;
-		}
+                    $("[data-pog]").removeClass("multiPogList_active");
+                    $(".canvas_highlight").removeClass("canvas_highlight");
+                    $("#" + canvas_id + "-btns").addClass("canvas_highlight");
+                    $("[data-indx=" + g_pog_index + "]").addClass("multiPogList_active");
+                    g_all_pog_flag = "N";
+                }
+            }
+        }
+        var pindex = 0;
+        for (const pog of g_pog_json) {
+            items_arr = [];
+            if (typeof g_pog_json[pindex].DeleteItems !== "undefined") {
+                //ASA- S-1108
+                if (g_pog_json[pindex].DeleteItems.length > 0) {
+                    var i = 0;
+                    for (var items of g_pog_json[pindex].DeleteItems) {
+                        items_arr.push(items.Item);
+                        i++;
+                    }
+                }
+            }
+            if (typeof items_arr !== "undefined") {
+                g_open_productlist = "D";
+                // await deleted_items_log(items_arr, "D", pindex);
+            } //ASA- E-1108
+            pindex++;
+        }
 
-		logDebug("function : get_json_data", "E");
-	} catch (err) {
-		error_handling(err);
-	}
+        logDebug("function : get_json_data", "E");
+    } catch (err) {
+        error_handling(err);
+    }
 }
 
 // This function will call create_module_from_json_lib from asw_common_main.js. This function will take the complete json of the POG and build json for g_pog_json
@@ -1349,7 +1360,7 @@ async function get_json_data(p_pog_code, p_imageLoadInd = "N", p_pog_desc) {
 async function create_module_from_json(p_pog_json_arr, p_new_pog_ind, p_pog_type, p_product_open, p_pog_opened, p_stop_loading, p_create_pdf_ind, p_recreate, p_create_json, p_pog_version, p_save_pdf, p_camera, p_scene, p_pog_index, p_orgPogIndex, p_ImageLoadInd = "N", p_UpdateIndex = "N", p_old_POGJSON = []) {
     try {
         typeof p_save_pdf == "undefined" ? "Y" : p_save_pdf;
-         load_orientation_json();
+        load_orientation_json();
         $("#LIVE_IMAGE").addClass("apex_disabled");
         //Start ASA-1371_26842
         if ($v(g_page_no + 'POGCR_DFT_NOTCH_LABEL') == "Y") {
@@ -1364,8 +1375,8 @@ async function create_module_from_json(p_pog_json_arr, p_new_pog_ind, p_pog_type
             g_show_item_label = 'Y';
             //show_item_labels("Y", $v("P36_POGCR_ITEM_NUM_LBL_COLOR"), $v("P36_POGCR_ITEM_NUM_LABEL_POS"), p_pog_index);
         }
-        console.log( "create_module_from_json:start", { p_pog_index:p_pog_index, g_canvas_objects_len: g_canvas_objects?g_canvas_objects.length:0, g_scene_objects_len: g_scene_objects?g_scene_objects.length:0, has_p_camera: typeof p_camera !== 'undefined', has_p_scene: typeof p_scene !== 'undefined' });
-        
+        console.log("create_module_from_json:start", { p_pog_index: p_pog_index, g_canvas_objects_len: g_canvas_objects ? g_canvas_objects.length : 0, g_scene_objects_len: g_scene_objects ? g_scene_objects.length : 0, has_p_camera: typeof p_camera !== 'undefined', has_p_scene: typeof p_scene !== 'undefined' });
+
         await create_module_from_json_lib(
             p_pog_json_arr,
             p_new_pog_ind,
@@ -1419,9 +1430,9 @@ async function create_module_from_json(p_pog_json_arr, p_new_pog_ind, p_pog_type
             $v(g_page_no + 'POGCR_MANUAL_CRUSH_ITEM'),
             'Y', //ASA-1310 KUSH FIX
             ""); //Regression 29(Portal Issue) added p_calc_dayofsupply
-            console.log("create_module_from_json:done", { p_pog_index:p_pog_index, g_pog_json_len: g_pog_json?g_pog_json.length:0 });
-       
-            g_pog_json[p_pog_index].MassUpdate = "N"; //ASA-1809, Set this to N, as for saving POG draft or existing the coordinates in JSON has been update with respect to WPD
+        console.log("create_module_from_json:done", { p_pog_index: p_pog_index, g_pog_json_len: g_pog_json ? g_pog_json.length : 0 });
+
+        g_pog_json[p_pog_index].MassUpdate = "N"; //ASA-1809, Set this to N, as for saving POG draft or existing the coordinates in JSON has been update with respect to WPD
 
         //This after refresh event is needed because Division/Dept/Subdept are cascading LOV and setting value is always removed by refresh
         //due to setting value to master page item.
@@ -1462,7 +1473,7 @@ async function create_module_from_json(p_pog_json_arr, p_new_pog_ind, p_pog_type
 
             $(".live_image").css("color", "white").css("cursor", "pointer");
             $(".open_pdf").css("color", "black").css("cursor", "pointer");
-            $(".open_pdf_online").css("color", "black").css("cursor", "pointer");            
+            $(".open_pdf_online").css("color", "black").css("cursor", "pointer");
         }
 
         if (g_ItemImages.length > 0 && g_show_live_image == "Y" && p_recreate == 'Y') {
@@ -1715,8 +1726,8 @@ function open_blk_details(p_blk_name, p_edit_ind) {
             $s(g_page_no + "BLK_COLOR", obj.BlkColor);
             $s(g_page_no + "BLK_RULE", obj.BlkRule);
             var row$,
-            region = apex.region("block_filters"),
-            view = region.call("getCurrentView");
+                region = apex.region("block_filters"),
+                view = region.call("getCurrentView");
             if (p_edit_ind == "N") { //Regression Issue 5 autofill EDIT
                 if (obj.FilterVal.length > 0) {
                     //ASA-1727 ISSUE-1 change 1 to 0  and remove if (i > 0) {
@@ -1748,14 +1759,18 @@ function open_blk_details(p_blk_name, p_edit_ind) {
                 apex.region("block_filters").refresh(); //ASA-1727 ISSUE-1
             }
 
+            // Ensure fields are never stuck disabled from a previous multiselect open
+            apex.item(g_page_no + "BLK_NAME").enable();
+            apex.item(g_page_no + "BLK_COLOR").enable();
+            apex.item(g_page_no + "BLK_RULE").enable();
             $("#ADD_BLK").css("display", "none");
             $("#SAVE_BLK").css("display", "none");
             $("#UPDATE_BLK").css("display", "inline");
             g_auto_fill_reg_open = "N";
-            openInlineDialog("block_details", 40, 65);            
+            openInlineDialog("block_details", 40, 65);
             break;
         }
-    } 
+    }
 }
 
 function clear_blinking() {
@@ -1774,55 +1789,54 @@ function clear_blinking() {
         g_intersected = [];
         g_select_zoom_arr = [];
     }
-} 
+}
 
 
 // WPD 3 
 function add_pog_code_header() {
-	$("#canvas-holder #block_title").remove();
-	for (var i = 0; i < g_scene_objects.length; i++) {
-		var canvas_id = g_canvas_objects[i].getAttribute("id");
-		$("#" + canvas_id + "-btns").append('<span id="block_title" style="float:left">' + g_pog_json[i].POGCode + "</span>");
-	}
+    $("#canvas-holder #block_title").remove();
+    for (var i = 0; i < g_scene_objects.length; i++) {
+        var canvas_id = g_canvas_objects[i].getAttribute("id");
+        $("#" + canvas_id + "-btns").append('<span id="block_title" style="float:left">' + g_pog_json[i].POGCode + "</span>");
+    }
 }
 // WPD 3 
 function closePog(p_pog_index, p_type) {
-	if (p_type == 0) {
-		g_scene_objects_backup.splice(p_pog_index, 1);
-		g_pogjson_backup.splice(p_pog_index, 1);
-   		g_pogjson_data_backup.splice(p_pog_index, 1);
-		generateCanvasListHolder(g_pogjson_backup);
-	} else {
-		confirm(get_message("POGCR_CLOSE_POG_WARN"), get_message("SHCT_YES"), get_message("SHCT_NO"), function () {
-			g_scene_objects.splice(p_pog_index, 1);
-			g_pog_json.splice(p_pog_index, 1);
+    if (p_type == 0) {
+        g_scene_objects_backup.splice(p_pog_index, 1);
+        g_pogjson_backup.splice(p_pog_index, 1);
+        g_pogjson_data_backup.splice(p_pog_index, 1);
+        generateCanvasListHolder(g_pogjson_backup);
+    } else {
+        confirm(get_message("POGCR_CLOSE_POG_WARN"), get_message("SHCT_YES"), get_message("SHCT_NO"), function () {
+            g_scene_objects.splice(p_pog_index, 1);
+            g_pog_json.splice(p_pog_index, 1);
             g_pog_json_data.splice(p_pog_index, 1);
-			appendMultiCanvasRowCol(g_scene_objects.length, $v(g_page_no + "POGCR_TILE_VIEW"));
-			modifyWindowAfterMinMax(g_scene_objects);
-			if (p_pog_index == g_ComViewIndex && g_compare_pog_flag == "Y") {
-				g_compare_view = "NONE";
-				g_compare_pog_flag = "N";
-				g_edit_pallet_mod_ind = -1;
-				g_edit_pallet_shelf_ind = -1;
-				g_ComViewIndex = -1;
-				g_ComBaseIndex = -1;
-				g_comp_view_code = "";
-				g_comp_base_code = "";
-			} else {
-				reset_compare_index(p_pog_index);
-			}
-			add_pog_code_header();
-			generateMultiPogDropdown();
-			if (g_pog_json.length > 0) {
-				g_pog_index = 0;
-				set_select_canvas(g_pog_index); //Regression Issue 9 20240802				
-			}
-		});
+            appendMultiCanvasRowCol(g_scene_objects.length, $v(g_page_no + "POGCR_TILE_VIEW"));
+            modifyWindowAfterMinMax(g_scene_objects);
+            if (p_pog_index == g_ComViewIndex && g_compare_pog_flag == "Y") {
+                g_compare_view = "NONE";
+                g_compare_pog_flag = "N";
+                g_edit_pallet_mod_ind = -1;
+                g_edit_pallet_shelf_ind = -1;
+                g_ComViewIndex = -1;
+                g_ComBaseIndex = -1;
+                g_comp_view_code = "";
+                g_comp_base_code = "";
+            } else {
+                reset_compare_index(p_pog_index);
+            }
+            add_pog_code_header();
+            generateMultiPogDropdown();
+            if (g_pog_json.length > 0) {
+                g_pog_index = 0;
+                set_select_canvas(g_pog_index); //Regression Issue 9 20240802				
+            }
+        });
 
-		//Task_29818 - End
-	}
+        //Task_29818 - End
+    }
 }
-
 function normalize_block_name(p_blk_name) {
     if (typeof p_blk_name !== "string" || p_blk_name === "") {
         return "Block";
@@ -2075,7 +2089,6 @@ function build_analysis_chart_options(p_has_data) {
 
 
 
-
 function delete_blk_details(p_old_blk_name) {
     confirm(get_message("SHCT_DELETE_CONFIRM_MSG"), get_global_ind_values("AI_CONFIRM_OK_TEXT"), get_global_ind_values("AI_CONFIRM_CANCEL_TEXT"), function () {
         async function doSomething() {
@@ -2098,11 +2111,11 @@ function delete_blk_details(p_old_blk_name) {
             closeInlineDialog("block_details");
             g_autofill_edit = "N";
             apex.event.trigger(g_page_no + "POG_RULE", "apexrefresh");
-            if (g_page_no == 'P25_'){
-               apex.theme.openRegion("auto_fill_reg");
-               g_auto_fill_reg_open = "Y";
+            if (g_page_no == 'P25_') {
+                apex.theme.openRegion("auto_fill_reg");
+                g_auto_fill_reg_open = "Y";
             } else {
-               apex.region("mod_block_details").refresh();
+                apex.region("mod_block_details").refresh();
             }
             return "SUCCESS";
         }
@@ -2110,6 +2123,7 @@ function delete_blk_details(p_old_blk_name) {
     });
     //Task_29818 - End
 }
+// graph start
 
 async function close_view_analysis() {
     logDebug("function : close_view_analysis", "S");
@@ -2676,7 +2690,45 @@ async function appendCanvasForGraph() {
     var topButtons = '<div class="canvas-buttons" id="maincanvas-btns"><span class="fa fa-close canvas-close" onClick="close_view_analysis()"></span></div>';
     var bottomButtons = '<div class="canvas-buttons" id="maincanvas2-btns"><span class="fa fa-close canvas-close" onClick="close_view_analysis()"></span></div>';
     var topHtml = '<div class="canvas-content" id="maincanvas-container" data-col="1" style="height:' + topHeight + "px;width:" + topWidth + 'px">' + topButtons + '<canvas class="canvasregion" data-canvas=true id="maincanvas"></canvas></div>';
-    var bottomHtml = '<div class="canvas-content" id="maincanvas2-container" data-col="1" style="height:' + bottomHeight + "px;width:" + bottomWidth + 'px">' + bottomButtons + '<div class="analysis-panel-content" style="background:#181E24; padding:8px 10px; height:100%; box-sizing:border-box; display:flex; align-items:center; justify-content:center;"><div style="width:' + graphCardWidth + "px;height:" + graphCardHeight + 'px; min-height:70px; background:#fff; border-radius:4px; padding:8px; box-sizing:border-box;"><canvas id="analysisChart_1" style="width:100%;height:100%;display:block;"></canvas></div></div></div>';
+    var bottomHtml = '<div class="canvas-content" id="maincanvas2-container" data-col="1" style="height:' + bottomHeight + "px;width:" + bottomWidth + 'px">' + bottomButtons + '<div class="analysis-panel-content" style="background:#181E24;"><div style="width:' + graphCardWidth + "px;height:" + graphCardHeight + 'px; min-height:70px; background:#fff; border-radius:4px; padding:8px; box-sizing:border-box;"><canvas id="analysisChart_1" style="width:100%;height:100%;display:block;"></canvas></div></div></div>';
+
+    $("[data-row='1']").append(topHtml);
+    $("[data-row='2']").append(bottomHtml);
+
+    try {
+        var topCanvas = document.getElementById("maincanvas");
+        if (topCanvas) {
+            topCanvas.setAttribute("data-indx", 0);
+            g_canvas_objects.push(topCanvas);
+        }
+    } catch (e) {
+        error_handling(e);
+    }
+    makeResizableRow();
+}
+
+async function appendCanvasForGraph() {
+    g_windowHeight = window.innerHeight - 167;
+    $("#canvas-holder .container").css("height", g_windowHeight + "px");
+    var containerH = $("#canvas-holder .container").height();
+    var containerW = $("#canvas-holder .container").width();
+
+    g_canvas_objects = [];
+    $("#canvas-holder .container").html("");
+    // Analysis mode uses a dedicated top/bottom layout independent of normal tile view.
+    $("#canvas-holder .container").css("display", "grid").addClass("v-view").removeClass("h-view");
+    $("#canvas-holder .container").append('<div class="row" data-row="1"></div>');
+    $("#canvas-holder .container").append('<div class="row" data-row="2"></div>');
+
+    var topWidth = parseFloat(containerW.toFixed(2));
+    var topHeight = parseFloat((containerH / 2).toFixed(2));
+    var bottomWidth = parseFloat(containerW.toFixed(2));
+    var bottomHeight = parseFloat((containerH / 2).toFixed(2));
+
+    var topButtons = '<div class="canvas-buttons" id="maincanvas-btns"><span class="fa fa-close canvas-close" onClick="close_view_analysis()"></span></div>';
+    var bottomButtons = '<div class="canvas-buttons" id="maincanvas2-btns"><span class="fa fa-close canvas-close" onClick="close_view_analysis()"></span></div>';
+    var topHtml = '<div class="canvas-content" id="maincanvas-container" data-col="1" style="height:' + topHeight + "px;width:" + topWidth + 'px">' + topButtons + '<canvas class="canvasregion" data-canvas=true id="maincanvas"></canvas></div>';
+    var bottomHtml = '<div class="canvas-content" id="maincanvas2-container" data-col="1" style="height:' + bottomHeight + "px;width:" + bottomWidth + 'px">' + bottomButtons + '<div class="analysis-panel-content" style="background:#181E24; padding:10px; height:100%; box-sizing:border-box; display:flex; flex-direction:column;"><div style="flex:1 1 auto; min-height:0; background:#fff; border-radius:4px; padding:10px;"><canvas id="analysisChart_1" style="width:100%;height:100%;display:block;"></canvas></div></div></div>';
 
     $("[data-row='1']").append(topHtml);
     $("[data-row='2']").append(bottomHtml);
@@ -2952,7 +3004,7 @@ function doMouseDown(p_x, p_y, p_startX, p_startY, p_event, p_canvas, p_context_
                     if (g_module_index !== -1 && g_shelf_index !== -1) {
                         update_item_distance(g_module_index, g_shelf_index, g_pog_index);
                     }
-                   
+
                     //set blinking of selected object
                     if (g_intersects.length > 0 && p_context_call == "N" && g_mselect_drag !== "Y") {
                         //ASA-1107
