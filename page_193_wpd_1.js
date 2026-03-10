@@ -1,6 +1,7 @@
 g_show_error = true;
 g_pog_json = [];
 g_mod_block_list = [];
+g_reset_block_snapshot = [];
 g_pog_edited_ind = 'Y';
 g_auto_fill_active = 'N';
 g_autofillModInfo = [];
@@ -745,6 +746,14 @@ function initiate_values_onload() {
         action: function (event, focusElement, data) {
             g_open_from = 'O';
             save_af_version();
+        },
+    });
+
+    apex.actions.add({
+        name: "pog-reset",
+        label: "Reset",
+        action: function (event, focusElement, data) {
+            reset_af_version();
         },
     });
 
@@ -7387,6 +7396,7 @@ async function open_draft_pog(p_imageLoadInd = "N", p_draft_pog_list, p_open_att
         await runattrCollections();
         add_pog_versions();
         wpdCaptureShowChangesBlockSnapshot(g_mod_block_list, "Y");  //ASA-1986 
+        g_reset_block_snapshot = JSON.parse(JSON.stringify(g_mod_block_list));
     }
 }
 
@@ -7725,6 +7735,8 @@ async function get_existing_pog(pog_code, pog_version, canvasNo, pMultiple, pIma
 async function open_existing_pog(p_pog_list_arr, p_openAttr, p_imageLoadInd = "N") {
     try {
         logDebug("function : open_existing ; ", "S");
+        g_reset_pog_list_arr = JSON.parse(JSON.stringify(p_pog_list_arr));
+        g_reset_open_attr = p_openAttr;
         addLoadingIndicator(); //ASA-1500
         $("#canvas-list-holder").html("");
         g_open_pog_flag = "Y";
@@ -7860,6 +7872,7 @@ async function open_existing_pog(p_pog_list_arr, p_openAttr, p_imageLoadInd = "N
                     }
                     await runattrCollections();
                     wpdCaptureShowChangesBlockSnapshot(g_mod_block_list, "Y"); // ASA-1986
+                    g_reset_block_snapshot = JSON.parse(JSON.stringify(g_mod_block_list));
                     add_pog_versions();
                     render(0);
                     animate_all_pog();
@@ -10127,211 +10140,342 @@ async function doMouseMove(p_x, p_y, p_event, p_prevX, p_prevY, p_canvas, p_came
                     var newRight = Number(g_block_resize_state.startRight || 0);
 
                     // Keep resizing inside module bounds and stop at neighboring blocks.
-                    var currModIndex = Array.isArray(blkRef.mod_index) && blkRef.mod_index.length > 0 ? blkRef.mod_index[0] : -1;
-                    var moduleLeftLimit = -Infinity;
-                    var moduleRightLimit = Infinity;
-                    var moduleCenterX = 0;
-                    if (currModIndex > -1 && typeof g_pog_json[g_pog_index] !== "undefined" && typeof g_pog_json[g_pog_index].ModuleInfo[currModIndex] !== "undefined") {
-                        moduleCenterX = Number(g_pog_json[g_pog_index].ModuleInfo[currModIndex].X || 0);
-                        var currModW = Number(g_pog_json[g_pog_index].ModuleInfo[currModIndex].W || 0);
-                        moduleLeftLimit = -currModW / 2;
-                        moduleRightLimit = currModW / 2;
-                    }
+                    // var currModIndex = Array.isArray(blkRef.mod_index) && blkRef.mod_index.length > 0 ? blkRef.mod_index[0] : -1;
+                    // var moduleLeftLimit = -Infinity;
+                    // var moduleRightLimit = Infinity;
+                    // var moduleCenterX = 0;
+                    // if (currModIndex > -1 && typeof g_pog_json[g_pog_index] !== "undefined" && typeof g_pog_json[g_pog_index].ModuleInfo[currModIndex] !== "undefined") {
+                    //     moduleCenterX = Number(g_pog_json[g_pog_index].ModuleInfo[currModIndex].X || 0);
+                    //     var currModW = Number(g_pog_json[g_pog_index].ModuleInfo[currModIndex].W || 0);
+                    //     moduleLeftLimit = -currModW / 2;
+                    //     moduleRightLimit = currModW / 2;
+                    // }
 
-                    // Shelf-level hard bounds: use intersection of all shelves captured in block.
-                    // This ensures width never grows outside shelf space even if module is wider.
-                    var shelfLeftLimit = moduleLeftLimit;
-                    var shelfRightLimit = moduleRightLimit;
-                    var hasShelfLimit = false;
-                    // Prefer BlkShelfInfo (stable shelf metadata for block). Fallback to g_delete_details.
-                    if (Array.isArray(blkRef.BlkShelfInfo) && blkRef.BlkShelfInfo.length > 0) {
-                        for (const blkShelfEntry of blkRef.BlkShelfInfo) {
-                            if (!blkShelfEntry || !blkShelfEntry.ShelfInfo) {
+                    // // Shelf-level hard bounds: use intersection of all shelves captured in block.
+                    // // This ensures width never grows outside shelf space even if module is wider.
+                    // var shelfLeftLimit = moduleLeftLimit;
+                    // var shelfRightLimit = moduleRightLimit;
+                    // var hasShelfLimit = false;
+                    // // Prefer BlkShelfInfo (stable shelf metadata for block). Fallback to g_delete_details.
+                    // if (Array.isArray(blkRef.BlkShelfInfo) && blkRef.BlkShelfInfo.length > 0) {
+                    //     for (const blkShelfEntry of blkRef.BlkShelfInfo) {
+                    //         if (!blkShelfEntry || !blkShelfEntry.ShelfInfo) {
+                    //             continue;
+                    //         }
+                    //         var shelfObj = blkShelfEntry.ShelfInfo;
+                    //         var shelfW = Number(shelfObj.W || 0);
+                    //         if (!(shelfW > 0)) {
+                    //             continue;
+                    //         }
+                    //         // Convert global shelf X to module-local X for BlockDim calculations.
+                    //         var shelfLocalX = Number(shelfObj.X || 0) - moduleCenterX;
+                    //         var shLeft = shelfLocalX - shelfW / 2;
+                    //         var shRight = shelfLocalX + shelfW / 2;
+                    //         if (!hasShelfLimit) {
+                    //             shelfLeftLimit = shLeft;
+                    //             shelfRightLimit = shRight;
+                    //             hasShelfLimit = true;
+                    //         } else {
+                    //             shelfLeftLimit = Math.max(shelfLeftLimit, shLeft);
+                    //             shelfRightLimit = Math.min(shelfRightLimit, shRight);
+                    //         }
+                    //     }
+                    // } else if (
+                    //     currModIndex > -1 &&
+                    //     typeof g_pog_json[g_pog_index] !== "undefined" &&
+                    //     typeof g_pog_json[g_pog_index].ModuleInfo[currModIndex] !== "undefined" &&
+                    //     Array.isArray(blkRef.g_delete_details) &&
+                    //     blkRef.g_delete_details.length > 0
+                    // ) {
+                    //     var moduleShelves = g_pog_json[g_pog_index].ModuleInfo[currModIndex].ShelfInfo;
+                    //     for (const blkShelf of blkRef.g_delete_details) {
+                    //         if (typeof blkShelf === "undefined" || blkShelf == null) {
+                    //             continue;
+                    //         }
+                    //         var shelfModIndex = typeof blkShelf.MIndex !== "undefined" ? Number(blkShelf.MIndex) : currModIndex;
+                    //         if (shelfModIndex !== currModIndex) {
+                    //             continue;
+                    //         }
+                    //         var shelfIndex = typeof blkShelf.SIndex !== "undefined" ? Number(blkShelf.SIndex) : -1;
+                    //         if (shelfIndex < 0 || typeof moduleShelves[shelfIndex] === "undefined") {
+                    //             continue;
+                    //         }
+                    //         var shelfObj = moduleShelves[shelfIndex];
+                    //         if (!shelfObj || shelfObj.ObjType === "NOTCH" || shelfObj.ObjType === "BASE" || shelfObj.ObjType === "DIVIDER") {
+                    //             continue;
+                    //         }
+                    //         var shelfW2 = Number(shelfObj.W || 0);
+                    //         if (!(shelfW2 > 0)) {
+                    //             continue;
+                    //         }
+                    //         var shelfLocalX2 = Number(shelfObj.X || 0) - moduleCenterX;
+                    //         var shLeft = shelfLocalX2 - shelfW2 / 2;
+                    //         var shRight = shelfLocalX2 + shelfW2 / 2;
+                    //         if (!hasShelfLimit) {
+                    //             shelfLeftLimit = shLeft;
+                    //             shelfRightLimit = shRight;
+                    //             hasShelfLimit = true;
+                    //         } else {
+                    //             shelfLeftLimit = Math.max(shelfLeftLimit, shLeft);
+                    //             shelfRightLimit = Math.min(shelfRightLimit, shRight);
+                    //         }
+                    //     }
+                    // }
+
+                    // // Final hard bounds for resize.
+                    // var effectiveLeftLimit = Math.max(moduleLeftLimit, shelfLeftLimit);
+                    // var effectiveRightLimit = Math.min(moduleRightLimit, shelfRightLimit);
+                    // if (!(effectiveRightLimit > effectiveLeftLimit)) {
+                    //     effectiveLeftLimit = moduleLeftLimit;
+                    //     effectiveRightLimit = moduleRightLimit;
+                    //     console.log("condition  1")
+                    // }
+                    // console.log("[BLOCK_RESIZE_VALIDATION] limits", {
+                    //     block: blkRef.BlkName,
+                    //     modIndex: currModIndex,
+                    //     moduleLeftLimit: moduleLeftLimit,
+                    //     moduleRightLimit: moduleRightLimit,
+                    //     shelfLeftLimit: shelfLeftLimit,
+                    //     shelfRightLimit: shelfRightLimit,
+                    //     effectiveLeftLimit: effectiveLeftLimit,
+                    //     effectiveRightLimit: effectiveRightLimit
+                    // });
+
+                    // var blockTop = Number(blkRef.BlockDim && typeof blkRef.BlockDim.FinalTop !== "undefined" ? blkRef.BlockDim.FinalTop : 0);
+                    // var blockBottom = Number(blkRef.BlockDim && typeof blkRef.BlockDim.FinalBtm !== "undefined" ? blkRef.BlockDim.FinalBtm : 0);
+                    // var leftNeighborLimit = effectiveLeftLimit;
+                    // var rightNeighborLimit = effectiveRightLimit;
+
+                    // for (const otherBlk of g_mod_block_list) {
+                    //     if (!otherBlk || otherBlk === blkRef || !otherBlk.BlockDim) {
+                    //         continue;
+                    //     }
+                    //     var otherModIndex = Array.isArray(otherBlk.mod_index) && otherBlk.mod_index.length > 0 ? otherBlk.mod_index[0] : -1;
+                    //     if (otherModIndex !== currModIndex) {
+                    //         continue;
+                    //     }
+
+                    //     var otherTop = Number(otherBlk.BlockDim.FinalTop || 0);
+                    //     var otherBottom = Number(otherBlk.BlockDim.FinalBtm || 0);
+                    //     if (!(otherTop > blockBottom && otherBottom < blockTop)) {
+                    //         continue;
+                    //     }
+
+                    //     var otherW = Number(otherBlk.BlockDim.BlkWidth || 0);
+                    //     var otherCX = Number(otherBlk.BlockDim.CalcX || 0);
+                    //     var otherLeft = otherCX - otherW / 2;
+                    //     var otherRight = otherCX + otherW / 2;
+
+                    //     var currentLeft = Number(g_block_resize_state.startLeft || 0);
+                    //     var currentRight = Number(g_block_resize_state.startRight || 0);
+
+                    //     if (otherRight <= currentLeft)
+                    //         leftNeighborLimit = Math.max(leftNeighborLimit, otherRight);
+
+                    //     if (otherLeft >= currentRight)
+                    //         rightNeighborLimit = Math.min(rightNeighborLimit, otherLeft);
+
+                    //     // if (otherRight <= Number(g_block_resize_state.startRight || 0)) {
+                    //     //     leftNeighborLimit = Math.max(leftNeighborLimit, otherRight);
+                    //     // }
+                    //     // if (otherLeft >= Number(g_block_resize_state.startLeft || 0)) {
+                    //     //     rightNeighborLimit = Math.min(rightNeighborLimit, otherLeft);
+                    //     // }
+                    // }
+
+                    // if (g_block_resize_state.edge === "left") {
+                    //     var prevLeftBeforeClamp = newLeft;
+                    //     newLeft = newLeft + delta;
+                    //     newLeft = Math.max(newLeft, leftNeighborLimit);
+                    //     newLeft = Math.max(newLeft, effectiveLeftLimit);
+                    //     console.log("condition left")
+                    //     if (newLeft !== prevLeftBeforeClamp + delta) {
+                    //         console.log("[BLOCK_RESIZE_VALIDATION] left edge clamped", {
+                    //             block: blkRef.BlkName,
+                    //             prevLeft: prevLeftBeforeClamp,
+                    //             requestedLeft: prevLeftBeforeClamp + delta,
+                    //             finalLeft: newLeft,
+                    //             leftNeighborLimit: leftNeighborLimit,
+                    //             effectiveLeftLimit: effectiveLeftLimit
+                    //         });
+                    //     }
+                    // } else {
+                    //     var prevRightBeforeClamp = newRight;
+                    //     newRight = newRight + delta;
+                    //     newRight = Math.min(newRight, rightNeighborLimit);
+                    //     newRight = Math.min(newRight, effectiveRightLimit);
+                    //     console.log("RIGHT EDGE", newRight)
+
+                    //     console.log("condition  right")
+                    //     if (newRight !== prevRightBeforeClamp + delta) {
+                    //         console.log("[BLOCK_RESIZE_VALIDATION] right edge clamped", {
+                    //             block: blkRef.BlkName,
+                    //             prevRight: prevRightBeforeClamp,
+                    //             requestedRight: prevRightBeforeClamp + delta,
+                    //             finalRight: newRight,
+                    //             rightNeighborLimit: rightNeighborLimit,
+                    //             effectiveRightLimit: effectiveRightLimit
+                    //         });
+                    //     }
+                    // }
+                    // if (newRight - newLeft < minWidth) {
+                    //     // Do not force hard min width; keep movement smooth near boundaries.
+                    //     // But also avoid collapsing block to near-zero width.
+                    //     var tinyEps = 0.001;
+                    //     console.log("[BLOCK_RESIZE_VALIDATION] hard min-width skipped", {
+                    //         block: blkRef.BlkName,
+                    //         edge: g_block_resize_state.edge,
+                    //         newLeft: newLeft,
+                    //         newRight: newRight,
+                    //         tinyEps: tinyEps
+                    //     });
+                    //     if (g_block_resize_state.edge === "left") {
+                    //         newLeft = newRight - tinyEps;
+                    //         console.log("condition  if")
+                    //     } else {
+                    //         newRight = newLeft + tinyEps;
+                    //         console.log("condition  else")
+                    //     }
+                    // }
+
+                    // var newW = newRight - newLeft;
+                    // var newCalcX = (newLeft + newRight) / 2;
+                    // if (!Number.isFinite(newW) || newW <= 0.01) {
+                    //     console.log("[BLOCK_RESIZE_VALIDATION] resize skipped (too small)", {
+                    //         block: blkRef.BlkName,
+                    //         edge: g_block_resize_state.edge,
+                    //         newLeft: newLeft,
+                    //         newRight: newRight,
+                    //         newW: newW
+                    //     });
+                    //     return true;
+                    // }
+                    // // apply immediately to BlockDim and refresh visuals in update mode
+                    // blkRef.BlockDim = blkRef.BlockDim || {};
+                    // blkRef.BlockDim.BlkWidth = Number(newW);
+                    // blkRef.BlockDim.CalcX = Number(newCalcX);
+
+                    // -------------------------------
+// FAST RESIZE VALIDATION ENGINE
+// -------------------------------
+
+                        var currModIndex = Array.isArray(blkRef.mod_index) ? blkRef.mod_index[0] : -1;
+
+                        // current block bounds
+                        var startLeft = Number(g_block_resize_state.startLeft);
+                        var startRight = Number(g_block_resize_state.startRight);
+
+                        // module limits
+                        var moduleLeftLimit = -Infinity;
+                        var moduleRightLimit = Infinity;
+                        var moduleCenterX = 0;
+
+                        if (
+                            currModIndex > -1 &&
+                            g_pog_json[g_pog_index] &&
+                            g_pog_json[g_pog_index].ModuleInfo[currModIndex]
+                        ) {
+                            var module = g_pog_json[g_pog_index].ModuleInfo[currModIndex];
+                            moduleCenterX = Number(module.X || 0);
+
+                            var moduleW = Number(module.W || 0);
+                            moduleLeftLimit = -moduleW / 2;
+                            moduleRightLimit = moduleW / 2;
+                        }
+
+                        // --------------------------------
+                        // FIND NEAREST NEIGHBOURS
+                        // --------------------------------
+
+                        var leftNeighborLimit = moduleLeftLimit;
+                        var rightNeighborLimit = moduleRightLimit;
+
+                        var blockTop = Number(blkRef.BlockDim.FinalTop || 0);
+                        var blockBottom = Number(blkRef.BlockDim.FinalBtm || 0);
+
+                        for (const otherBlk of g_mod_block_list) {
+
+                            if (!otherBlk || otherBlk === blkRef || !otherBlk.BlockDim)
                                 continue;
-                            }
-                            var shelfObj = blkShelfEntry.ShelfInfo;
-                            var shelfW = Number(shelfObj.W || 0);
-                            if (!(shelfW > 0)) {
+
+                            var otherModIndex = Array.isArray(otherBlk.mod_index) ? otherBlk.mod_index[0] : -1;
+                            if (otherModIndex !== currModIndex)
                                 continue;
-                            }
-                            // Convert global shelf X to module-local X for BlockDim calculations.
-                            var shelfLocalX = Number(shelfObj.X || 0) - moduleCenterX;
-                            var shLeft = shelfLocalX - shelfW / 2;
-                            var shRight = shelfLocalX + shelfW / 2;
-                            if (!hasShelfLimit) {
-                                shelfLeftLimit = shLeft;
-                                shelfRightLimit = shRight;
-                                hasShelfLimit = true;
-                            } else {
-                                shelfLeftLimit = Math.max(shelfLeftLimit, shLeft);
-                                shelfRightLimit = Math.min(shelfRightLimit, shRight);
-                            }
-                        }
-                    } else if (
-                        currModIndex > -1 &&
-                        typeof g_pog_json[g_pog_index] !== "undefined" &&
-                        typeof g_pog_json[g_pog_index].ModuleInfo[currModIndex] !== "undefined" &&
-                        Array.isArray(blkRef.g_delete_details) &&
-                        blkRef.g_delete_details.length > 0
-                    ) {
-                        var moduleShelves = g_pog_json[g_pog_index].ModuleInfo[currModIndex].ShelfInfo;
-                        for (const blkShelf of blkRef.g_delete_details) {
-                            if (typeof blkShelf === "undefined" || blkShelf == null) {
+
+                            var otherTop = Number(otherBlk.BlockDim.FinalTop || 0);
+                            var otherBottom = Number(otherBlk.BlockDim.FinalBtm || 0);
+
+                            // vertical overlap check
+                            if (!(otherTop > blockBottom && otherBottom < blockTop))
                                 continue;
+
+                            var otherW = Number(otherBlk.BlockDim.BlkWidth || 0);
+                            var otherCX = Number(otherBlk.BlockDim.CalcX || 0);
+
+                            var otherLeft = otherCX - otherW / 2;
+                            var otherRight = otherCX + otherW / 2;
+
+                            // LEFT neighbour
+                            if (otherRight <= startLeft) {
+                                if (otherRight > leftNeighborLimit)
+                                    leftNeighborLimit = otherRight;
                             }
-                            var shelfModIndex = typeof blkShelf.MIndex !== "undefined" ? Number(blkShelf.MIndex) : currModIndex;
-                            if (shelfModIndex !== currModIndex) {
-                                continue;
-                            }
-                            var shelfIndex = typeof blkShelf.SIndex !== "undefined" ? Number(blkShelf.SIndex) : -1;
-                            if (shelfIndex < 0 || typeof moduleShelves[shelfIndex] === "undefined") {
-                                continue;
-                            }
-                            var shelfObj = moduleShelves[shelfIndex];
-                            if (!shelfObj || shelfObj.ObjType === "NOTCH" || shelfObj.ObjType === "BASE" || shelfObj.ObjType === "DIVIDER") {
-                                continue;
-                            }
-                            var shelfW2 = Number(shelfObj.W || 0);
-                            if (!(shelfW2 > 0)) {
-                                continue;
-                            }
-                            var shelfLocalX2 = Number(shelfObj.X || 0) - moduleCenterX;
-                            var shLeft = shelfLocalX2 - shelfW2 / 2;
-                            var shRight = shelfLocalX2 + shelfW2 / 2;
-                            if (!hasShelfLimit) {
-                                shelfLeftLimit = shLeft;
-                                shelfRightLimit = shRight;
-                                hasShelfLimit = true;
-                            } else {
-                                shelfLeftLimit = Math.max(shelfLeftLimit, shLeft);
-                                shelfRightLimit = Math.min(shelfRightLimit, shRight);
+
+                            // RIGHT neighbour
+                            if (otherLeft >= startRight) {
+                                if (otherLeft < rightNeighborLimit)
+                                    rightNeighborLimit = otherLeft;
                             }
                         }
-                    }
 
-                    // Final hard bounds for resize.
-                    var effectiveLeftLimit = Math.max(moduleLeftLimit, shelfLeftLimit);
-                    var effectiveRightLimit = Math.min(moduleRightLimit, shelfRightLimit);
-                    if (!(effectiveRightLimit > effectiveLeftLimit)) {
-                        effectiveLeftLimit = moduleLeftLimit;
-                        effectiveRightLimit = moduleRightLimit;
-                        console.log("condition  1")
-                    }
-                    console.log("[BLOCK_RESIZE_VALIDATION] limits", {
-                        block: blkRef.BlkName,
-                        modIndex: currModIndex,
-                        moduleLeftLimit: moduleLeftLimit,
-                        moduleRightLimit: moduleRightLimit,
-                        shelfLeftLimit: shelfLeftLimit,
-                        shelfRightLimit: shelfRightLimit,
-                        effectiveLeftLimit: effectiveLeftLimit,
-                        effectiveRightLimit: effectiveRightLimit
-                    });
+                        // --------------------------------
+                        // APPLY RESIZE
+                        // --------------------------------
 
-                    var blockTop = Number(blkRef.BlockDim && typeof blkRef.BlockDim.FinalTop !== "undefined" ? blkRef.BlockDim.FinalTop : 0);
-                    var blockBottom = Number(blkRef.BlockDim && typeof blkRef.BlockDim.FinalBtm !== "undefined" ? blkRef.BlockDim.FinalBtm : 0);
-                    var leftNeighborLimit = effectiveLeftLimit;
-                    var rightNeighborLimit = effectiveRightLimit;
+                        var delta = currPointerLocalX - g_block_resize_state.startPointerLocalX;
 
-                    for (const otherBlk of g_mod_block_list) {
-                        if (!otherBlk || otherBlk === blkRef || !otherBlk.BlockDim) {
-                            continue;
-                        }
-                        var otherModIndex = Array.isArray(otherBlk.mod_index) && otherBlk.mod_index.length > 0 ? otherBlk.mod_index[0] : -1;
-                        if (otherModIndex !== currModIndex) {
-                            continue;
-                        }
+                        var newLeft = startLeft;
+                        var newRight = startRight;
 
-                        var otherTop = Number(otherBlk.BlockDim.FinalTop || 0);
-                        var otherBottom = Number(otherBlk.BlockDim.FinalBtm || 0);
-                        if (!(otherTop > blockBottom && otherBottom < blockTop)) {
-                            continue;
-                        }
-
-                        var otherW = Number(otherBlk.BlockDim.BlkWidth || 0);
-                        var otherCX = Number(otherBlk.BlockDim.CalcX || 0);
-                        var otherLeft = otherCX - otherW / 2;
-                        var otherRight = otherCX + otherW / 2;
-
-                        if (otherRight <= Number(g_block_resize_state.startRight || 0)) {
-                            leftNeighborLimit = Math.max(leftNeighborLimit, otherRight);
-                        }
-                        if (otherLeft >= Number(g_block_resize_state.startLeft || 0)) {
-                            rightNeighborLimit = Math.min(rightNeighborLimit, otherLeft);
-                        }
-                    }
-
-                    if (g_block_resize_state.edge === "left") {
-                        var prevLeftBeforeClamp = newLeft;
-                        newLeft = newLeft + delta;
-                        newLeft = Math.max(newLeft, leftNeighborLimit);
-                        newLeft = Math.max(newLeft, effectiveLeftLimit);
-                        console.log("condition left")
-                        if (newLeft !== prevLeftBeforeClamp + delta) {
-                            console.log("[BLOCK_RESIZE_VALIDATION] left edge clamped", {
-                                block: blkRef.BlkName,
-                                prevLeft: prevLeftBeforeClamp,
-                                requestedLeft: prevLeftBeforeClamp + delta,
-                                finalLeft: newLeft,
-                                leftNeighborLimit: leftNeighborLimit,
-                                effectiveLeftLimit: effectiveLeftLimit
-                            });
-                        }
-                    } else {
-                        var prevRightBeforeClamp = newRight;
-                        newRight = newRight + delta;
-                        newRight = Math.min(newRight, rightNeighborLimit);
-                        newRight = Math.min(newRight, effectiveRightLimit);
-                        console.log("RIGHT EDGE", newRight)
-
-                        console.log("condition  right")
-                        if (newRight !== prevRightBeforeClamp + delta) {
-                            console.log("[BLOCK_RESIZE_VALIDATION] right edge clamped", {
-                                block: blkRef.BlkName,
-                                prevRight: prevRightBeforeClamp,
-                                requestedRight: prevRightBeforeClamp + delta,
-                                finalRight: newRight,
-                                rightNeighborLimit: rightNeighborLimit,
-                                effectiveRightLimit: effectiveRightLimit
-                            });
-                        }
-                    }
-                    if (newRight - newLeft < minWidth) {
-                        // Do not force hard min width; keep movement smooth near boundaries.
-                        // But also avoid collapsing block to near-zero width.
-                        var tinyEps = 0.001;
-                        console.log("[BLOCK_RESIZE_VALIDATION] hard min-width skipped", {
-                            block: blkRef.BlkName,
-                            edge: g_block_resize_state.edge,
-                            newLeft: newLeft,
-                            newRight: newRight,
-                            tinyEps: tinyEps
-                        });
                         if (g_block_resize_state.edge === "left") {
-                            newLeft = newRight - tinyEps;
-                            console.log("condition  if")
-                        } else {
-                            newRight = newLeft + tinyEps;
-                            console.log("condition  else")
-                        }
-                    }
 
-                    var newW = newRight - newLeft;
-                    var newCalcX = (newLeft + newRight) / 2;
-                    if (!Number.isFinite(newW) || newW <= 0.01) {
-                        console.log("[BLOCK_RESIZE_VALIDATION] resize skipped (too small)", {
-                            block: blkRef.BlkName,
-                            edge: g_block_resize_state.edge,
-                            newLeft: newLeft,
-                            newRight: newRight,
-                            newW: newW
-                        });
-                        return true;
-                    }
-                    // apply immediately to BlockDim and refresh visuals in update mode
-                    blkRef.BlockDim = blkRef.BlockDim || {};
-                    blkRef.BlockDim.BlkWidth = Number(newW);
-                    blkRef.BlockDim.CalcX = Number(newCalcX);
+                            newLeft = startLeft + delta;
+
+                            newLeft = Math.max(newLeft, leftNeighborLimit);
+                            newLeft = Math.max(newLeft, moduleLeftLimit);
+
+                        } else {
+
+                            newRight = startRight + delta;
+
+                            newRight = Math.min(newRight, rightNeighborLimit);
+                            newRight = Math.min(newRight, moduleRightLimit);
+                        }
+
+                        // --------------------------------
+                        // MIN WIDTH PROTECTION
+                        // --------------------------------
+
+                        var minWidth = 0.02;
+
+                        if (newRight - newLeft < minWidth) {
+
+                            if (g_block_resize_state.edge === "left") {
+                                newLeft = newRight - minWidth;
+                            } else {
+                                newRight = newLeft + minWidth;
+                            }
+                        }
+
+                        // --------------------------------
+                        // APPLY NEW DIMENSIONS
+                        // --------------------------------
+
+                        var newWidth = newRight - newLeft;
+                        var newCenter = (newLeft + newRight) / 2;
+
+                        blkRef.BlockDim.BlkWidth = newWidth;
+                        blkRef.BlockDim.CalcX = newCenter;
                     var l_mod_index = Array.isArray(blkRef.mod_index) && blkRef.mod_index.length > 0 ? blkRef.mod_index[0] : -1;
                     if (l_mod_index > -1 && typeof g_pog_json[g_pog_index] !== "undefined" && typeof g_pog_json[g_pog_index].ModuleInfo[l_mod_index] !== "undefined") {
                         var moduleX = Number(g_pog_json[g_pog_index].ModuleInfo[l_mod_index].X || 0);
@@ -12704,7 +12848,7 @@ async function save_af_version() {
                 if (pText == "YES") {
 
                     apex.message.confirm(
-                        "Do you want to override the existing version?",
+                        get_message("OVERRIDE_BLK_VER_MSG"),
                         function (okPressed) {
                             if (okPressed) {
                                 proceed_save('U');
@@ -12717,7 +12861,7 @@ async function save_af_version() {
                 }
                 if (pText == "DELETE") {
                     apex.message.confirm(
-                        `You already have existing ${l_max_versions} blockings.Process to delete oldest version`,
+                        get_message("DELETE_BLK_VER_MSG",l_max_versions),
                         function (okPressed) {
                             if (okPressed) {
                                 proceed_save('D');
@@ -12730,7 +12874,7 @@ async function save_af_version() {
                 }
                 if (pText == "OVERIDE") {
                     apex.message.confirm(
-                        "You already have existing blockings.Do you want to overide?",
+                        get_message("OVERRIDE_BLK_MSG"),
                         function (okPressed) {
                             if (okPressed) {
                                 proceed_save('O');
@@ -15238,4 +15382,66 @@ function cleanupBlockBorders(p_pog_index) {
     } catch (err) {
         error_handling(err);
     }
+}
+
+
+async function reset_af_version() {
+
+    logDebug("function : reset_af_version", "S");
+
+    if (!$v('P193_OPEN_POG_CODE')) {
+        alert(get_message('POGCR_BLK_NULL'));
+        return;
+    }
+
+    apex.message.confirm(
+        "Are you sure you want to reset? All unsaved changes will be lost.",
+        async function (okPressed) {
+            if (!okPressed) { return; }
+
+            // Remove block color overlays from the canvas using live ColorObj references
+            for (const obj of g_mod_block_list) {
+                if (obj.BlockDim && obj.BlockDim.ColorObj) {
+                    for (const child of obj.BlockDim.ColorObj.children) {
+                        if (child.uuid == obj.BlkName) {
+                            obj.BlockDim.ColorObj.remove(child);
+                            break;
+                        }
+                    }
+                }
+            }
+            render(g_pog_index);
+            g_mod_block_list = [];
+
+            // Restore from the snapshot captured on POG open
+            g_mod_block_list = JSON.parse(JSON.stringify(g_reset_block_snapshot));
+            g_autofill_detail["BlkInfo"] = g_mod_block_list;
+
+            // Re-draw each block on the canvas
+            for (const blkDet of g_mod_block_list) {
+                g_autofillModInfo = blkDet.BlkModInfo;
+                g_autofillShelfInfo = blkDet.BlkShelfInfo;
+                var retdtl = await colorAutofillBlock(
+                    blkDet["DragMouseStart"],
+                    blkDet["DragMouseEnd"],
+                    blkDet["mod_index"],
+                    blkDet["BlkColor"],
+                    blkDet["BlkName"],
+                    "U",
+                    blkDet,
+                    g_pog_index
+                );
+                blkDet["BlockDim"] = retdtl;
+            }
+
+            // Sync server-side collection so the IG grid shows the restored state
+            await save_blk_dtl_coll("Y", "", g_mod_block_list);
+            apex.region("mod_block_details").refresh();
+            $("#added_attribute").show();
+            apex.region("added_attribute").refresh();
+
+            render(g_pog_index);
+            logDebug("function : reset_af_version", "E");
+        }
+    );
 }
