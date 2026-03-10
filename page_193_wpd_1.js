@@ -7374,7 +7374,7 @@ async function open_draft_pog(p_imageLoadInd = "N", p_draft_pog_list, p_open_att
         p.done(function (data) {
             var return_data = $.trim(data);
             if (return_data.match(/ERROR.*/)) {
-                javascript: window.open("f?p=" + $v("pFlowId") + ":25:" + $v("pInstance") + ":APEX_CLONE_SESSION:NO::P193_OPEN_NEW_TAB,P193_PRODUCT_BTN_CLICK,P193_DRAFT_LIST,P193_POG_DESCRIPTION,P193_EXISTING_DRAFT_VER:Y,N," + p_draft_seq_id + "," + p_draft_desc + "," + p_draft_version);
+                javascript: window.open("f?p=" + $v("pFlowId") + ":193:" + $v("pInstance") + ":APEX_CLONE_SESSION:NO::P193_OPEN_NEW_TAB,P193_PRODUCT_BTN_CLICK,P193_DRAFT_LIST,P193_POG_DESCRIPTION,P193_EXISTING_DRAFT_VER:Y,N," + p_draft_seq_id + "," + p_draft_desc + "," + p_draft_version);
                 sessionStorage.removeItem("POGJSON");
                 resolve("SUCESS");
             } else if (return_data !== "") {
@@ -7394,7 +7394,7 @@ async function open_draft_pog(p_imageLoadInd = "N", p_draft_pog_list, p_open_att
             apex.region("added_attribute").refresh();
         }
         await runattrCollections();
-        add_pog_versions();
+        await add_pog_versions();
         wpdCaptureShowChangesBlockSnapshot(g_mod_block_list, "Y");  //ASA-1986 
         g_reset_block_snapshot = JSON.parse(JSON.stringify(g_mod_block_list));
     }
@@ -7797,8 +7797,6 @@ async function open_existing_pog(p_pog_list_arr, p_openAttr, p_imageLoadInd = "N
             await setDefaultState("N");
             $("#pog_list_btn").css("display", "none"); //ASA-1425
             $("#chng_view_btn").css("display", "none"); //ASA-1425
-            $(".add_pog").css("display", "block");
-            $(".open_par").css("display", "block"); //ASA-1587
             if (real_pog_list[0] == "N") {
                 removeLoadingIndicator(regionloadWait); //ASA-1500
                 confirm(get_message("VIRTUAL_POG_OPEN_ALERT"), get_global_ind_values("AI_CONFIRM_OK_TEXT"), get_global_ind_values("AI_CONFIRM_CANCEL_TEXT"), function () {
@@ -7815,17 +7813,7 @@ async function open_existing_pog(p_pog_list_arr, p_openAttr, p_imageLoadInd = "N
                         g_seqArrDtl["pogType"] = "E";
                         g_seqArr.push(g_seqArrDtl);
                         addLoadingIndicator(); //ASA-1500
-                        await get_existing_pog(pog_code_list[0], pog_version_list[0], 0, "N", "N");
-                        // //ASA-1803 Added for refresh sales.
-                        // if ($v("P193_AUTO_REFRESH_SALES_FOR_POG") == "Y" && g_pog_json[0].NewPOG != "Y") {
-                        //     //ASA-1803 Issue 3, 9
-                        //     await refresh_sales_data(13, "", $v("P193_POGCR_FONTSIZE_DAYSOFSUPP"), g_hide_show_dos_label, g_show_days_of_supply, "N", "N", "N", pog_code_list[0], "N", pog_code_list[0], "N", g_pog_index, "Y");
-                        //     $s("P193_REFRESH_SALE_CALL", "Y");
-                        // }
-                        // if ($v("P193_POGCR_ITEM_DIM_AUTO_REFRESH") == "Y") {
-                        //     //ASA-1812 Refresh Item Dimension. Issue 3
-                        //     await itemDimUpdate(g_pog_index);
-                        // }
+                        await get_existing_pog(pog_code_list[0], pog_version_list[0], 0, "N", "N");                       
                         removeLoadingIndicator(regionloadWait); //ASA-1500
                         render(0);
                         animate_all_pog();
@@ -7846,14 +7834,7 @@ async function open_existing_pog(p_pog_list_arr, p_openAttr, p_imageLoadInd = "N
                     g_seqArrDtl["pogVersion"] = pog_version_list[0];
                     g_seqArrDtl["pogType"] = "E";
                     g_seqArr.push(g_seqArrDtl);
-                    var retval = await get_existing_pog(pog_code_list[0], pog_version_list[0], 0, "N", "N");
-                    //ASA-1803 Added for refresh sales.
-                    // await refresh_sales_data(13, "", $v("P193_POGCR_FONTSIZE_DAYSOFSUPP"), g_hide_show_dos_label, g_show_days_of_supply, "N", "N", "N", pog_code_list[0], pog_code_list[0], "N", g_pog_index, "Y");
-
-                    // if ($v("P193_POGCR_ITEM_DIM_AUTO_REFRESH") == "Y") {
-                    //     //ASA-1812 Refresh Item Dimension. Issue 3
-                    //     await itemDimUpdate(g_pog_index);
-                    // }
+                    var retval = await get_existing_pog(pog_code_list[0], pog_version_list[0], 0, "N", "N");                    
                     removeLoadingIndicator(regionloadWait); //ASA-1500    
                     g_auto_fill_active = "N";
                     $s("P193_OPEN_DRAFT", 'N'); //Garit
@@ -7870,16 +7851,17 @@ async function open_existing_pog(p_pog_list_arr, p_openAttr, p_imageLoadInd = "N
                     } else {
                         apex.region("mod_block_details").refresh();
                     }
+                    await add_pog_versions();
                     await runattrCollections();
                     wpdCaptureShowChangesBlockSnapshot(g_mod_block_list, "Y"); // ASA-1986
-                    g_reset_block_snapshot = JSON.parse(JSON.stringify(g_mod_block_list));
-                    add_pog_versions();
+                    g_reset_block_snapshot = JSON.parse(JSON.stringify(g_mod_block_list));                    
                     render(0);
                     animate_all_pog();
                 }
                 doSomething();
             }
-        } else {
+        } 
+        else {
             $("#pog_list_btn").css("display", "block");
             $("#chng_view_btn").css("display", "block");
             $(".add_pog").css("display", "block");
@@ -9748,325 +9730,6 @@ async function doMouseMove(p_x, p_y, p_event, p_prevX, p_prevY, p_canvas, p_came
             g_raycaster.setFromCamera(new THREE.Vector2(a, b), p_camera);
             g_intersects = g_raycaster.intersectObjects(new_world.children);
 
-            //   if (g_block_resize_state && g_block_resize_state.active && g_block_resize_state.blkRef) {
-            //     try {
-            //         var locationX = (g_intersects && g_intersects.length>0) ? g_intersects[0].point.x : g_block_resize_state.startX;
-            //         var delta = locationX - g_block_resize_state.startX;
-            //         // Heuristic: positive delta increases width, negative decreases
-            //         var newW = Math.max(0.1, g_block_resize_state.startWidth + Math.abs(delta));
-            //         // apply immediately to BlockDim and refresh visuals in update mode
-            //         var blkRef = g_block_resize_state.blkRef;
-            //         blkRef.BlockDim = blkRef.BlockDim || {};
-            //         blkRef.BlockDim.BlkWidth = Number(newW);
-            //         // call colorAutofillBlock to refresh visuals (update-mode)
-            //         colorAutofillBlock(null, null, blkRef.mod_index, blkRef.BlkColor || '#FFFFFF', blkRef.BlkName, 'U', blkRef, g_pog_index, 'N').then(function (ret) {
-            //             if (ret) blkRef.BlockDim = Object.assign(blkRef.BlockDim || {}, ret);
-            //             render(g_pog_index);
-            //         });
-            //         return true;
-            //     } catch (e) { console.warn('Resize move err', e); }
-            // }  resize block fun
-
-
-            //      if (g_block_resize_state && g_block_resize_state.armed && !g_block_resize_state.active && g_block_resize_state.blkRef) {
-            //         try {
-            //             var hoverBlkRef = g_block_resize_state.blkRef;
-            //             var hoverEdge = null;
-            //             if (hoverBlkRef.BlockDim && hoverBlkRef.BlockDim.ColorObj) {
-            //                 var hoverMesh = hoverBlkRef.BlockDim.ColorObj.getObjectByProperty("uuid", hoverBlkRef.BlkName);
-            //                 if (hoverMesh) {
-            //                     var hoverHits = g_raycaster.intersectObject(hoverMesh, true);
-            //                     if (Array.isArray(hoverHits) && hoverHits.length > 0) {
-            //                         var hoverPt = hoverHits[0].point.clone();
-            //                         hoverBlkRef.BlockDim.ColorObj.worldToLocal(hoverPt);
-            //                         var hoverX = Number(hoverPt.x);
-            //                         var hoverW = Number(hoverBlkRef.BlockDim.BlkWidth || 0);
-            //                         var hoverCX = Number(hoverBlkRef.BlockDim.CalcX || 0);
-            //                         var hoverLeft = hoverCX - hoverW / 2;
-            //                         var hoverRight = hoverCX + hoverW / 2;
-            //                         var hoverTol = Math.max(0.06, hoverW * 0.08);
-            //                         if (Math.abs(hoverX - hoverLeft) <= hoverTol) {
-            //                             hoverEdge = "left";
-            //                         } else if (Math.abs(hoverX - hoverRight) <= hoverTol) {
-            //                             hoverEdge = "right";
-            //                         }
-            //                     }
-            //                 }
-            //             }
-            //             g_block_resize_state.hoverEdge = hoverEdge;
-            //             if (hoverEdge) {
-            //                 canvas_drag.style.cursor = "ew-resize";
-            //             } else {
-            //                 canvas_drag.style.cursor = "auto";
-            //             }
-            //         } catch (e) {}
-            //     }
-            //     // If currently performing a block resize drag, update width live
-            //    if (g_block_resize_state && g_block_resize_state.active && g_block_resize_state.blkRef) {
-            //         try {
-            //             var blkRef = g_block_resize_state.blkRef;
-            //             var currPointerLocalX = g_block_resize_state.startPointerLocalX;
-            //             if (blkRef.BlockDim && blkRef.BlockDim.ColorObj) {
-            //                 var activeMesh = blkRef.BlockDim.ColorObj.getObjectByProperty("uuid", blkRef.BlkName);
-            //                 if (activeMesh) {
-            //                     var activeHits = g_raycaster.intersectObject(activeMesh, true);
-            //                     if (Array.isArray(activeHits) && activeHits.length > 0) {
-            //                         var activePt = activeHits[0].point.clone();
-            //                         blkRef.BlockDim.ColorObj.worldToLocal(activePt);
-            //                         currPointerLocalX = Number(activePt.x);
-            //                     }
-            //                 }
-            //             }
-
-            //             var delta = currPointerLocalX - Number(g_block_resize_state.startPointerLocalX || 0);
-            //             var minWidth = 0.1;
-            //             var newLeft = Number(g_block_resize_state.startLeft || 0);
-            //             var newRight = Number(g_block_resize_state.startRight || 0);
-            //             if (g_block_resize_state.edge === "left") {
-            //                 newLeft = newLeft + delta;
-            //             } else {
-            //                 newRight = newRight + delta;
-            //             }
-            //             if (newRight - newLeft < minWidth) {
-            //                 if (g_block_resize_state.edge === "left") {
-            //                     newLeft = newRight - minWidth;
-            //                 } else {
-            //                     newRight = newLeft + minWidth;
-            //                 }
-            //             }
-
-            //             var newW = newRight - newLeft;
-            //             var newCalcX = (newLeft + newRight) / 2;
-            //             // apply immediately to BlockDim and refresh visuals in update mode
-            //             blkRef.BlockDim = blkRef.BlockDim || {};
-            //             blkRef.BlockDim.BlkWidth = Number(newW);
-            //             blkRef.BlockDim.CalcX = Number(newCalcX);
-            //             var l_mod_index = Array.isArray(blkRef.mod_index) && blkRef.mod_index.length > 0 ? blkRef.mod_index[0] : -1;
-            //             if (l_mod_index > -1 && typeof g_pog_json[g_pog_index] !== "undefined" && typeof g_pog_json[g_pog_index].ModuleInfo[l_mod_index] !== "undefined") {
-            //                 var moduleX = Number(g_pog_json[g_pog_index].ModuleInfo[l_mod_index].X || 0);
-            //                 blkRef.DragMouseStart = blkRef.DragMouseStart || {};
-            //                 blkRef.DragMouseEnd = blkRef.DragMouseEnd || {};
-            //                 blkRef.DragMouseStart.x = moduleX + newLeft;
-            //                 blkRef.DragMouseEnd.x = moduleX + newRight;
-            //             }
-
-            //             console.log(" block ref", blkRef);
-            //             // call colorAutofillBlock to refresh visuals (update-mode)
-            //             colorAutofillBlock(null, null, blkRef.mod_index, blkRef.BlkColor || '#FFFFFF', blkRef.BlkName, 'U', blkRef, g_pog_index, 'N').then(function (ret) {
-            //                 if (ret) blkRef.BlockDim = Object.assign(blkRef.BlockDim || {}, ret);
-            //                 render(g_pog_index);
-            //             });
-            //             return true;
-            //         } catch (e) { console.warn('Resize move err', e); }
-            //     }
-
-
-
-            //    if (g_block_resize_state && g_block_resize_state.armed && !g_block_resize_state.active && g_block_resize_state.blkRef) {
-            //         try {
-            //             var hoverBlkRef = g_block_resize_state.blkRef;
-            //             var hoverEdge = null;
-            //             if (hoverBlkRef.BlockDim && hoverBlkRef.BlockDim.ColorObj) {
-            //                 var hoverMesh = hoverBlkRef.BlockDim.ColorObj.getObjectByProperty("uuid", hoverBlkRef.BlkName);
-            //                 if (hoverMesh) {
-            //                     var hoverHits = g_raycaster.intersectObject(hoverMesh, true);
-            //                     if (Array.isArray(hoverHits) && hoverHits.length > 0) {
-            //                         var hoverPt = hoverHits[0].point.clone();
-            //                         hoverBlkRef.BlockDim.ColorObj.worldToLocal(hoverPt);
-            //                         var hoverX = Number(hoverPt.x);
-            //                         var hoverW = Number(hoverBlkRef.BlockDim.BlkWidth || 0);
-            //                         var hoverCX = Number(hoverBlkRef.BlockDim.CalcX || 0);
-            //                         var hoverLeft = hoverCX - hoverW / 2;
-            //                         var hoverRight = hoverCX + hoverW / 2;
-            //                         var hoverTol = Math.max(0.06, hoverW * 0.08);
-            //                         if (Math.abs(hoverX - hoverLeft) <= hoverTol) {
-            //                             hoverEdge = "left";
-            //                         } else if (Math.abs(hoverX - hoverRight) <= hoverTol) {
-            //                             hoverEdge = "right";
-            //                         }
-            //                     }
-            //                 }
-            //             }
-            //             if (hoverEdge) {
-            //                 canvas_drag.style.cursor = "ew-resize";
-            //             } else {
-            //                 canvas_drag.style.cursor = "auto";
-            //             }
-            //         } catch (e) {}
-            //     }
-            //     // If currently performing a block resize drag, update width live
-            //     if (g_block_resize_state && g_block_resize_state.active && g_block_resize_state.blkRef) {
-            //         try {
-            //             var blkRef = g_block_resize_state.blkRef;
-            //             var currPointerLocalX = g_block_resize_state.startPointerLocalX;
-            //             if (blkRef.BlockDim && blkRef.BlockDim.ColorObj) {
-            //                 var activeMesh = blkRef.BlockDim.ColorObj.getObjectByProperty("uuid", blkRef.BlkName);
-            //                 var hasActiveHit = false;
-            //                 if (activeMesh) {
-            //                     var activeHits = g_raycaster.intersectObject(activeMesh, true);
-            //                     if (Array.isArray(activeHits) && activeHits.length > 0) {
-            //                         var activePt = activeHits[0].point.clone();
-            //                         blkRef.BlockDim.ColorObj.worldToLocal(activePt);
-            //                         currPointerLocalX = Number(activePt.x);
-            //                         hasActiveHit = true;
-            //                     }
-            //                 }
-            //                 // When pointer goes outside block mesh while dragging edge,
-            //                 // continue tracking X on the block plane so width can increase.
-            //                 if (!hasActiveHit) {
-            //                     var planeLocalZ = Number(blkRef.BlockDim.CalcZ || 0.009);
-            //                     var planePointWorld = new THREE.Vector3(0, 0, planeLocalZ);
-            //                     blkRef.BlockDim.ColorObj.localToWorld(planePointWorld);
-            //                     var normalMatrix = new THREE.Matrix3().getNormalMatrix(blkRef.BlockDim.ColorObj.matrixWorld);
-            //                     var planeNormalWorld = new THREE.Vector3(0, 0, 1).applyMatrix3(normalMatrix).normalize();
-            //                     var dragPlane = new THREE.Plane().setFromNormalAndCoplanarPoint(planeNormalWorld, planePointWorld);
-            //                     var worldPt = new THREE.Vector3();
-            //                     if (g_raycaster.ray.intersectPlane(dragPlane, worldPt)) {
-            //                         var planePtLocal = worldPt.clone();
-            //                         blkRef.BlockDim.ColorObj.worldToLocal(planePtLocal);
-            //                         currPointerLocalX = Number(planePtLocal.x);
-            //                     }
-            //                 }
-            //             }
-
-            //             var delta = currPointerLocalX - Number(g_block_resize_state.startPointerLocalX || 0);
-            //             var minWidth = 0.1;
-            //             var newLeft = Number(g_block_resize_state.startLeft || 0);
-            //             var newRight = Number(g_block_resize_state.startRight || 0);
-
-
-            //            // validation 
-            //            var currModIndex = Array.isArray(blkRef.mod_index) && blkRef.mod_index.length > 0 ? blkRef.mod_index[0] : -1;
-            //             var moduleLeftLimit = -Infinity;
-            //             var moduleRightLimit = Infinity;
-            //             if (currModIndex > -1 && typeof g_pog_json[g_pog_index] !== "undefined" && typeof g_pog_json[g_pog_index].ModuleInfo[currModIndex] !== "undefined") {
-            //                 var currModW = Number(g_pog_json[g_pog_index].ModuleInfo[currModIndex].W || 0);
-            //                 moduleLeftLimit = -currModW / 2;
-            //                 moduleRightLimit = currModW / 2;
-            //             }
-
-            //             // Shelf-level hard bounds: use intersection of all shelves captured in block.
-            //             // This ensures width never grows outside shelf space even if module is wider.
-            //             var shelfLeftLimit = moduleLeftLimit;
-            //             var shelfRightLimit = moduleRightLimit;
-            //             var hasShelfLimit = false;
-            //             if (
-            //                 currModIndex > -1 &&
-            //                 typeof g_pog_json[g_pog_index] !== "undefined" &&
-            //                 typeof g_pog_json[g_pog_index].ModuleInfo[currModIndex] !== "undefined" &&
-            //                 Array.isArray(blkRef.g_delete_details) &&
-            //                 blkRef.g_delete_details.length > 0
-            //             ) {
-            //                 var moduleShelves = g_pog_json[g_pog_index].ModuleInfo[currModIndex].ShelfInfo;
-            //                 for (const blkShelf of blkRef.g_delete_details) {
-            //                     if (typeof blkShelf === "undefined" || blkShelf == null) {
-            //                         continue;
-            //                     }
-            //                     var shelfModIndex = typeof blkShelf.MIndex !== "undefined" ? Number(blkShelf.MIndex) : currModIndex;
-            //                     if (shelfModIndex !== currModIndex) {
-            //                         continue;
-            //                     }
-            //                     var shelfIndex = typeof blkShelf.SIndex !== "undefined" ? Number(blkShelf.SIndex) : -1;
-            //                     if (shelfIndex < 0 || typeof moduleShelves[shelfIndex] === "undefined") {
-            //                         continue;
-            //                     }
-            //                     var shelfObj = moduleShelves[shelfIndex];
-            //                     if (!shelfObj || shelfObj.ObjType === "NOTCH" || shelfObj.ObjType === "BASE" || shelfObj.ObjType === "DIVIDER") {
-            //                         continue;
-            //                     }
-            //                     var shLeft = Number(shelfObj.X || 0) - Number(shelfObj.W || 0) / 2;
-            //                     var shRight = Number(shelfObj.X || 0) + Number(shelfObj.W || 0) / 2;
-            //                     if (!hasShelfLimit) {
-            //                         shelfLeftLimit = shLeft;
-            //                         shelfRightLimit = shRight;
-            //                         hasShelfLimit = true;
-            //                     } else {
-            //                         shelfLeftLimit = Math.max(shelfLeftLimit, shLeft);
-            //                         shelfRightLimit = Math.min(shelfRightLimit, shRight);
-            //                     }
-            //                 }
-            //             }
-
-            //             // Final hard bounds for resize.
-            //             var effectiveLeftLimit = Math.max(moduleLeftLimit, shelfLeftLimit);
-            //             var effectiveRightLimit = Math.min(moduleRightLimit, shelfRightLimit);
-            //             if (!(effectiveRightLimit > effectiveLeftLimit)) {
-            //                 effectiveLeftLimit = moduleLeftLimit;
-            //                 effectiveRightLimit = moduleRightLimit;
-            //             }
-
-            //             var blockTop = Number(blkRef.BlockDim && typeof blkRef.BlockDim.FinalTop !== "undefined" ? blkRef.BlockDim.FinalTop : 0);
-            //             var blockBottom = Number(blkRef.BlockDim && typeof blkRef.BlockDim.FinalBtm !== "undefined" ? blkRef.BlockDim.FinalBtm : 0);
-            //             var leftNeighborLimit = effectiveLeftLimit;
-            //             var rightNeighborLimit = effectiveRightLimit;
-
-            //             for (const otherBlk of g_mod_block_list) {
-            //                 if (!otherBlk || otherBlk === blkRef || !otherBlk.BlockDim) {
-            //                     continue;
-            //                 }
-            //                 var otherModIndex = Array.isArray(otherBlk.mod_index) && otherBlk.mod_index.length > 0 ? otherBlk.mod_index[0] : -1;
-            //                 if (otherModIndex !== currModIndex) {
-            //                     continue;
-            //                 }
-
-            //                 var otherTop = Number(otherBlk.BlockDim.FinalTop || 0);
-            //                 var otherBottom = Number(otherBlk.BlockDim.FinalBtm || 0);
-            //                 if (!(otherTop > blockBottom && otherBottom < blockTop)) {
-            //                     continue;
-            //                 }
-
-            //                 var otherW = Number(otherBlk.BlockDim.BlkWidth || 0);
-            //                 var otherCX = Number(otherBlk.BlockDim.CalcX || 0);
-            //                 var otherLeft = otherCX - otherW / 2;
-            //                 var otherRight = otherCX + otherW / 2;
-
-            //                 if (otherRight <= Number(g_block_resize_state.startRight || 0)) {
-            //                     leftNeighborLimit = Math.max(leftNeighborLimit, otherRight);
-            //                 }
-            //                 if (otherLeft >= Number(g_block_resize_state.startLeft || 0)) {
-            //                     rightNeighborLimit = Math.min(rightNeighborLimit, otherLeft);
-            //                 }
-            //             }
-            //             //Validation
-
-            //             if (g_block_resize_state.edge === "left") {
-            //                 newLeft = newLeft + delta;
-            //             } else {
-            //                 newRight = newRight + delta;
-            //             }
-            //             if (newRight - newLeft < minWidth) {
-            //                 if (g_block_resize_state.edge === "left") {
-            //                     newLeft = newRight - minWidth;
-            //                 } else {
-            //                     newRight = newLeft + minWidth;
-            //                 }
-            //             }
-
-            //             var newW = newRight - newLeft;
-            //             var newCalcX = (newLeft + newRight) / 2;
-            //             // apply immediately to BlockDim and refresh visuals in update mode
-            //             blkRef.BlockDim = blkRef.BlockDim || {};
-            //             blkRef.BlockDim.BlkWidth = Number(newW);
-            //             blkRef.BlockDim.CalcX = Number(newCalcX);
-            //             var l_mod_index = Array.isArray(blkRef.mod_index) && blkRef.mod_index.length > 0 ? blkRef.mod_index[0] : -1;
-            //             if (l_mod_index > -1 && typeof g_pog_json[g_pog_index] !== "undefined" && typeof g_pog_json[g_pog_index].ModuleInfo[l_mod_index] !== "undefined") {
-            //                 var moduleX = Number(g_pog_json[g_pog_index].ModuleInfo[l_mod_index].X || 0);
-            //                 blkRef.DragMouseStart = blkRef.DragMouseStart || {};
-            //                 blkRef.DragMouseEnd = blkRef.DragMouseEnd || {};
-            //                 blkRef.DragMouseStart.x = moduleX + newLeft;
-            //                 blkRef.DragMouseEnd.x = moduleX + newRight;
-            //             }
-            //             // call colorAutofillBlock to refresh visuals (update-mode)
-            //             var ret = await colorAutofillBlock(null, null, blkRef.mod_index, blkRef.BlkColor || '#FFFFFF', blkRef.BlkName, 'U', blkRef, g_pog_index, 'N');
-            //             if (ret) blkRef.BlockDim = Object.assign(blkRef.BlockDim || {}, ret);
-            //             render(g_pog_index);
-            //             return true;
-            //         } catch (e) { console.warn('Resize move err', e); }
-            //     }
-
-
-
-            // While resize mode is armed, show resize cursor only when hovering selected block edge.
             if (g_block_resize_state && g_block_resize_state.armed && !g_block_resize_state.active && g_block_resize_state.blkRef) {
                 try {
                     var hoverBlkRef = g_block_resize_state.blkRef;
@@ -10139,233 +9802,12 @@ async function doMouseMove(p_x, p_y, p_event, p_prevX, p_prevY, p_canvas, p_came
                     var newLeft = Number(g_block_resize_state.startLeft || 0);
                     var newRight = Number(g_block_resize_state.startRight || 0);
 
-                    // Keep resizing inside module bounds and stop at neighboring blocks.
-                    // var currModIndex = Array.isArray(blkRef.mod_index) && blkRef.mod_index.length > 0 ? blkRef.mod_index[0] : -1;
-                    // var moduleLeftLimit = -Infinity;
-                    // var moduleRightLimit = Infinity;
-                    // var moduleCenterX = 0;
-                    // if (currModIndex > -1 && typeof g_pog_json[g_pog_index] !== "undefined" && typeof g_pog_json[g_pog_index].ModuleInfo[currModIndex] !== "undefined") {
-                    //     moduleCenterX = Number(g_pog_json[g_pog_index].ModuleInfo[currModIndex].X || 0);
-                    //     var currModW = Number(g_pog_json[g_pog_index].ModuleInfo[currModIndex].W || 0);
-                    //     moduleLeftLimit = -currModW / 2;
-                    //     moduleRightLimit = currModW / 2;
-                    // }
-
-                    // // Shelf-level hard bounds: use intersection of all shelves captured in block.
-                    // // This ensures width never grows outside shelf space even if module is wider.
-                    // var shelfLeftLimit = moduleLeftLimit;
-                    // var shelfRightLimit = moduleRightLimit;
-                    // var hasShelfLimit = false;
-                    // // Prefer BlkShelfInfo (stable shelf metadata for block). Fallback to g_delete_details.
-                    // if (Array.isArray(blkRef.BlkShelfInfo) && blkRef.BlkShelfInfo.length > 0) {
-                    //     for (const blkShelfEntry of blkRef.BlkShelfInfo) {
-                    //         if (!blkShelfEntry || !blkShelfEntry.ShelfInfo) {
-                    //             continue;
-                    //         }
-                    //         var shelfObj = blkShelfEntry.ShelfInfo;
-                    //         var shelfW = Number(shelfObj.W || 0);
-                    //         if (!(shelfW > 0)) {
-                    //             continue;
-                    //         }
-                    //         // Convert global shelf X to module-local X for BlockDim calculations.
-                    //         var shelfLocalX = Number(shelfObj.X || 0) - moduleCenterX;
-                    //         var shLeft = shelfLocalX - shelfW / 2;
-                    //         var shRight = shelfLocalX + shelfW / 2;
-                    //         if (!hasShelfLimit) {
-                    //             shelfLeftLimit = shLeft;
-                    //             shelfRightLimit = shRight;
-                    //             hasShelfLimit = true;
-                    //         } else {
-                    //             shelfLeftLimit = Math.max(shelfLeftLimit, shLeft);
-                    //             shelfRightLimit = Math.min(shelfRightLimit, shRight);
-                    //         }
-                    //     }
-                    // } else if (
-                    //     currModIndex > -1 &&
-                    //     typeof g_pog_json[g_pog_index] !== "undefined" &&
-                    //     typeof g_pog_json[g_pog_index].ModuleInfo[currModIndex] !== "undefined" &&
-                    //     Array.isArray(blkRef.g_delete_details) &&
-                    //     blkRef.g_delete_details.length > 0
-                    // ) {
-                    //     var moduleShelves = g_pog_json[g_pog_index].ModuleInfo[currModIndex].ShelfInfo;
-                    //     for (const blkShelf of blkRef.g_delete_details) {
-                    //         if (typeof blkShelf === "undefined" || blkShelf == null) {
-                    //             continue;
-                    //         }
-                    //         var shelfModIndex = typeof blkShelf.MIndex !== "undefined" ? Number(blkShelf.MIndex) : currModIndex;
-                    //         if (shelfModIndex !== currModIndex) {
-                    //             continue;
-                    //         }
-                    //         var shelfIndex = typeof blkShelf.SIndex !== "undefined" ? Number(blkShelf.SIndex) : -1;
-                    //         if (shelfIndex < 0 || typeof moduleShelves[shelfIndex] === "undefined") {
-                    //             continue;
-                    //         }
-                    //         var shelfObj = moduleShelves[shelfIndex];
-                    //         if (!shelfObj || shelfObj.ObjType === "NOTCH" || shelfObj.ObjType === "BASE" || shelfObj.ObjType === "DIVIDER") {
-                    //             continue;
-                    //         }
-                    //         var shelfW2 = Number(shelfObj.W || 0);
-                    //         if (!(shelfW2 > 0)) {
-                    //             continue;
-                    //         }
-                    //         var shelfLocalX2 = Number(shelfObj.X || 0) - moduleCenterX;
-                    //         var shLeft = shelfLocalX2 - shelfW2 / 2;
-                    //         var shRight = shelfLocalX2 + shelfW2 / 2;
-                    //         if (!hasShelfLimit) {
-                    //             shelfLeftLimit = shLeft;
-                    //             shelfRightLimit = shRight;
-                    //             hasShelfLimit = true;
-                    //         } else {
-                    //             shelfLeftLimit = Math.max(shelfLeftLimit, shLeft);
-                    //             shelfRightLimit = Math.min(shelfRightLimit, shRight);
-                    //         }
-                    //     }
-                    // }
-
-                    // // Final hard bounds for resize.
-                    // var effectiveLeftLimit = Math.max(moduleLeftLimit, shelfLeftLimit);
-                    // var effectiveRightLimit = Math.min(moduleRightLimit, shelfRightLimit);
-                    // if (!(effectiveRightLimit > effectiveLeftLimit)) {
-                    //     effectiveLeftLimit = moduleLeftLimit;
-                    //     effectiveRightLimit = moduleRightLimit;
-                    //     console.log("condition  1")
-                    // }
-                    // console.log("[BLOCK_RESIZE_VALIDATION] limits", {
-                    //     block: blkRef.BlkName,
-                    //     modIndex: currModIndex,
-                    //     moduleLeftLimit: moduleLeftLimit,
-                    //     moduleRightLimit: moduleRightLimit,
-                    //     shelfLeftLimit: shelfLeftLimit,
-                    //     shelfRightLimit: shelfRightLimit,
-                    //     effectiveLeftLimit: effectiveLeftLimit,
-                    //     effectiveRightLimit: effectiveRightLimit
-                    // });
-
-                    // var blockTop = Number(blkRef.BlockDim && typeof blkRef.BlockDim.FinalTop !== "undefined" ? blkRef.BlockDim.FinalTop : 0);
-                    // var blockBottom = Number(blkRef.BlockDim && typeof blkRef.BlockDim.FinalBtm !== "undefined" ? blkRef.BlockDim.FinalBtm : 0);
-                    // var leftNeighborLimit = effectiveLeftLimit;
-                    // var rightNeighborLimit = effectiveRightLimit;
-
-                    // for (const otherBlk of g_mod_block_list) {
-                    //     if (!otherBlk || otherBlk === blkRef || !otherBlk.BlockDim) {
-                    //         continue;
-                    //     }
-                    //     var otherModIndex = Array.isArray(otherBlk.mod_index) && otherBlk.mod_index.length > 0 ? otherBlk.mod_index[0] : -1;
-                    //     if (otherModIndex !== currModIndex) {
-                    //         continue;
-                    //     }
-
-                    //     var otherTop = Number(otherBlk.BlockDim.FinalTop || 0);
-                    //     var otherBottom = Number(otherBlk.BlockDim.FinalBtm || 0);
-                    //     if (!(otherTop > blockBottom && otherBottom < blockTop)) {
-                    //         continue;
-                    //     }
-
-                    //     var otherW = Number(otherBlk.BlockDim.BlkWidth || 0);
-                    //     var otherCX = Number(otherBlk.BlockDim.CalcX || 0);
-                    //     var otherLeft = otherCX - otherW / 2;
-                    //     var otherRight = otherCX + otherW / 2;
-
-                    //     var currentLeft = Number(g_block_resize_state.startLeft || 0);
-                    //     var currentRight = Number(g_block_resize_state.startRight || 0);
-
-                    //     if (otherRight <= currentLeft)
-                    //         leftNeighborLimit = Math.max(leftNeighborLimit, otherRight);
-
-                    //     if (otherLeft >= currentRight)
-                    //         rightNeighborLimit = Math.min(rightNeighborLimit, otherLeft);
-
-                    //     // if (otherRight <= Number(g_block_resize_state.startRight || 0)) {
-                    //     //     leftNeighborLimit = Math.max(leftNeighborLimit, otherRight);
-                    //     // }
-                    //     // if (otherLeft >= Number(g_block_resize_state.startLeft || 0)) {
-                    //     //     rightNeighborLimit = Math.min(rightNeighborLimit, otherLeft);
-                    //     // }
-                    // }
-
-                    // if (g_block_resize_state.edge === "left") {
-                    //     var prevLeftBeforeClamp = newLeft;
-                    //     newLeft = newLeft + delta;
-                    //     newLeft = Math.max(newLeft, leftNeighborLimit);
-                    //     newLeft = Math.max(newLeft, effectiveLeftLimit);
-                    //     console.log("condition left")
-                    //     if (newLeft !== prevLeftBeforeClamp + delta) {
-                    //         console.log("[BLOCK_RESIZE_VALIDATION] left edge clamped", {
-                    //             block: blkRef.BlkName,
-                    //             prevLeft: prevLeftBeforeClamp,
-                    //             requestedLeft: prevLeftBeforeClamp + delta,
-                    //             finalLeft: newLeft,
-                    //             leftNeighborLimit: leftNeighborLimit,
-                    //             effectiveLeftLimit: effectiveLeftLimit
-                    //         });
-                    //     }
-                    // } else {
-                    //     var prevRightBeforeClamp = newRight;
-                    //     newRight = newRight + delta;
-                    //     newRight = Math.min(newRight, rightNeighborLimit);
-                    //     newRight = Math.min(newRight, effectiveRightLimit);
-                    //     console.log("RIGHT EDGE", newRight)
-
-                    //     console.log("condition  right")
-                    //     if (newRight !== prevRightBeforeClamp + delta) {
-                    //         console.log("[BLOCK_RESIZE_VALIDATION] right edge clamped", {
-                    //             block: blkRef.BlkName,
-                    //             prevRight: prevRightBeforeClamp,
-                    //             requestedRight: prevRightBeforeClamp + delta,
-                    //             finalRight: newRight,
-                    //             rightNeighborLimit: rightNeighborLimit,
-                    //             effectiveRightLimit: effectiveRightLimit
-                    //         });
-                    //     }
-                    // }
-                    // if (newRight - newLeft < minWidth) {
-                    //     // Do not force hard min width; keep movement smooth near boundaries.
-                    //     // But also avoid collapsing block to near-zero width.
-                    //     var tinyEps = 0.001;
-                    //     console.log("[BLOCK_RESIZE_VALIDATION] hard min-width skipped", {
-                    //         block: blkRef.BlkName,
-                    //         edge: g_block_resize_state.edge,
-                    //         newLeft: newLeft,
-                    //         newRight: newRight,
-                    //         tinyEps: tinyEps
-                    //     });
-                    //     if (g_block_resize_state.edge === "left") {
-                    //         newLeft = newRight - tinyEps;
-                    //         console.log("condition  if")
-                    //     } else {
-                    //         newRight = newLeft + tinyEps;
-                    //         console.log("condition  else")
-                    //     }
-                    // }
-
-                    // var newW = newRight - newLeft;
-                    // var newCalcX = (newLeft + newRight) / 2;
-                    // if (!Number.isFinite(newW) || newW <= 0.01) {
-                    //     console.log("[BLOCK_RESIZE_VALIDATION] resize skipped (too small)", {
-                    //         block: blkRef.BlkName,
-                    //         edge: g_block_resize_state.edge,
-                    //         newLeft: newLeft,
-                    //         newRight: newRight,
-                    //         newW: newW
-                    //     });
-                    //     return true;
-                    // }
-                    // // apply immediately to BlockDim and refresh visuals in update mode
-                    // blkRef.BlockDim = blkRef.BlockDim || {};
-                    // blkRef.BlockDim.BlkWidth = Number(newW);
-                    // blkRef.BlockDim.CalcX = Number(newCalcX);
-
-                    // -------------------------------
-// FAST RESIZE VALIDATION ENGINE
-// -------------------------------
-
                         var currModIndex = Array.isArray(blkRef.mod_index) ? blkRef.mod_index[0] : -1;
+                        var currWidth = Number(blkRef.BlockDim.BlkWidth || 0);
+                        var currCenter = Number(blkRef.BlockDim.CalcX || 0);
 
-                        // current block bounds
-                        var startLeft = Number(g_block_resize_state.startLeft);
-                        var startRight = Number(g_block_resize_state.startRight);
-
-                        // module limits
+                        var currLeft = currCenter - currWidth / 2;
+                        var currRight = currCenter + currWidth / 2;
                         var moduleLeftLimit = -Infinity;
                         var moduleRightLimit = Infinity;
                         var moduleCenterX = 0;
@@ -10376,17 +9818,14 @@ async function doMouseMove(p_x, p_y, p_event, p_prevX, p_prevY, p_canvas, p_came
                             g_pog_json[g_pog_index].ModuleInfo[currModIndex]
                         ) {
                             var module = g_pog_json[g_pog_index].ModuleInfo[currModIndex];
+
                             moduleCenterX = Number(module.X || 0);
 
                             var moduleW = Number(module.W || 0);
+
                             moduleLeftLimit = -moduleW / 2;
                             moduleRightLimit = moduleW / 2;
                         }
-
-                        // --------------------------------
-                        // FIND NEAREST NEIGHBOURS
-                        // --------------------------------
-
                         var leftNeighborLimit = moduleLeftLimit;
                         var rightNeighborLimit = moduleRightLimit;
 
@@ -10399,13 +9838,12 @@ async function doMouseMove(p_x, p_y, p_event, p_prevX, p_prevY, p_canvas, p_came
                                 continue;
 
                             var otherModIndex = Array.isArray(otherBlk.mod_index) ? otherBlk.mod_index[0] : -1;
+
                             if (otherModIndex !== currModIndex)
                                 continue;
 
                             var otherTop = Number(otherBlk.BlockDim.FinalTop || 0);
                             var otherBottom = Number(otherBlk.BlockDim.FinalBtm || 0);
-
-                            // vertical overlap check
                             if (!(otherTop > blockBottom && otherBottom < blockTop))
                                 continue;
 
@@ -10414,47 +9852,31 @@ async function doMouseMove(p_x, p_y, p_event, p_prevX, p_prevY, p_canvas, p_came
 
                             var otherLeft = otherCX - otherW / 2;
                             var otherRight = otherCX + otherW / 2;
-
-                            // LEFT neighbour
-                            if (otherRight <= startLeft) {
-                                if (otherRight > leftNeighborLimit)
-                                    leftNeighborLimit = otherRight;
+                            if (otherRight <= currLeft) {
+                                leftNeighborLimit = Math.max(leftNeighborLimit, otherRight);
                             }
-
-                            // RIGHT neighbour
-                            if (otherLeft >= startRight) {
-                                if (otherLeft < rightNeighborLimit)
-                                    rightNeighborLimit = otherLeft;
+                            if (otherLeft >= currRight) {
+                                rightNeighborLimit = Math.min(rightNeighborLimit, otherLeft);
                             }
                         }
-
-                        // --------------------------------
-                        // APPLY RESIZE
-                        // --------------------------------
-
-                        var delta = currPointerLocalX - g_block_resize_state.startPointerLocalX;
-
-                        var newLeft = startLeft;
-                        var newRight = startRight;
+                        var newLeft = currLeft;
+                        var newRight = currRight;
 
                         if (g_block_resize_state.edge === "left") {
 
-                            newLeft = startLeft + delta;
-
-                            newLeft = Math.max(newLeft, leftNeighborLimit);
-                            newLeft = Math.max(newLeft, moduleLeftLimit);
+                            newLeft = currPointerLocalX;
 
                         } else {
 
-                            newRight = startRight + delta;
+                            newRight = currPointerLocalX;
 
-                            newRight = Math.min(newRight, rightNeighborLimit);
-                            newRight = Math.min(newRight, moduleRightLimit);
                         }
 
-                        // --------------------------------
-                        // MIN WIDTH PROTECTION
-                        // --------------------------------
+                        newLeft = Math.max(newLeft, leftNeighborLimit);
+                        newLeft = Math.max(newLeft, moduleLeftLimit);
+
+                        newRight = Math.min(newRight, rightNeighborLimit);
+                        newRight = Math.min(newRight, moduleRightLimit);
 
                         var minWidth = 0.02;
 
@@ -10466,10 +9888,6 @@ async function doMouseMove(p_x, p_y, p_event, p_prevX, p_prevY, p_canvas, p_came
                                 newRight = newLeft + minWidth;
                             }
                         }
-
-                        // --------------------------------
-                        // APPLY NEW DIMENSIONS
-                        // --------------------------------
 
                         var newWidth = newRight - newLeft;
                         var newCenter = (newLeft + newRight) / 2;
@@ -11547,8 +10965,6 @@ async function onload_create_pog() {
 
             g_pog_json_data = JSON.parse(JSON.stringify(g_json));
             g_module_obj_array = [];
-            $(".live_image").css("color", "#c7c7c7").removeAttr("onclick").css("cursor", "auto");
-            $(".open_pdf").css("color", "#c7c7c7").removeAttr("onclick").css("cursor", "auto");
             async function doSomething() {
                 if ($v("P193_ERROR_FLAG") == "Y") {
                     // raise_error("&IMP_FAILURE_ERROR_MSG.");
@@ -11634,8 +11050,6 @@ async function onload_create_pog() {
                                     if (POG_JSON.length > 1) {
                                         $("#pog_list_btn").css("display", "block");
                                         $("#chng_view_btn").css("display", "block");
-                                        $(".add_pog").css("display", "block");
-                                        $(".open_par").css("display", "block"); //ASA-1587
                                     }
                                     g_pog_json = [];
                                     for (var p = 0; p <= POG_JSON.length - 1; p++) {
@@ -11667,11 +11081,6 @@ async function onload_create_pog() {
                                             var res = await enableDisableFlags(p);
                                         }
                                     }
-                                    if (g_ComViewIndex > -1 && g_compare_pog_flag == "Y" && g_compare_view == "EDIT_PALLET") {
-                                        await edit_pallet("Y", g_edit_pallet_mod_ind, g_edit_pallet_shelf_ind, g_ComBaseIndex, "Y");
-                                    }
-                                    // removeLoadingIndicator(regionloadWait); //ASA-1500
-                                    $(".open_product").css("display", "block");
                                     $s("P193_UPLD_ID", "");
                                 }
                                 doSomething();
@@ -11699,10 +11108,6 @@ async function onload_create_pog() {
                                     addLoadingIndicator();
                                     var retval = await create_all_pog_onload(POG_JSON);
                                     removeLoadingIndicator(regionloadWait);
-
-                                    if (g_ComViewIndex > -1 && g_compare_pog_flag == "Y" && g_compare_view == "EDIT_PALLET") {
-                                        await edit_pallet("Y", g_edit_pallet_mod_ind, g_edit_pallet_shelf_ind, g_ComBaseIndex, "Y");
-                                    }
                                 }
                                 doSomething();
                             }
@@ -11729,10 +11134,6 @@ async function onload_create_pog() {
                         addLoadingIndicator();
                         var retval = await create_all_pog_onload(POG_JSON);
                         removeLoadingIndicator(regionloadWait);
-
-                        if (g_ComViewIndex > -1 && g_compare_pog_flag == "Y" && g_compare_view == "EDIT_PALLET") {
-                            await edit_pallet("Y", g_edit_pallet_mod_ind, g_edit_pallet_shelf_ind, g_ComBaseIndex, "Y");
-                        }
                         if (g_pog_json.length > 1) {
                             animate_all_pog();
                         }
@@ -12681,14 +12082,14 @@ async function modifyWindowAfterMinMax(p_scene_objects) {
 }
 
 async function createDynamicBlocks(
-    p_pog_code,
-    p_draft_pog,
-    p_pog_version,
-    p_pog_draft_version = "",
-    p_saveColl = "Y",
-    p_attr_val = "",
-    p_margin_param = ""
-) {
+        p_pog_code,
+        p_draft_pog,
+        p_pog_version,
+        p_pog_draft_version = "",
+        p_saveColl = "Y",
+        p_attr_val = "",
+        p_margin_param = ""
+    ) {
 
     return new Promise((resolve, reject) => {
 
@@ -12799,7 +12200,6 @@ async function createDynamicBlocks(
                 }
             }
         );
-
     });
 }
 
@@ -12950,72 +12350,46 @@ function getAfVersion() {
 }
 
 // Reorder Attributes
-function wpdInitializeAttributeReorder() {
-    const containers = document.querySelectorAll(
-        ".u-tC"
-    );
-    containers.forEach(container => {
-        let draggedChip = null;
-        container.addEventListener("dragstart", function (e) {
-            const chip = e.target.closest(".attr-chip");
-            if (!chip) return;
-            draggedChip = chip;
-            chip.classList.add("dragging");
-        });
-        container.addEventListener("dragend", function (e) {
-            const chip = e.target.closest(".attr-chip");
-            if (!chip) return;
-            chip.classList.remove("dragging");
-            draggedChip = null;
-        });
-        container.addEventListener("dragover", function (e) {
-            e.preventDefault();
-            if (!draggedChip) return;
-            const insertBeforeElement =
-                wpdGetAttributeInsertPosition(container, e.clientY);
-            if (insertBeforeElement == null) {
-                container.appendChild(draggedChip);
-            } else {
-                container.insertBefore(draggedChip, insertBeforeElement);
-            }
-        });
+let draggedItem = null;
+document.addEventListener("dragstart", function (e) {
+    const chip = e.target.closest(".attr-chip");
+    if (!chip) return;
+    draggedItem = chip;
+    chip.classList.add("dragging");
+});
+document.addEventListener("dragend", function (e) {
+    const chip = e.target.closest(".attr-chip");
+    if (!chip) return;
+
+    chip.classList.remove("dragging");
+});
+document.addEventListener("dragover", function (e) {
+    if (e.target.closest(".attr-chip")) {
+        e.preventDefault();
+    }
+});
+document.addEventListener("drop", function (e) {
+    const target = e.target.closest(".attr-chip");
+    if (!target || draggedItem === target) return;
+    e.preventDefault();
+    const container = target.parentNode;
+    const items = [...container.querySelectorAll(".attr-chip")];
+    const draggedIndex = items.indexOf(draggedItem);
+    const targetIndex = items.indexOf(target);
+    if (draggedIndex < targetIndex) {
+        container.insertBefore(draggedItem, target.nextSibling);
+    } else {
+        container.insertBefore(draggedItem, target);
+    }
+    update_attr_sequence(container);
+});
+function update_attr_sequence(container) {
+    container.querySelectorAll(".attr-chip").forEach((chip, index) => {
+        chip.dataset.seq = index + 1;
     });
 }
+// Reorder Attributes End
 
-function wpdGetAttributeInsertPosition(container, mouseY) {
-    const chips = [
-        ...container.querySelectorAll(".attr-chip:not(.dragging)")
-    ];
-    return chips.reduce((closest, chip) => {
-        const box = chip.getBoundingClientRect();
-        const offset = mouseY - box.top - box.height / 2;
-        if (offset < 0 && offset > closest.offset) {
-            return {
-                offset: offset,
-                element: chip
-            };
-        } else {
-            return closest;
-        }
-    }, {
-        offset: Number.NEGATIVE_INFINITY
-    }).element;
-}
-
-function wpdCollectAttributeSequence(container) {
-    const chips = container.querySelectorAll(".attr-chip");
-    const sequence = [];
-    chips.forEach((chip, index) => {
-        sequence.push({
-            seq_id: chip.dataset.seq,
-            new_position: index + 1
-        });
-    });
-    return sequence;
-}
-
-// Initialize
-wpdInitializeAttributeReorder();
 
 async function open_view_analysis() {
     logDebug("function : open_view_analysis", "S");
@@ -13041,7 +12415,7 @@ async function open_view_analysis() {
 }
 
 
-function add_pog_versions() {
+async function add_pog_versions() {
     logDebug("function : add_pog_versions", "S");
     try {
         const select = document.getElementById("top_ver");
