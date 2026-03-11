@@ -29,6 +29,17 @@ var g_block_resize_state = {
     startRight: 0
 }
 
+var g_show_changes_block_diff_state = {
+    active: "N",
+    baseIndex: -1,
+    compareIndex: -1,
+    diffSummary: {
+        Added: [],
+        Deleted: [],
+        Edited: []
+    }
+};
+
 
 //ASA-1986 start
 function wpdBuildShowChangesBlockSnapshot(p_block_list) {
@@ -53,6 +64,14 @@ function wpdBuildShowChangesBlockSnapshot(p_block_list) {
         blkSnapshot["BlkModInfo"] = Array.isArray(blk.BlkModInfo) ? JSON.parse(JSON.stringify(blk.BlkModInfo)) : [];
         blkSnapshot["BlkShelfInfo"] = Array.isArray(blk.BlkShelfInfo) ? JSON.parse(JSON.stringify(blk.BlkShelfInfo)) : [];
         blkSnapshot["mod_index"] = Array.isArray(blk.mod_index) ? JSON.parse(JSON.stringify(blk.mod_index)) : [];
+        blkSnapshot["BlockFilters"] = Array.isArray(blk.BlockFilters)
+            ? JSON.parse(JSON.stringify(blk.BlockFilters))
+            : (typeof blk.BlockFilters === "string" && blk.BlockFilters !== "" ? [blk.BlockFilters] : []);
+        blkSnapshot["FilterVal"] = Array.isArray(blk.FilterVal) ? JSON.parse(JSON.stringify(blk.FilterVal)) : [];
+        var blockDimSnapshot = wpdExtractBlockDimForSnapshot(blk);
+        if (blockDimSnapshot !== null) {
+            blkSnapshot["BlockDim"] = blockDimSnapshot;
+        }
         snapshot.push(blkSnapshot);
     }
     return snapshot;
@@ -63,10 +82,461 @@ function wpdCaptureShowChangesBlockSnapshot(p_block_list, p_force = "N") {
         g_show_changes_block_snapshot = wpdBuildShowChangesBlockSnapshot(p_block_list);
     }
 }
+
+function wpdExtractBlockDimForSnapshot(p_block) {
+    var blockDim = p_block && p_block.BlockDim ? p_block.BlockDim : null;
+    if (!blockDim) {
+        return null;
+    }
+    function toFiniteNum(p_val) {
+        var num = Number(p_val);
+        return Number.isFinite(num) ? num : null;
+    }
+    var dimSnapshot = {};
+    dimSnapshot["CalcX"] = toFiniteNum(blockDim.CalcX);
+    dimSnapshot["CalcY"] = toFiniteNum(blockDim.CalcY);
+    dimSnapshot["BlkWidth"] = toFiniteNum(blockDim.BlkWidth);
+    dimSnapshot["BlkHeight"] = toFiniteNum(blockDim.BlkHeight);
+    dimSnapshot["FinalTop"] = toFiniteNum(blockDim.FinalTop);
+    dimSnapshot["FinalBtm"] = toFiniteNum(blockDim.FinalBtm);
+    if (
+        dimSnapshot["CalcX"] === null &&
+        dimSnapshot["CalcY"] === null &&
+        dimSnapshot["BlkWidth"] === null &&
+        dimSnapshot["BlkHeight"] === null &&
+        dimSnapshot["FinalTop"] === null &&
+        dimSnapshot["FinalBtm"] === null
+    ) {
+        return null;
+    }
+    return dimSnapshot;
+}
+
+function wpdRoundDiffNumber(p_value, p_precision = 4) {
+    var num = Number(p_value);
+    if (!Number.isFinite(num)) {
+        return "";
+    }
+    return Number(num.toFixed(p_precision)).toString();
+}
+
+function wpdNormalizeHexColor(p_color, p_default = "#FFFFFF") {
+    var defaultVal = typeof p_default === "string" && p_default !== "" ? p_default : "#FFFFFF";
+    if (typeof p_color === "undefined" || p_color === null) {
+        return defaultVal.toUpperCase();
+    }
+    var normalized = String(p_color).trim();
+    if (normalized === "") {
+        return defaultVal.toUpperCase();
+    }
+    normalized = normalized.replace(/^0x/i, "").replace(/^#/i, "");
+    if (!/^[0-9a-fA-F]{6}$/.test(normalized)) {
+        return defaultVal.toUpperCase();
+    }
+    return ("#" + normalized).toUpperCase();
+}
+
+function wpdNormalizeBlockName(p_block_name) {
+    if (typeof p_block_name === "undefined" || p_block_name === null) {
+        return "";
+    }
+    return String(p_block_name).trim().toUpperCase();
+}
+
+function wpdNormalizeStringArray(p_arr) {
+    if (!Array.isArray(p_arr)) {
+        return [];
+    }
+    var normalized = [];
+    for (const val of p_arr) {
+        if (typeof val === "undefined" || val === null) {
+            continue;
+        }
+        normalized.push(String(val).trim().toUpperCase());
+    }
+    normalized.sort();
+    return normalized;
+}
+
+function wpdNormalizeNumericArray(p_arr) {
+    if (!Array.isArray(p_arr)) {
+        return [];
+    }
+    var normalized = [];
+    for (const val of p_arr) {
+        var num = Number(val);
+        if (Number.isFinite(num)) {
+            normalized.push(num);
+        }
+    }
+    normalized.sort(function (left, right) {
+        return left - right;
+    });
+    return normalized;
+}
+
+function wpdGetBlockFilterSignature(p_block) {
+    if (!p_block || typeof p_block !== "object") {
+        return "";
+    }
+    if (Array.isArray(p_block.FilterVal) && p_block.FilterVal.length > 0) {
+        return wpdNormalizeStringArray(p_block.FilterVal).join("|");
+    }
+    if (Array.isArray(p_block.BlockFilters) && p_block.BlockFilters.length > 0) {
+        return wpdNormalizeStringArray(p_block.BlockFilters).join("|");
+    }
+    if (typeof p_block.BlkFilters === "string" && p_block.BlkFilters !== "") {
+        return wpdNormalizeStringArray(p_block.BlkFilters.split("AND")).join("|");
+    }
+    return "";
+}
+
+function wpdGetBlockEditSignature(p_block) {
+    var dragStart = p_block && p_block.DragMouseStart ? p_block.DragMouseStart : {};
+    var dragEnd = p_block && p_block.DragMouseEnd ? p_block.DragMouseEnd : {};
+    var blockDim = p_block && p_block.BlockDim ? p_block.BlockDim : {};
+
+    var signature = {
+        BlkName: wpdNormalizeBlockName(p_block && p_block.BlkName),
+        BlkColor: wpdNormalizeHexColor(p_block && p_block.BlkColor, "#FFFFFF"),
+        BlkRule: typeof (p_block && p_block.BlkRule) === "undefined" || (p_block && p_block.BlkRule) === null ? "" : String(p_block.BlkRule).trim().toUpperCase(),
+        DragStartX: wpdRoundDiffNumber(dragStart.x),
+        DragStartY: wpdRoundDiffNumber(dragStart.y),
+        DragEndX: wpdRoundDiffNumber(dragEnd.x),
+        DragEndY: wpdRoundDiffNumber(dragEnd.y),
+        ModIndex: wpdNormalizeNumericArray(p_block && p_block.mod_index),
+        Filters: wpdGetBlockFilterSignature(p_block),
+        CalcX: wpdRoundDiffNumber(blockDim.CalcX),
+        CalcY: wpdRoundDiffNumber(blockDim.CalcY),
+        BlkWidth: wpdRoundDiffNumber(blockDim.BlkWidth),
+        BlkHeight: wpdRoundDiffNumber(blockDim.BlkHeight),
+        FinalTop: wpdRoundDiffNumber(blockDim.FinalTop),
+        FinalBtm: wpdRoundDiffNumber(blockDim.FinalBtm)
+    };
+    return JSON.stringify(signature);
+}
+
+function wpdBuildNamedBlockMap(p_block_list) {
+    var namedMap = {};
+    if (!Array.isArray(p_block_list)) {
+        return namedMap;
+    }
+    for (const blk of p_block_list) {
+        if (!blk) {
+            continue;
+        }
+        var blockName = wpdNormalizeBlockName(blk.BlkName);
+        if (blockName === "") {
+            continue;
+        }
+        if (typeof namedMap[blockName] === "undefined") {
+            namedMap[blockName] = blk;
+        }
+    }
+    return namedMap;
+}
+
+function wpdGetShowChangesBlockDiff(p_working_blocks, p_baseline_blocks) {
+    var workingSnapshot = wpdBuildShowChangesBlockSnapshot(p_working_blocks);
+    var baselineSnapshot = wpdBuildShowChangesBlockSnapshot(p_baseline_blocks);
+    var workingMap = wpdBuildNamedBlockMap(workingSnapshot);
+    var baselineMap = wpdBuildNamedBlockMap(baselineSnapshot);
+    var addedBlocks = [];
+    var deletedBlocks = [];
+    var editedBlocks = [];
+
+    for (var wName in workingMap) {
+        if (!Object.prototype.hasOwnProperty.call(workingMap, wName)) {
+            continue;
+        }
+        if (typeof baselineMap[wName] === "undefined") {
+            addedBlocks.push(workingMap[wName]);
+        } else {
+            var workingSig = wpdGetBlockEditSignature(workingMap[wName]);
+            var baselineSig = wpdGetBlockEditSignature(baselineMap[wName]);
+            if (workingSig !== baselineSig) {
+                editedBlocks.push({
+                    Name: wName,
+                    Working: workingMap[wName],
+                    Baseline: baselineMap[wName]
+                });
+            }
+        }
+    }
+
+    for (var bName in baselineMap) {
+        if (!Object.prototype.hasOwnProperty.call(baselineMap, bName)) {
+            continue;
+        }
+        if (typeof workingMap[bName] === "undefined") {
+            deletedBlocks.push(baselineMap[bName]);
+        }
+    }
+
+    return {
+        WorkingSnapshot: workingSnapshot,
+        BaselineSnapshot: baselineSnapshot,
+        AddedBlocks: addedBlocks,
+        DeletedBlocks: deletedBlocks,
+        EditedBlocks: editedBlocks
+    };
+}
+
+function wpdResolveCompareBlockColor(p_color_key) {
+    var fallbackColors = {
+        ADD: "#2E7D32",
+        RETAIN_CHANGE: "#1565C0",
+        REMOVE: "#C62828"
+    };
+    var fallback = fallbackColors[p_color_key] || "#FFFFFF";
+    try {
+        if (typeof g_compareColObj !== "undefined" && g_compareColObj !== null && typeof g_compareColObj[p_color_key] !== "undefined") {
+            return wpdNormalizeHexColor(g_compareColObj[p_color_key], fallback);
+        }
+    } catch (err) {
+        console.warn("wpdResolveCompareBlockColor fallback used:", err);
+    }
+    return fallback;
+}
+
+function wpdHasBlockDimForUpdate(p_block) {
+    if (!p_block || !p_block.BlockDim) {
+        return false;
+    }
+    var blockDim = p_block.BlockDim;
+    var width = Number(blockDim.BlkWidth);
+    var height = Number(blockDim.BlkHeight);
+    var calcX = Number(blockDim.CalcX);
+    var calcY = Number(blockDim.CalcY);
+    var finalTop = Number(blockDim.FinalTop);
+    var finalBtm = Number(blockDim.FinalBtm);
+    return Number.isFinite(width) && width > 0 &&
+        Number.isFinite(height) && height > 0 &&
+        Number.isFinite(calcX) &&
+        Number.isFinite(calcY) &&
+        Number.isFinite(finalTop) &&
+        Number.isFinite(finalBtm);
+}
+
+function wpdGetBlockModIndexList(p_block) {
+    var modIndexList = Array.isArray(p_block && p_block.mod_index) ? p_block.mod_index.slice() : [];
+    if (modIndexList.length === 0 && Array.isArray(p_block && p_block.BlkModInfo) && p_block.BlkModInfo.length > 0) {
+        var modIdx = Number(p_block.BlkModInfo[0].modIdx);
+        if (Number.isFinite(modIdx)) {
+            modIndexList.push(modIdx);
+        }
+    }
+    return modIndexList;
+}
+
+async function wpdWithPogCanvasContext(p_pog_index, p_callback) {
+    if (typeof p_callback !== "function") {
+        return null;
+    }
+    if (!Array.isArray(g_scene_objects) || typeof g_scene_objects[p_pog_index] === "undefined") {
+        return null;
+    }
+    var oldContext = {
+        pogIndex: g_pog_index,
+        world: g_world,
+        camera: g_camera,
+        scene: g_scene,
+        canvas: g_canvas,
+        renderer: g_renderer
+    };
+    try {
+        g_pog_index = p_pog_index;
+        g_scene = g_scene_objects[p_pog_index].scene;
+        if (g_scene && Array.isArray(g_scene.children) && g_scene.children.length > 2) {
+            g_camera = g_scene.children[0];
+            g_world = g_scene.children[2];
+        }
+        if (g_scene_objects[p_pog_index].renderer) {
+            g_renderer = g_scene_objects[p_pog_index].renderer;
+        }
+        var canvasName = p_pog_index > 0 ? "maincanvas" + (p_pog_index + 1) : "maincanvas";
+        var currCanvas = Array.isArray(g_canvas_objects) && g_canvas_objects[p_pog_index]
+            ? g_canvas_objects[p_pog_index]
+            : document.getElementById(canvasName);
+        if (currCanvas) {
+            g_canvas = currCanvas;
+        }
+        return await p_callback();
+    } finally {
+        g_pog_index = oldContext.pogIndex;
+        g_world = oldContext.world;
+        g_camera = oldContext.camera;
+        g_scene = oldContext.scene;
+        g_canvas = oldContext.canvas;
+        g_renderer = oldContext.renderer;
+    }
+}
+
+async function wpdRepaintBlockOnCanvas(p_pog_index, p_block, p_color, p_render_opts = null) {
+    if (!p_block) {
+        return false;
+    }
+    var modIndexList = wpdGetBlockModIndexList(p_block);
+    if (!Array.isArray(modIndexList) || modIndexList.length === 0) {
+        return false;
+    }
+    var repaintColor = wpdNormalizeHexColor(p_color, "#FFFFFF");
+    var blockName = p_block.BlkName || "BLOCK_AFP";
+    var dragStart = p_block.DragMouseStart || { x: 0, y: 0 };
+    var dragEnd = p_block.DragMouseEnd || { x: 0, y: 0 };
+    return await wpdWithPogCanvasContext(p_pog_index, async function () {
+        var oldAutofillModInfo = Array.isArray(g_autofillModInfo) ? JSON.parse(JSON.stringify(g_autofillModInfo)) : [];
+        var oldAutofillShelfInfo = Array.isArray(g_autofillShelfInfo) ? JSON.parse(JSON.stringify(g_autofillShelfInfo)) : [];
+        try {
+            var updateMode = "U";
+            if (!wpdHasBlockDimForUpdate(p_block)) {
+                if (Array.isArray(p_block.BlkModInfo) && p_block.BlkModInfo.length > 0) {
+                    updateMode = "Y";
+                    g_autofillModInfo = JSON.parse(JSON.stringify(p_block.BlkModInfo));
+                    g_autofillShelfInfo = Array.isArray(p_block.BlkShelfInfo) ? JSON.parse(JSON.stringify(p_block.BlkShelfInfo)) : [];
+                } else {
+                    return false;
+                }
+            }
+            var blockPayload = JSON.parse(JSON.stringify(p_block));
+            var retDtl = await colorAutofillBlock(dragStart, dragEnd, modIndexList, repaintColor, blockName, updateMode, blockPayload, p_pog_index, "N", p_render_opts);
+            if (retDtl && typeof p_block === "object") {
+                p_block.BlockDim = Object.assign({}, p_block.BlockDim || {}, retDtl);
+            }
+            return !!retDtl;
+        } finally {
+            g_autofillModInfo = oldAutofillModInfo;
+            g_autofillShelfInfo = oldAutofillShelfInfo;
+        }
+    });
+}
+
+async function wpdResetShowChangesBlockDiffColors(p_base_index, p_base_blocks) {
+    if (!Array.isArray(p_base_blocks) || p_base_index < 0) {
+        return false;
+    }
+    if (!Array.isArray(g_scene_objects) || typeof g_scene_objects[p_base_index] === "undefined") {
+        return false;
+    }
+    for (const blk of p_base_blocks) {
+        if (!blk) {
+            continue;
+        }
+        await wpdRepaintBlockOnCanvas(p_base_index, blk, wpdNormalizeHexColor(blk.BlkColor, "#FFFFFF"));
+    }
+    render(p_base_index);
+    g_show_changes_block_diff_state.active = "N";
+    g_show_changes_block_diff_state.baseIndex = -1;
+    g_show_changes_block_diff_state.compareIndex = -1;
+    g_show_changes_block_diff_state.diffSummary = { Added: [], Deleted: [], Edited: [] };
+    return true;
+}
+
+async function wpdApplyShowChangesBlockDiffColors(p_base_index, p_compare_index, p_working_blocks, p_baseline_blocks) {
+    if (
+        typeof p_base_index === "undefined" || p_base_index < 0 ||
+        typeof p_compare_index === "undefined" || p_compare_index < 0 ||
+        !Array.isArray(g_scene_objects) ||
+        typeof g_scene_objects[p_base_index] === "undefined" ||
+        typeof g_scene_objects[p_compare_index] === "undefined"
+    ) {
+        return;
+    }
+    var diffResult = wpdGetShowChangesBlockDiff(p_working_blocks, p_baseline_blocks);
+    await wpdResetShowChangesBlockDiffColors(p_base_index, diffResult.WorkingSnapshot);
+
+    var addColor = wpdResolveCompareBlockColor("ADD");
+    var editColor = wpdResolveCompareBlockColor("RETAIN_CHANGE");
+    var deleteColor = wpdResolveCompareBlockColor("REMOVE");
+
+    var diffOpaqueStyle = { forceOpaque: "Y" };
+    for (const blk of diffResult.AddedBlocks) {
+        await wpdRepaintBlockOnCanvas(p_base_index, blk, addColor, diffOpaqueStyle);
+    }
+    for (const blk of diffResult.DeletedBlocks) {
+        await wpdRepaintBlockOnCanvas(p_compare_index, blk, deleteColor, diffOpaqueStyle);
+    }
+    for (const editBlk of diffResult.EditedBlocks) {
+        await wpdRepaintBlockOnCanvas(p_compare_index, editBlk.Baseline, editColor, diffOpaqueStyle);
+    }
+
+    render(p_base_index);
+    render(p_compare_index);
+
+    g_show_changes_block_diff_state.active = "Y";
+    g_show_changes_block_diff_state.baseIndex = p_base_index;
+    g_show_changes_block_diff_state.compareIndex = p_compare_index;
+    g_show_changes_block_diff_state.diffSummary = {
+        Added: diffResult.AddedBlocks.map(function (blk) { return wpdNormalizeBlockName(blk.BlkName); }),
+        Deleted: diffResult.DeletedBlocks.map(function (blk) { return wpdNormalizeBlockName(blk.BlkName); }),
+        Edited: diffResult.EditedBlocks.map(function (blk) { return wpdNormalizeBlockName(blk.Name); })
+    };
+}
+
+function wpdInstallShowChangesCloseHook() {
+    if (typeof window !== "undefined" && window.__wpd193ShowChangesCloseHookInstalled === true) {
+        return;
+    }
+    if (typeof closePog !== "function") {
+        if (typeof window !== "undefined" && window.__wpd193ShowChangesCloseHookRetry !== true) {
+            window.__wpd193ShowChangesCloseHookRetry = true;
+            setTimeout(function () {
+                window.__wpd193ShowChangesCloseHookRetry = false;
+                wpdInstallShowChangesCloseHook();
+            }, 250);
+        }
+        return;
+    }
+
+    var originalClosePog = closePog;
+    closePog = function (p_pog_index, p_type) {
+        var closeIndex = parseInt(p_pog_index);
+        var shouldWatchShowChangesClose = (
+            g_compare_pog_flag == "Y" &&
+            g_compare_view == "POG" &&
+            closeIndex === g_ComViewIndex &&
+            g_ComBaseIndex > -1
+        );
+        var baseIndex = g_ComBaseIndex;
+        var baseBlocksSnapshot = wpdBuildShowChangesBlockSnapshot(Array.isArray(g_mod_block_list) ? g_mod_block_list : []);
+
+        var returnVal = originalClosePog.apply(this, arguments);
+
+        if (shouldWatchShowChangesClose) {
+            var attempts = 0;
+            var closeWatcher = setInterval(function () {
+                attempts++;
+                var isShowChangesStillOpen = g_compare_pog_flag == "Y" && g_compare_view == "POG" && g_ComViewIndex > -1;
+                if (!isShowChangesStillOpen) {
+                    wpdResetShowChangesBlockDiffColors(baseIndex, baseBlocksSnapshot)
+                        .then(function (resetDone) {
+                            if (resetDone || attempts >= 80) {
+                                clearInterval(closeWatcher);
+                            }
+                        })
+                        .catch(function (resetErr) {
+                            console.warn("Show Changes block reset skipped:", resetErr);
+                            if (attempts >= 80) {
+                                clearInterval(closeWatcher);
+                            }
+                        });
+                } else if (attempts >= 80) {
+                    clearInterval(closeWatcher);
+                }
+            }, 125);
+        }
+        return returnVal;
+    };
+
+    if (typeof window !== "undefined") {
+        window.__wpd193ShowChangesCloseHookInstalled = true;
+    }
+}
 //This function is called from page 25 execute on page load.
 function initiate_values_onload() {
     sessionStorage.setItem("g_dbuDebugEnabled", $v("P193_POGC_JS_DEBUG_ENABLE"));
     logDebug("onload code ; ", "S");
+    wpdInstallShowChangesCloseHook();
 
     if (!document.getElementById("ig_mod_details")) {
         var igDiv = document.createElement("div");
@@ -6911,7 +7381,7 @@ async function setAutofillBlock(p_action_ind, p_old_blk_name, p_escape_ind = "N"
     }
 }
 
-async function colorAutofillBlock(p_dragMouseStart, p_dragMouseEnd, p_mod_index, p_color, p_text, p_update_flag, p_block_detail, p_pog_index, p_swapBlock) {
+async function colorAutofillBlock(p_dragMouseStart, p_dragMouseEnd, p_mod_index, p_color, p_text, p_update_flag, p_block_detail, p_pog_index, p_swapBlock, p_render_opts = null) {
     try {
         var i = 0;
         // ASA-1986 start
@@ -7039,7 +7509,17 @@ async function colorAutofillBlock(p_dragMouseStart, p_dragMouseEnd, p_mod_index,
         // mesh.uuid = p_text + "_AFP";
         mesh.uuid = blockUuid;
         if (mesh.material) {  // ASA-1986 start
-            mesh.material.opacity = 0.5;
+            var forceOpaque = p_render_opts && typeof p_render_opts === "object" && p_render_opts.forceOpaque === "Y";
+            if (forceOpaque) {
+                mesh.material.opacity = 1;
+                mesh.material.transparent = false;
+            } else {
+                mesh.material.opacity = 0.5;
+                mesh.material.transparent = true;
+            }
+            if (typeof mesh.material.needsUpdate !== "undefined") {
+                mesh.material.needsUpdate = true;
+            }
         }
         if (mesh.position) { // ASA-1986 start
             mesh.position.x = calc_x;
@@ -12003,6 +12483,7 @@ async function get_compare_pog(p_compare_ind, p_pog_code, p_pog_version, p_draft
                                 fit_pog_to_canvas_default(g_ComViewIndex);
                             });
                         }
+                        await wpdApplyShowChangesBlockDiffColors(g_ComBaseIndex, g_ComViewIndex, g_mod_block_list, p_show_change_blocks);
                     }
 
                     if (p_prev_version == "Y") {
