@@ -7328,7 +7328,7 @@ function get_nearest_item(p_module_index, p_shelf_index, p_final_x, p_item_index
             }
         } 
     else {
-            if (p_edit_ind == "N" && spread_product !== "R" && upd_item_index > -1) { // ASA-2066 Issue 2 start
+            if (p_edit_ind == "N" && upd_item_index > -1) { // ASA-2066 Issue 2 start
                 if (p_final_x >= items_arr[upd_item_index].X) {
                  upd_item_index = upd_item_index + 1;
             }
